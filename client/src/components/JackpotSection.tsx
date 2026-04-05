@@ -37,7 +37,7 @@ export default function JackpotSection() {
                 </div>
                 <div className="flex items-center gap-3 justify-center text-muted-foreground">
                   <Calendar className="w-5 h-5 text-purple-400 flex-shrink-0" />
-                  <p>Winner announced at the end of March</p>
+                  <p>Winner announced at the end of July</p>
                 </div>
               </div>
               
