@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import logoImage from "@assets/Logo_1765298445957.png";
+import logoImage from "@assets/Transylvania_Trivia_2.png";
 
 export default function HeroSection() {
   const handleJoinClick = () => {
