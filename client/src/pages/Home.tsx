@@ -6,11 +6,14 @@ import RulesSection from "@/components/RulesSection";
 import FormatSection from "@/components/FormatSection";
 import RegistrationForm from "@/components/RegistrationForm";
 import FooterSection from "@/components/FooterSection";
+import SeasonAnnouncement from "@/components/Announcement";
+
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <HeroSection />
+      <SeasonAnnouncement />
       <CountdownTimer />
       <PrizesSection />
       <JackpotSection />
