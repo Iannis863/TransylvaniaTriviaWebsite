@@ -10,7 +10,7 @@ import SeasonAnnouncement from "@/components/Announcement";
 
 // <CountdownTimer /> goes back in the space
 // Remove SeasonAnnouncement
-
+// <RegistrationForm /> goes back in the space
 
 export default function Home() {
   return (
@@ -22,7 +22,7 @@ export default function Home() {
       <JackpotSection />
       <RulesSection />
       <FormatSection />
-      <RegistrationForm />
+      
       <FooterSection />
     </div>
   );
