@@ -14,8 +14,8 @@ const rounds = [
   },
   {
     id: "round2",
-    name: "Picture Round",
-    description: "Identify celebrities, logos, and movie scenes on the projector. Visual memory time!",
+    name: "Find The Link Between The Pictures",
+    description: "Identify the link between 2 pictures. Visual memory time!",
     icon: Image,
     questions: 10,
     color: "border-blue-500/30",
@@ -23,8 +23,8 @@ const rounds = [
   },
   {
     id: "round3",
-    name: "The Music Round",
-    description: "15-20 seconds of a song. Guess the Title and Artist (0.5 points each). Fan favorite!",
+    name: "Continue The Lyrics",
+    description: "15-20 seconds of a song. Continue the lyrics. Fan favorite!",
     icon: Music,
     questions: 10,
     color: "border-pink-500/30",
@@ -42,7 +42,7 @@ const rounds = [
   },
   {
     id: "round4",
-    name: "Thematic Round",
+    name: "Thematic Round 1",
     description: "A focused topic each week - could be 'The 2000s', 'AI & Tech', 'Geography', or more!",
     icon: Target,
     questions: 10,
