@@ -8,21 +8,16 @@ import RegistrationForm from "@/components/RegistrationForm";
 import FooterSection from "@/components/FooterSection";
 import SeasonAnnouncement from "@/components/Announcement";
 
-// <CountdownTimer /> goes back in the space
-// Remove SeasonAnnouncement
-// <RegistrationForm /> goes back in the space
-
 export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <HeroSection />
-      <SeasonAnnouncement />
-      
+      <CountdownTimer />
       <PrizesSection />
       <JackpotSection />
       <RulesSection />
       <FormatSection />
-      
+      <RegistrationForm />
       <FooterSection />
     </div>
   );
