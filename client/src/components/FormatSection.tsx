@@ -5,8 +5,8 @@ import { Brain, Image, Music, Target, Skull, Coffee, Coins } from "lucide-react"
 const rounds = [
   {
     id: "round1",
-    name: "General Knowledge",
-    description: "Warm up with easier questions to get everyone confident and in the zone.",
+    name: "Cultură Generală",
+    description: "Încălzirea cu întrebări mai ușoare pentru ca toată lumea să prindă încredere și să intre în atmosferă.",
     icon: Brain,
     questions: 10,
     color: "border-green-500/30",
@@ -14,8 +14,8 @@ const rounds = [
   },
   {
     id: "round2",
-    name: "Find The Link Between The Pictures",
-    description: "Identify the link between 2 pictures. Visual memory time!",
+    name: "Conexiunea dintre Imagini",
+    description: "Identifică legătura dintre 2 imagini. E timpul să îți folosești memoria vizuală!",
     icon: Image,
     questions: 10,
     color: "border-blue-500/30",
@@ -23,8 +23,8 @@ const rounds = [
   },
   {
     id: "round3",
-    name: "Continue The Lyrics",
-    description: "15-20 seconds of a song. Continue the lyrics. Fan favorite!",
+    name: "Continuă Versurile",
+    description: "Asculți 15-20 de secunde dintr-o melodie, apoi continui versurile. Runda preferată a tuturor!",
     icon: Music,
     questions: 10,
     color: "border-pink-500/30",
@@ -32,8 +32,8 @@ const rounds = [
   },
   {
     id: "break",
-    name: "Break Time",
-    description: "15 minutes to grab drinks, discuss strategy, and prepare for the final push!",
+    name: "Pauză",
+    description: "15 minute pentru a lua băuturi, a discuta strategia și a vă pregăti pentru rundele finale!",
     icon: Coffee,
     questions: null,
     color: "border-amber-500/30",
@@ -42,8 +42,8 @@ const rounds = [
   },
   {
     id: "round4",
-    name: "Thematic Round 1",
-    description: "A focused topic each week - could be 'The 2000s', 'AI & Tech', 'Geography', or more!",
+    name: "Rundă Tematică 1",
+    description: "Un subiect focalizat diferit în fiecare săptămână – cum ar fi 'Anii 2000', 'AI & Tehnologie', 'Geografie' și multe altele!",
     icon: Target,
     questions: 10,
     color: "border-cyan-500/30",
@@ -51,8 +51,8 @@ const rounds = [
   },
   {
     id: "round5",
-    name: "Thematic Round 2",
-    description: "Another themed topic to test your specialized knowledge. Double the themes, double the fun!",
+    name: "Rundă Tematică 2",
+    description: "Un alt subiect tematic pentru a vă testa cunoștințele specializate. Teme duble, distracție dublă!",
     icon: Target,
     questions: 10,
     color: "border-red-500/30",
@@ -60,8 +60,8 @@ const rounds = [
   },
   {
     id: "break2",
-    name: "Break Time",
-    description: "15 minutes to discuss strategy for the final wager!",
+    name: "Pauză",
+    description: "15 minute pentru a pune la punct strategia pentru miza finală!",
     icon: Coffee,
     questions: null,
     color: "border-amber-500/30",
@@ -70,8 +70,8 @@ const rounds = [
   },
   {
     id: "final",
-    name: "Final Question Wager",
-    description: "One impossibly hard question. Bet your points wisely - glory or doom awaits!",
+    name: "Miza Întrebării Finale",
+    description: "O singură întrebare incredibil de grea. Pariază-ți punctele cu înțelepciune – te așteaptă gloria sau eșecul!",
     icon: Coins,
     questions: 1,
     color: "border-purple-500/30",
@@ -88,10 +88,10 @@ export default function FormatSection() {
           className="font-heading text-4xl md:text-5xl text-center mb-4 tracking-wider"
           data-testid="text-format-title"
         >
-          QUIZ FORMAT
+          FORMATUL QUIZ-ULUI
         </h2>
         <p className="text-muted-foreground text-center mb-12 max-w-xl mx-auto">
-          Five rounds of trivia glory, one legendary final question
+          Cinci runde de glorie trivia și o întrebare finală legendară
         </p>
         
         <div className="relative space-y-4">
@@ -117,7 +117,7 @@ export default function FormatSection() {
                     <h3 className="font-heading text-xl tracking-wide">{round.name}</h3>
                     {round.questions !== null && (
                       <Badge variant="outline" className="text-xs">
-                        {round.questions} {round.questions === 1 ? 'Question' : 'Questions'}
+                        {round.questions} {round.questions === 1 ? 'Întrebare' : 'Întrebări'}
                       </Badge>
                     )}
                     {round.isBreak && (
