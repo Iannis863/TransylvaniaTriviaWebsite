@@ -12,12 +12,12 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <HeroSection />
+      <RegistrationForm />
       <CountdownTimer />
       <PrizesSection />
       <JackpotSection />
       <RulesSection />
-      <FormatSection />
-      <RegistrationForm />
+      <FormatSection />   
       <FooterSection />
     </div>
   );
