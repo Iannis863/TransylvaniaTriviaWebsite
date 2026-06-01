@@ -15,7 +15,7 @@ export default function HeroSection() {
         
         <div className="space-y-3">
           <p className="font-heading text-2xl md:text-3xl tracking-wider text-purple-400">
-            CONCURS DE TRIVIA LA INSOMNIA CAFE & BISTRO
+            CONCURS DE TRIVIA LA INSOMNIA
           </p>
           <p className="text-muted-foreground text-lg max-w-lg">
             Testează-ți cunoștințele și câștigă premii!
