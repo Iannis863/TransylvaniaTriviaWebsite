@@ -4,38 +4,38 @@ import { Smartphone, Joystick, Coins, PartyPopper, Ticket, Trophy, RefreshCw } f
 const rules = [
   {
     number: 1,
-    title: "No Phones",
-    description: "Keep your devices away. This is a battle of wits, not Google skills!",
+    title: "Fără Telefoane",
+    description: "Țineți dispozitivele la distanță. Aceasta este o bătălie a minții, nu a abilităților de căutare pe Google!",
     icon: Smartphone,
   },
   {
     number: 2,
-    title: "The Joker Card",
-    description: "5 rounds with 10 questions each. Use your Joker Card before any round to DOUBLE the points for that round!",
+    title: "Cardul Joker",
+    description: "5 runde cu câte 10 întrebări fiecare. Folosiți cardul Joker înainte de orice rundă pentru a DUBLA punctele din runda respectivă!",
     icon: Joystick,
   },
   {
     number: 3,
-    title: "The Wager",
-    description: "The final question is brutal. Bet any amount of your points - win big or lose it all!",
+    title: "Miza Finală",
+    description: "Întrebarea finală este necruțătoare. Pariați orice sumă din punctele voastre – câștigați la mare artă sau pierdeți totul!",
     icon: Coins,
   },
   {
     number: 4,
-    title: "Swap & Mark",
-    description: "Teams write answers on paper, then swap sheets with neighbors to check. Swap back to verify, then submit before the break.",
+    title: "Schimbă & Corectează",
+    description: "Echipele scriu răspunsurile pe foaie, apoi fac schimb cu vecinii pentru verificare. La final, se dă foaia înapoi pentru confirmare și se predă înainte de pauză.",
     icon: RefreshCw,
   },
   {
     number: 5,
-    title: "Last Place Picks",
-    description: "The team in last place gets to choose a theme round for next week!",
+    title: "Ultimul Loc Alege",
+    description: "Echipa de pe ultimul loc are ocazia să aleagă o rundă tematică pentru săptămâna viitoare!",
     icon: Trophy,
   },
   {
     number: 6,
-    title: "Have Fun!",
-    description: "This is all about having a great time with friends. Enjoy the competition!",
+    title: "Distrează-te!",
+    description: "Totul este despre a petrece timp excelent alături de prieteni. Bucurați-vă de competiție!",
     icon: PartyPopper,
   },
 ];
@@ -48,16 +48,16 @@ export default function RulesSection() {
           className="font-heading text-4xl md:text-5xl text-center mb-4 tracking-wider"
           data-testid="text-rules-title"
         >
-          THE RULES
+          REGULAMENTUL
         </h2>
         <p className="text-muted-foreground text-center mb-8 max-w-xl mx-auto">
-          Simple rules for maximum fun
+          Reguli simple pentru distracție maximă
         </p>
         
         <div className="flex justify-center mb-12">
           <div className="inline-flex items-center gap-3 px-6 py-3 rounded-md bg-amber-500/10 border border-amber-500/30" data-testid="entry-fee-badge">
             <Ticket className="w-6 h-6 text-amber-400" />
-            <span className="font-heading text-xl tracking-wide text-amber-400">ENTRY FEE: 10 LEI PER PERSON</span>
+            <span className="font-heading text-xl tracking-wide text-amber-400">TAXĂ DE PARTICIPARE: 10 LEI DE PERSOANĂ</span>
           </div>
         </div>
         
@@ -74,7 +74,8 @@ export default function RulesSection() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <rule.icon className="w-5 h-5 text-cyan-400" />
+                    {/* Swapped text-cyan-400 to text-purple-400 to complete the purple brand shift */}
+                    <rule.icon className="w-5 h-5 text-purple-400" />
                     <h3 className="font-heading text-xl tracking-wide">{rule.title}</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">{rule.description}</p>
