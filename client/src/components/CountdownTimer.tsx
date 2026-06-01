@@ -77,7 +77,6 @@ export default function CountdownTimer() {
         >
           URMĂTOAREA SEARĂ DE QUIZ
         </h2>
-        <p className="text-muted-foreground mb-8">În fiecare marți de la ora 20:00</p>
         
         <div className="grid grid-cols-4 gap-3 md:gap-6 max-w-xl mx-auto">
           {timeUnits.map((unit) => (
@@ -97,6 +96,7 @@ export default function CountdownTimer() {
             </Card>
           ))}
         </div>
+        <p className="text-muted-foreground mb-8">În fiecare marți de la ora 20:00</p>
       </div>
     </section>
   );
