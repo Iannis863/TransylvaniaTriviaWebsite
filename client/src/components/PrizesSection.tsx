@@ -46,7 +46,7 @@ export default function PrizesSection() {
           PREMII
         </h2>
         <p className="text-muted-foreground text-center mb-12 max-w-xl mx-auto">
-          Luptă pentru glorie și pleacă acasă cu recompense legendare
+          Câștigă și pleacă acasă cu premiile serii
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
