@@ -12,7 +12,7 @@ export default function JackpotSection() {
           JACKPOT-UL
         </h2>
         <p className="text-muted-foreground text-center mb-12 max-w-xl mx-auto">
-          Premiul suprem pentru excelență și constanță la trivia
+          Premiul suprem pentru excelență la trivia
         </p>
         
         <Card className="border border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-amber-500/10">
@@ -34,7 +34,7 @@ export default function JackpotSection() {
                 <div className="flex items-center gap-3 justify-center text-muted-foreground">
                   {/* Swapped text-cyan-400 to text-purple-400 to match the brand identity */}
                   <TrendingUp className="w-5 h-5 text-purple-400 flex-shrink-0" />
-                  <p>Echipa cu cel mai mare punctaj cumulat la toate serile de quiz câștigă!</p>
+                  <p>Echipa cu cel mai mare punctaj cumulat la toate serile de quiz ale sezonului câștigă!</p>
                 </div>
                 <div className="flex items-center gap-3 justify-center text-muted-foreground">
                   <Calendar className="w-5 h-5 text-purple-400 flex-shrink-0" />
@@ -43,7 +43,7 @@ export default function JackpotSection() {
               </div>
               
               <p className="mt-8 text-sm text-amber-400/80 font-medium">
-                Joacă în fiecare marți pentru a-ți maximiza punctele și a revendica jackpot-ul!
+                Joacă în fiecare marți pentru a-ți maximiza punctele și a câștiga jackpot-ul!
               </p>
             </div>
           </CardContent>
