@@ -16,7 +16,7 @@ const rules = [
   },
   {
     number: 3,
-    title: "Miza Finală",
+    title: "Pariul",
     description: "Întrebarea finală este cea mai importantă. Pariați orice sumă din punctele voastre – dublați sau pierdeți totul!",
     icon: Coins,
   },
