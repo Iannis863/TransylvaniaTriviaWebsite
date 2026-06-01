@@ -26,12 +26,13 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Users, CheckCircle } from "lucide-react";
 
+// Translated form validation error messages
 const registrationSchema = z.object({
-  teamName: z.string().min(2, "Team name must be at least 2 characters"),
-  captainName: z.string().min(2, "Captain name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
+  teamName: z.string().min(2, "Numele echipei trebuie să aibă cel puțin 2 caractere"),
+  captainName: z.string().min(2, "Numele căpitanului trebuie să aibă cel puțin 2 caractere"),
+  email: z.string().email("Te rugăm să introduci o adresă de email validă"),
   phoneNumber: z.string().optional(),
-  memberCount: z.number().min(1, "At least 1 member required").max(6, "Maximum 6 members allowed"),
+  memberCount: z.number().min(1, "Este necesar cel puțin 1 membru").max(6, "Sunt允许ți maximum 6 membri"),
 });
 
 type RegistrationFormData = z.infer<typeof registrationSchema>;
@@ -59,14 +60,14 @@ export default function RegistrationForm() {
     onSuccess: () => {
       setIsRegistered(true);
       toast({
-        title: "Registration Successful!",
-        description: "Your team has been registered for the next quiz night.",
+        title: "Înregistrare Reușită!",
+        description: "Echipa ta a fost înregistrată pentru următoarea seară de quiz.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Registration Failed",
-        description: error.message || "Please try again later.",
+        title: "Înregistrare Eșuată",
+        description: error.message || "Te rugăm să încerci din nou mai târziu.",
         variant: "destructive",
       });
     },
@@ -76,6 +77,7 @@ export default function RegistrationForm() {
     registerMutation.mutate(data);
   };
 
+  // Success Screen Component (When user submits successfully)
   if (isRegistered) {
     return (
       <section id="register" className="py-20 px-4">
@@ -83,9 +85,9 @@ export default function RegistrationForm() {
           <Card className="border border-green-500/30 bg-green-500/5">
             <CardContent className="p-8 text-center">
               <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
-              <h3 className="font-heading text-2xl tracking-wider mb-2">YOU'RE IN!</h3>
+              <h3 className="font-heading text-2xl tracking-wider mb-2">AI INTRAT ÎN JOC!</h3>
               <p className="text-muted-foreground">
-                Your team has been registered. See you Tuesday at 20:00!
+                Echipa ta a fost înregistrată cu succes. Ne vedem marți la ora 20:00!
               </p>
             </CardContent>
           </Card>
@@ -94,6 +96,7 @@ export default function RegistrationForm() {
     );
   }
 
+  // Active Form Screen
   return (
     <section id="register" className="py-20 px-4">
       <div className="max-w-md mx-auto">
@@ -101,20 +104,20 @@ export default function RegistrationForm() {
           className="font-heading text-4xl md:text-5xl text-center mb-4 tracking-wider"
           data-testid="text-register-title"
         >
-          REGISTER YOUR TEAM
+          ÎNREGISTREAZĂ-ȚI ECHIPA
         </h2>
         <p className="text-muted-foreground text-center mb-4">
-          Secure your spot for the next quiz night
+          Asigură-ți locul pentru următoarea seară de quiz
         </p>
         <p className="text-amber-400 text-center mb-8 font-medium">
-          Entry Fee: 10 lei per person
+          Taxă de participare: 10 lei de persoană
         </p>
 
         <Card className="border border-purple-500/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Users className="w-5 h-5 text-purple-400" />
-              Team Details
+              Detalii Echipă
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -125,10 +128,10 @@ export default function RegistrationForm() {
                   name="teamName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Team Name</FormLabel>
+                      <FormLabel>Nume Echipă</FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="The Brainiacs" 
+                          placeholder="Ex: Geniile Carpaților" 
                           {...field} 
                           data-testid="input-team-name"
                         />
@@ -143,10 +146,10 @@ export default function RegistrationForm() {
                   name="captainName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Captain Name</FormLabel>
+                      <FormLabel>Nume Căpitan</FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="Your name" 
+                          placeholder="Numele tău complet" 
                           {...field} 
                           data-testid="input-captain-name"
                         />
@@ -165,7 +168,7 @@ export default function RegistrationForm() {
                       <FormControl>
                         <Input 
                           type="email" 
-                          placeholder="team@example.com" 
+                          placeholder="echipa@exemplu.com" 
                           {...field} 
                           data-testid="input-email"
                         />
@@ -180,7 +183,7 @@ export default function RegistrationForm() {
                   name="phoneNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone Number (Optional)</FormLabel>
+                      <FormLabel>Număr de Telefon (Opțional)</FormLabel>
                       <FormControl>
                         <Input 
                           type="tel" 
@@ -199,23 +202,23 @@ export default function RegistrationForm() {
                   name="memberCount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Number of Team Members</FormLabel>
+                      <FormLabel>Număr de Membri în Echipă</FormLabel>
                       <Select 
                         onValueChange={(value) => field.onChange(parseInt(value))} 
                         defaultValue={field.value.toString()}
                       >
                         <FormControl>
                           <SelectTrigger data-testid="select-member-count">
-                            <SelectValue placeholder="Select team size" />
+                            <SelectValue placeholder="Selectează dimensiunea echipei" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="1">1 Member</SelectItem>
-                          <SelectItem value="2">2 Members</SelectItem>
-                          <SelectItem value="3">3 Members</SelectItem>
-                          <SelectItem value="4">4 Members</SelectItem>
-                          <SelectItem value="5">5 Members</SelectItem>
-                          <SelectItem value="6">6 Members (Max)</SelectItem>
+                          <SelectItem value="1">1 Membru</SelectItem>
+                          <SelectItem value="2">2 Membri</SelectItem>
+                          <SelectItem value="3">3 Membri</SelectItem>
+                          <SelectItem value="4">4 Membri</SelectItem>
+                          <SelectItem value="5">5 Membri</SelectItem>
+                          <SelectItem value="6">6 Membri (Maxim)</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -229,7 +232,7 @@ export default function RegistrationForm() {
                   disabled={registerMutation.isPending}
                   data-testid="button-register-submit"
                 >
-                  {registerMutation.isPending ? "REGISTERING..." : "REGISTER TEAM"}
+                  {registerMutation.isPending ? "SE ÎNREGISTREAZĂ..." : "ÎNREGISTREAZĂ ECHIPA"}
                 </Button>
               </form>
             </Form>
