@@ -11,13 +11,13 @@ const rules = [
   {
     number: 2,
     title: "Cardul Joker",
-    description: "5 runde cu câte 10 întrebări fiecare. Folosiți cardul Joker înainte de orice rundă pentru a DUBLA punctele din runda respectivă!",
+    description: "5 runde cu câte 10 întrebări fiecare. Folosiți cardul Joker înainte de orice rundă pentru a aduna mai multe puncte în runda respectivă!",
     icon: Joystick,
   },
   {
     number: 3,
     title: "Miza Finală",
-    description: "Întrebarea finală este necruțătoare. Pariați orice sumă din punctele voastre – câștigați la mare artă sau pierdeți totul!",
+    description: "Întrebarea finală este cea mai importantă. Pariați orice sumă din punctele voastre – dublați sau pierdeți totul!",
     icon: Coins,
   },
   {
@@ -29,13 +29,13 @@ const rules = [
   {
     number: 5,
     title: "Ultimul Loc Alege",
-    description: "Echipa de pe ultimul loc are ocazia să aleagă o rundă tematică pentru săptămâna viitoare!",
+    description: "Echipa de pe ultimul loc are ocazia să aleagă una dintre rundele tematice pentru săptămâna viitoare!",
     icon: Trophy,
   },
   {
     number: 6,
     title: "Distrează-te!",
-    description: "Totul este despre a petrece timp excelent alături de prieteni. Bucurați-vă de competiție!",
+    description: "Cea mai importantă este distracția alături de prieteni. Bucurați-vă de competiție!",
     icon: PartyPopper,
   },
 ];
@@ -53,13 +53,6 @@ export default function RulesSection() {
         <p className="text-muted-foreground text-center mb-8 max-w-xl mx-auto">
           Reguli simple pentru distracție maximă
         </p>
-        
-        <div className="flex justify-center mb-12">
-          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-md bg-amber-500/10 border border-amber-500/30" data-testid="entry-fee-badge">
-            <Ticket className="w-6 h-6 text-amber-400" />
-            <span className="font-heading text-xl tracking-wide text-amber-400">TAXĂ DE PARTICIPARE: 10 LEI DE PERSOANĂ</span>
-          </div>
-        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {rules.map((rule) => (
