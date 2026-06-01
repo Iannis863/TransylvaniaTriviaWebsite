@@ -42,7 +42,7 @@ const rounds = [
   },
   {
     id: "round4",
-    name: "Rundă Tematică 1",
+    name: "Runda Tematică 1",
     description: "O temă diferită în fiecare săptămână – cum ar fi 'Anii 2000', 'AI & Tehnologie', 'Geografie' și multe altele!",
     icon: Target,
     questions: 10,
@@ -51,7 +51,7 @@ const rounds = [
   },
   {
     id: "round5",
-    name: "Rundă Tematică 2",
+    name: "Runda Tematică 2",
     description: "O altă temă pentru a vă testa cunoștințele specializate!",
     icon: Target,
     questions: 10,
