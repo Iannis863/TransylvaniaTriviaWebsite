@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
-import { Users, Mail, Phone, Calendar, ArrowLeft, Trash2 } from "lucide-react";
+import { Users, Mail, Phone, Calendar, ArrowLeft, Trash2, Lock } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -41,7 +43,7 @@ function getEventTuesday(registrationDate: Date): Date {
 }
 
 function formatEventDate(date: Date): string {
-  return date.toLocaleDateString('en-US', { 
+  return date.toLocaleDateString('ro-RO', { 
     weekday: 'long',
     year: 'numeric', 
     month: 'long', 
@@ -62,36 +64,38 @@ function groupByEvent(registrations: TeamRegistration[]): Array<[string, TeamReg
     groups.get(key)!.push(reg);
   });
   
-  const sortedGroups = Array.from(groups.entries()).sort((a, b) => b[0].localeCompare(a[0]));
-  
-  return sortedGroups;
+  return Array.from(groups.entries()).sort((a, b) => b[0].localeCompare(a[0]));
 }
 
-function TeamCard({ team }: { team: TeamRegistration }) {
+// Added password string parameter to TeamCard to authenticate deletions
+function TeamCard({ team, adminPassword }: { team: TeamRegistration; adminPassword: string }) {
   const { toast } = useToast();
   
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/registrations/${id}`);
+      // Sent the custom authentication header with the delete request
+      await apiRequest("DELETE", `/api/registrations/${id}`, undefined, {
+        headers: { "x-admin-password": adminPassword }
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/registrations"] });
       toast({
-        title: "Team deleted",
-        description: `${team.teamName} has been removed.`,
+        title: "Echipă ștearsă",
+        description: `${team.teamName} a fost eliminată.`,
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to delete team. Please try again.",
+        title: "Eroare",
+        description: "Nu s-a putut șterge echipa. Parolă greșită sau eroare de server.",
         variant: "destructive",
       });
     },
   });
 
   const handleDelete = () => {
-    if (confirm(`Are you sure you want to delete ${team.teamName}?`)) {
+    if (confirm(`Sigur vrei să ștergi echipa ${team.teamName}?`)) {
       deleteMutation.mutate(String(team.id));
     }
   };
@@ -103,7 +107,7 @@ function TeamCard({ team }: { team: TeamRegistration }) {
           <span className="text-lg">{team.teamName}</span>
           <div className="flex items-center gap-2">
             <span className="text-sm font-normal text-purple-400">
-              {team.memberCount} member{team.memberCount !== 1 ? "s" : ""}
+              {team.memberCount} membrul{team.memberCount !== 1 ? "i" : ""}
             </span>
             <Button 
               variant="ghost" 
@@ -119,22 +123,22 @@ function TeamCard({ team }: { team: TeamRegistration }) {
       </CardHeader>
       <CardContent className="space-y-2">
         <div className="flex items-center gap-2 text-sm">
-          <Users className="w-4 h-4 text-cyan-400" />
-          <span>Captain: {team.captainName}</span>
+          <Users className="w-4 h-4 text-purple-400" />
+          <span>Căpitan: {team.captainName}</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <Mail className="w-4 h-4 text-cyan-400" />
+          <Mail className="w-4 h-4 text-purple-400" />
           <span>{team.email}</span>
         </div>
         {team.phoneNumber && (
           <div className="flex items-center gap-2 text-sm">
-            <Phone className="w-4 h-4 text-cyan-400" />
+            <Phone className="w-4 h-4 text-purple-400" />
             <span>{team.phoneNumber}</span>
           </div>
         )}
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="w-4 h-4" />
-          <span>Registered: {new Date(team.createdAt).toLocaleDateString()}</span>
+          <span>Înregistrat la: {new Date(team.createdAt).toLocaleDateString('ro-RO')}</span>
         </div>
       </CardContent>
     </Card>
@@ -142,9 +146,62 @@ function TeamCard({ team }: { team: TeamRegistration }) {
 }
 
 export default function Admin() {
-  const { data: registrations, isLoading } = useQuery<TeamRegistration[]>({
-    queryKey: ["/api/registrations"],
+  const [password, setPassword] = useState("");
+  const [inputVal, setInputVal] = useState("");
+
+  // Fetches data only when password state is set, sending it inside headers
+  const { data: registrations, isLoading, error } = useQuery<TeamRegistration[]>({
+    queryKey: ["/api/registrations", password],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/registrations", undefined, {
+        headers: { "x-admin-password": password }
+      });
+      return res.json();
+    },
+    enabled: password.length > 0, // Don't fetch automatically if password is empty
+    retry: false
   });
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPassword(inputVal);
+  };
+
+  // If password hasn't been set, or the last query returned a 401 error (unauthorized)
+  if (!password || error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border border-purple-500/30">
+          <CardHeader className="text-center">
+            <div className="w-12 h-12 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-6 h-6 text-purple-400" />
+            </div>
+            <CardTitle className="font-heading text-2xl tracking-wider">PANOU ADMINISTRATOR</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Input 
+                  type="password" 
+                  placeholder="Introdu parola de acces..." 
+                  value={inputVal}
+                  onChange={(e) => setInputVal(e.target.value)}
+                />
+              </div>
+              {error && (
+                <p className="text-destructive text-sm text-center font-medium">
+                  Parolă incorectă! Încearcă din nou.
+                </p>
+              )}
+              <Button type="submit" className="w-full font-heading tracking-wider">
+                ACCESEAZĂ PANOUL
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const groupedRegistrations = registrations ? groupByEvent(registrations) : [];
   const upcomingTuesday = getNextTuesday(new Date());
@@ -163,19 +220,19 @@ export default function Admin() {
             className="font-heading text-3xl md:text-4xl tracking-wider"
             data-testid="text-admin-title"
           >
-            REGISTERED TEAMS
+            ECHIPE ÎNREGISTRATE
           </h1>
         </div>
 
         {isLoading ? (
           <div className="text-center py-12 text-muted-foreground">
-            Loading registrations...
+            Se încarcă înregistrările...
           </div>
         ) : !registrations || registrations.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No teams registered yet.</p>
+              <p className="text-muted-foreground">Nicio echipă înregistrată momentan.</p>
             </CardContent>
           </Card>
         ) : (
@@ -190,25 +247,25 @@ export default function Admin() {
                   <div className="flex items-center gap-3 mb-4">
                     <Calendar className={`w-5 h-5 ${isUpcoming ? 'text-green-400' : 'text-muted-foreground'}`} />
                     <h2 className="font-heading text-xl tracking-wider">
-                      {isUpcoming ? 'UPCOMING: ' : ''}{formatEventDate(eventDate)}
+                      {isUpcoming ? 'URMĂTORUL: ' : ''}{formatEventDate(eventDate)}
                     </h2>
                     {isUpcoming && (
                       <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400 border border-green-500/30">
-                        This Week
+                        Săptămâna Aceasta
                       </span>
                     )}
                     {isPast && (
                       <span className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground">
-                        Past Event
+                        Eveniment Trecut
                       </span>
                     )}
                   </div>
                   <p className="text-muted-foreground text-sm mb-4">
-                    {teams.length} team{teams.length !== 1 ? "s" : ""} registered
+                    {teams.length} echip{teams.length !== 1 ? "e" : "ă"} înregistrat{teams.length !== 1 ? "e" : "ă"}
                   </p>
                   <div className="space-y-4">
                     {teams.map((team: TeamRegistration) => (
-                      <TeamCard key={team.id} team={team} />
+                      <TeamCard key={team.id} team={team} adminPassword={password} />
                     ))}
                   </div>
                 </div>
