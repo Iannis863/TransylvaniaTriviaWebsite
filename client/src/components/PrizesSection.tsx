@@ -1,7 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-// 1. Import your custom sticker images from the assets folder
 import prizeWineImage from "@assets/prize_wine.png";
 import prizeBeerImage from "@assets/prize_beer.png";
 import prizeShotsImage from "@assets/prize_shots.png";
