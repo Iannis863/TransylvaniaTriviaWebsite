@@ -17,7 +17,8 @@ export default function Home() {
       <PrizesSection />
       <JackpotSection />
       <RulesSection />
-      <FormatSection />   
+      <FormatSection /> 
+      <RegistrationForm />
       <FooterSection />
     </div>
   );
