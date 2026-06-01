@@ -1,30 +1,26 @@
-import { Button } from "@/components/ui/button";
-import logoImage from "@assets/Transylvania_Trivia_2.png";
+import logoImage from "@assets/Logo.png";
 
 export default function HeroSection() {
-  const handleJoinClick = () => {
-    const registerSection = document.getElementById("register");
-    if (registerSection) {
-      registerSection.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
   return (
-    <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 via-background to-background" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-500/10 via-transparent to-transparent" />
+    <section className="relative flex items-center justify-center overflow-hidden pt-12 pb-6">
+      {/* Background gradients */}
+      <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 via-background to-background" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-500/5 via-transparent to-transparent" />
       
-      <div className="relative z-10 flex flex-col items-center text-center px-4 py-16 gap-8">
+      {/* Reduced the gap-8 to gap-2 since the image itself already has white space built into it */}
+      <div className="relative z-10 flex flex-col items-center text-center px-4 gap-2">
         <img 
           src={logoImage} 
           alt="TransylvaniaTrivia Logo" 
-          className="w-64 md:w-80 lg:w-96 drop-shadow-[0_0_30px_rgba(168,85,247,0.4)]"
+          {/* Changed sizing to scale cleanly by height and removed the purple drop-shadow */}
+          className="h-48 sm:h-56 md:h-64 lg:h-72 w-auto object-contain"
           data-testid="img-logo"
         />
         
-        <div className="space-y-4">
+        <div className="space-y-3">
+          {/* Changed color from text-cyan-400 to text-purple-400 to match the logo */}
           <p 
-            className="font-heading text-2xl md:text-3xl tracking-wider text-cyan-400"
+            className="font-heading text-2xl md:text-3xl tracking-wider text-purple-400"
             data-testid="text-tagline"
           >
             CONCURS DE TRIVIA LA INSOMNIA CAFE & BISTRO
@@ -33,8 +29,6 @@ export default function HeroSection() {
             Testează-ți cunoștințele și câștigă premii!
           </p>
         </div>
-        
-        
       </div>
     </section>
   );
