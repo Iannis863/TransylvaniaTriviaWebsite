@@ -10,7 +10,7 @@ export default function HeroSection() {
         <img 
           src={logoImage} 
           alt="TransylvaniaTrivia Logo" 
-          className="h-48 sm:h-56 md:h-64 lg:h-72 w-auto object-contain"
+          className="h-64 sm:h-72 md:h-80 lg:h-96 w-auto object-contain"
         />
         
         <div className="space-y-3">
