@@ -1,4 +1,4 @@
-import logoImage from "@assets/Logo.png";
+import logoImage from "@assets/Logo 2.png";
 
 export default function HeroSection() {
   return (
