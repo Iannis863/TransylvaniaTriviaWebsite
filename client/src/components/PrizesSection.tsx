@@ -6,7 +6,7 @@ const prizes = [
   {
     place: "1",
     title: "O Sticlă de Vin",
-    description: "Deschideți șampania sau vinul bun și sărbătoriți victoria!",
+    description: "Deschideți vinul și sărbătoriți victoria!",
     icon: Wine,
     color: "text-yellow-400",
     borderColor: "border-yellow-400/30",
@@ -14,8 +14,8 @@ const prizes = [
   },
   {
     place: "2",
-    title: "Frapieră cu Bere",
-    description: "O recompensă rece, pe deplin meritată pentru locul secund.",
+    title: "O găleată de Bere",
+    description: "O recompensă rece, pe deplin meritată pentru locul 2.",
     icon: Beer,
     color: "text-gray-300",
     borderColor: "border-gray-300/30",
