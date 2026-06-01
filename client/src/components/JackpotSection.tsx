@@ -9,10 +9,10 @@ export default function JackpotSection() {
           className="font-heading text-4xl md:text-5xl text-center mb-4 tracking-wider"
           data-testid="text-jackpot-title"
         >
-          THE JACKPOT
+          JACKPOT-UL
         </h2>
         <p className="text-muted-foreground text-center mb-12 max-w-xl mx-auto">
-          The ultimate prize for consistent trivia excellence
+          Premiul suprem pentru excelență și constanță la trivia
         </p>
         
         <Card className="border border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-amber-500/10">
@@ -27,22 +27,23 @@ export default function JackpotSection() {
               </div>
               
               <h3 className="font-heading text-2xl tracking-wider mb-6">
-                GRAND PRIZE
+                MARELE PREMIU
               </h3>
               
               <div className="max-w-lg space-y-4">
                 <div className="flex items-center gap-3 justify-center text-muted-foreground">
-                  <TrendingUp className="w-5 h-5 text-cyan-400 flex-shrink-0" />
-                  <p>The team with the highest combined points across all quiz nights wins!</p>
+                  {/* Swapped text-cyan-400 to text-purple-400 to match the brand identity */}
+                  <TrendingUp className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                  <p>Echipa cu cel mai mare punctaj cumulat la toate serile de quiz câștigă!</p>
                 </div>
                 <div className="flex items-center gap-3 justify-center text-muted-foreground">
                   <Calendar className="w-5 h-5 text-purple-400 flex-shrink-0" />
-                  <p>Winner announced at the end of July</p>
+                  <p>Câștigătorul va fi anunțat la sfârșitul lunii iulie</p>
                 </div>
               </div>
               
               <p className="mt-8 text-sm text-amber-400/80 font-medium">
-                Play every Tuesday to maximize your points and claim the jackpot!
+                Joacă în fiecare marți pentru a-ți maximiza punctele și a revendica jackpot-ul!
               </p>
             </div>
           </CardContent>
