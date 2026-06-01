@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
 import { Users, Mail, Phone, Calendar, ArrowLeft, Trash2, Lock } from "lucide-react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 interface TeamRegistration {
@@ -67,16 +67,20 @@ function groupByEvent(registrations: TeamRegistration[]): Array<[string, TeamReg
   return Array.from(groups.entries()).sort((a, b) => b[0].localeCompare(a[0]));
 }
 
-// Added password string parameter to TeamCard to authenticate deletions
 function TeamCard({ team, adminPassword }: { team: TeamRegistration; adminPassword: string }) {
   const { toast } = useToast();
   
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      // Sent the custom authentication header with the delete request
-      await apiRequest("DELETE", `/api/registrations/${id}`, undefined, {
-        headers: { "x-admin-password": adminPassword }
+      // Direct native fetch call to completely avoid header stripping issues
+      const response = await fetch(`/api/registrations/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": adminPassword
+        }
       });
+      if (!response.ok) throw new Error("Delete failed");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/registrations"] });
@@ -149,16 +153,23 @@ export default function Admin() {
   const [password, setPassword] = useState("");
   const [inputVal, setInputVal] = useState("");
 
-  // Fetches data only when password state is set, sending it inside headers
   const { data: registrations, isLoading, error } = useQuery<TeamRegistration[]>({
     queryKey: ["/api/registrations", password],
     queryFn: async () => {
-      const res = await apiRequest("GET", "/api/registrations", undefined, {
-        headers: { "x-admin-password": password }
+      // Forcing standard native fetch to ensure headers remain untouched
+      const res = await fetch("/api/registrations", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": password
+        }
       });
+      if (!res.ok) {
+        throw new Error("Parolă incorectă!");
+      }
       return res.json();
     },
-    enabled: password.length > 0, // Don't fetch automatically if password is empty
+    enabled: password.length > 0,
     retry: false
   });
 
@@ -167,7 +178,6 @@ export default function Admin() {
     setPassword(inputVal);
   };
 
-  // If password hasn't been set, or the last query returned a 401 error (unauthorized)
   if (!password || error) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
