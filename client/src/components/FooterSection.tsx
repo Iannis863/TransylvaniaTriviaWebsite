@@ -129,7 +129,7 @@ export default function FooterSection() {
         
         <div className="mt-12 pt-8 border-t border-border text-center">
           <p className="text-muted-foreground text-sm">
-            TransylvaniaTrivia la Restaurantul Insomnia
+            Transylvania Trivia la Insomnia Cafe & Bistro
           </p>
         </div>
       </div>
