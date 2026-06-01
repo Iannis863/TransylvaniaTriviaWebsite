@@ -4,27 +4,27 @@ import { Wine, Beer, Sparkles } from "lucide-react";
 
 const prizes = [
   {
-    place: "1st",
-    title: "Wine Bottle",
-    description: "Pop the bubbly and celebrate your victory!",
+    place: "1",
+    title: "O Sticlă de Vin",
+    description: "Deschideți șampania sau vinul bun și sărbătoriți victoria!",
     icon: Wine,
     color: "text-yellow-400",
     borderColor: "border-yellow-400/30",
     bgGlow: "shadow-[0_0_30px_rgba(250,204,21,0.15)]",
   },
   {
-    place: "2nd",
-    title: "Bucket of Beer",
-    description: "A well-deserved cold reward for runners-up.",
+    place: "2",
+    title: "Frapieră cu Bere",
+    description: "O recompensă rece, pe deplin meritată pentru locul secund.",
     icon: Beer,
     color: "text-gray-300",
     borderColor: "border-gray-300/30",
     bgGlow: "shadow-[0_0_30px_rgba(209,213,219,0.1)]",
   },
   {
-    place: "3rd",
-    title: "Shots for All",
-    description: "The whole team gets a round of shots!",
+    place: "3",
+    title: "Shot-uri pentru Toți",
+    description: "Întreaga echipă primește o rundă de shot-uri din partea casei!",
     icon: Sparkles,
     color: "text-amber-600",
     borderColor: "border-amber-600/30",
@@ -40,10 +40,10 @@ export default function PrizesSection() {
           className="font-heading text-4xl md:text-5xl text-center mb-4 tracking-wider"
           data-testid="text-prizes-title"
         >
-          PRIZES
+          PREMII
         </h2>
         <p className="text-muted-foreground text-center mb-12 max-w-xl mx-auto">
-          Compete for glory and walk away with legendary rewards
+          Luptă pentru glorie și pleacă acasă cu recompense legendare
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -58,7 +58,7 @@ export default function PrizesSection() {
                   variant="outline" 
                   className={`${prize.color} border-current text-lg px-4 py-1 font-heading tracking-wider`}
                 >
-                  {prize.place} PLACE
+                  LOCUL {prize.place}
                 </Badge>
                 <prize.icon className={`w-16 h-16 ${prize.color}`} />
                 <h3 className="font-heading text-2xl tracking-wide">{prize.title}</h3>
