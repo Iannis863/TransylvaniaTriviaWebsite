@@ -12,14 +12,14 @@ export default function FooterSection() {
               className="font-heading text-2xl tracking-wider mb-6 text-purple-400"
               data-testid="text-venue-title"
             >
-              LOCAȚIE
+              LOCAȚIE & DETALII
             </h3>
             <div className="space-y-4">
               <div className="flex items-start gap-3">
                 {/* Changed text-cyan-400 to text-purple-400 to match your new branding theme */}
                 <MapPin className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium">Restaurantul Insomnia</p>
+                  <p className="font-medium">Insomnia Cafe & Bistro</p>
                   <p className="text-muted-foreground text-sm">Strada Universității nr. 2</p>
                 </div>
               </div>
@@ -33,7 +33,7 @@ export default function FooterSection() {
               <div className="flex items-start gap-3">
                 <Users className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium">Dimensiune echipă: Max. 6 persoane</p>
+                  <p className="font-medium">Număr membrii: Max. 6 într-o echipă</p>
                   <p className="text-muted-foreground text-sm">Adună-ți cei mai isteți prieteni!</p>
                 </div>
               </div>
