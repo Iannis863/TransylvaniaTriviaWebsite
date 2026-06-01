@@ -10,7 +10,7 @@ const prizes = [
     place: "1",
     title: "O Sticlă de Vin",
     description: "Deschideți vinul și sărbătoriți victoria!",
-    image: prizeWineImage, // Pointing to your custom image
+    image: prizeWineImage, 
     borderColor: "border-yellow-400/30",
     bgGlow: "shadow-[0_0_30px_rgba(250,204,21,0.15)]",
     badgeColor: "text-yellow-400",
