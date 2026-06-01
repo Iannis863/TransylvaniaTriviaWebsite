@@ -60,11 +60,12 @@ export default function CountdownTimer() {
     return () => clearInterval(timer);
   }, []);
 
+  // Translated the display labels here
   const timeUnits = [
-    { label: "DAYS", value: timeLeft.days },
-    { label: "HOURS", value: timeLeft.hours },
-    { label: "MINUTES", value: timeLeft.minutes },
-    { label: "SECONDS", value: timeLeft.seconds },
+    { label: "ZILE", value: timeLeft.days, id: "days" },
+    { label: "ORE", value: timeLeft.hours, id: "hours" },
+    { label: "MINUTE", value: timeLeft.minutes, id: "minutes" },
+    { label: "SECUNDE", value: timeLeft.seconds, id: "seconds" },
   ];
 
   return (
@@ -74,16 +75,16 @@ export default function CountdownTimer() {
           className="font-heading text-3xl md:text-4xl tracking-wider mb-2"
           data-testid="text-countdown-title"
         >
-          NEXT QUIZ NIGHT
+          URMĂTOAREA SEARĂ DE QUIZ
         </h2>
-        <p className="text-muted-foreground mb-8">Every Tuesday at 20:00</p>
+        <p className="text-muted-foreground mb-8">În fiecare marți de la ora 20:00</p>
         
         <div className="grid grid-cols-4 gap-3 md:gap-6 max-w-xl mx-auto">
           {timeUnits.map((unit) => (
             <Card 
-              key={unit.label}
+              key={unit.id}
               className="border border-purple-500/30 bg-purple-500/5"
-              data-testid={`card-countdown-${unit.label.toLowerCase()}`}
+              data-testid={`card-countdown-${unit.id}`}
             >
               <CardContent className="p-3 md:p-6">
                 <div className="font-heading text-3xl md:text-5xl text-purple-400">
