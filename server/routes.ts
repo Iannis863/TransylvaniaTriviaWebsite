@@ -1,25 +1,33 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage.js";
-// CHANGE: Point to the physical file relative to the server folder
 import { insertTeamRegistrationSchema } from "../shared/schema.js"; 
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { sendRegistrationConfirmation } from "./email.js";
+
+// Helper function to check the password header securely
+function checkAuth(req: any, res: any, next: () => void) {
+  const adminPassword = process.env.ADMIN_PASSWORD || "TriviaAdmin2026!";
+  const clientPassword = req.headers["x-admin-password"];
+
+  if (!clientPassword || clientPassword !== adminPassword) {
+    return res.status(401).json({ message: "Neautorizat. Parolă incorectă!" });
+  }
+  next();
+}
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   
+  // Public Endpoint: Anyone can register a team
   app.post("/api/registrations", async (req, res) => {
     try {
       const data = insertTeamRegistrationSchema.parse(req.body);
       const registration = await storage.createTeamRegistration(data);
       
-      // THE "SMOOTH PROFESSIONAL" FIX: 
-      // We MUST await this on Vercel/Serverless or the function will
-      // terminate before the email actually leaves the outgoing queue.
       try {
         await sendRegistrationConfirmation(
           data.email,
@@ -28,8 +36,6 @@ export async function registerRoutes(
           data.memberCount
         );
       } catch (emailErr) {
-        // We log the error but still return the registration success
-        // to the user so they aren't stuck on "Registering..."
         console.error("Failed to send confirmation email:", emailErr);
       }
       
@@ -45,7 +51,8 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/registrations", async (req, res) => {
+  // Protected Endpoint: Fetching teams requires the password
+  app.get("/api/registrations", checkAuth, async (req, res) => {
     try {
       const registrations = await storage.getTeamRegistrations();
       res.json(registrations);
@@ -55,7 +62,8 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/registrations/:id", async (req, res) => {
+  // Protected Endpoint: Deleting teams requires the password
+  app.delete("/api/registrations/:id", checkAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const deleted = await storage.deleteTeamRegistration(id);
