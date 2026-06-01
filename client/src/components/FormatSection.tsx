@@ -14,8 +14,8 @@ const rounds = [
   },
   {
     id: "round2",
-    name: "Conexiunea dintre Imagini",
-    description: "Identifică legătura dintre 2 imagini. E timpul să îți folosești memoria vizuală!",
+    name: "Legătura dintre Imagini",
+    description: "Identifică legătura dintre 2 imagini. E timpul să îți folosești memoria vizuală și deducția logică!",
     icon: Image,
     questions: 10,
     color: "border-blue-500/30",
@@ -43,7 +43,7 @@ const rounds = [
   {
     id: "round4",
     name: "Rundă Tematică 1",
-    description: "Un subiect focalizat diferit în fiecare săptămână – cum ar fi 'Anii 2000', 'AI & Tehnologie', 'Geografie' și multe altele!",
+    description: "O temă diferită în fiecare săptămână – cum ar fi 'Anii 2000', 'AI & Tehnologie', 'Geografie' și multe altele!",
     icon: Target,
     questions: 10,
     color: "border-cyan-500/30",
@@ -52,7 +52,7 @@ const rounds = [
   {
     id: "round5",
     name: "Rundă Tematică 2",
-    description: "Un alt subiect tematic pentru a vă testa cunoștințele specializate. Teme duble, distracție dublă!",
+    description: "O altă temă pentru a vă testa cunoștințele specializate!",
     icon: Target,
     questions: 10,
     color: "border-red-500/30",
@@ -70,8 +70,8 @@ const rounds = [
   },
   {
     id: "final",
-    name: "Miza Întrebării Finale",
-    description: "O singură întrebare incredibil de grea. Pariază-ți punctele cu înțelepciune – te așteaptă gloria sau eșecul!",
+    name: "Pariul",
+    description: "O singură întrebare incredibil de grea. Pariază-ți punctele strategic – te așteaptă gloria sau eșecul!",
     icon: Coins,
     questions: 1,
     color: "border-purple-500/30",
