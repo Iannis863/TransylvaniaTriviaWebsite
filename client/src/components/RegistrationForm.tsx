@@ -149,7 +149,7 @@ export default function RegistrationForm() {
                       <FormLabel>Nume Căpitan</FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="Numele tău complet" 
+                          placeholder="Numele tău" 
                           {...field} 
                           data-testid="input-captain-name"
                         />
