@@ -6,7 +6,8 @@ export default function HeroSection() {
       <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 via-background to-background" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-500/5 via-transparent to-transparent" />
       
-      <div className="relative z-10 flex flex-col items-center text-center px-4 gap-2">
+      {/* Removed z-10 from this line so the blend mode can pass through! 👇 */}
+      <div className="relative flex flex-col items-center text-center px-4 gap-2">
         <img 
           src={logoImage} 
           alt="TransylvaniaTrivia Logo" 
