@@ -11,7 +11,7 @@ export default function HeroSection() {
         <img 
           src={logoImage} 
           alt="TransylvaniaTrivia Logo" 
-          className="mix-blend-screen h-48 sm:h-56 md:h-64 lg:h-72 w-auto object-contain"
+          className="mix-blend-lighten h-48 sm:h-56 md:h-64 lg:h-72 w-auto object-contain"
         />
         
         <div className="space-y-3">
