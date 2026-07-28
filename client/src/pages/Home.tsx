@@ -30,7 +30,7 @@ export default function Home() {
       <main className="w-full max-w-2xl flex items-center justify-center my-auto">
         <div className="relative w-full rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-amber-200/20 backdrop-blur-sm">
           <img
-            src="/summer-break.jpg"
+            src="/summer-break.png"
             alt="Transylvania Trivia - Vacanță Frumoasă! Revenim cu un nou sezon în toamnă."
             className="w-full h-auto object-cover block"
           />
