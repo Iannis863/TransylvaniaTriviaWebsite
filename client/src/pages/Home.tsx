@@ -1,41 +1,115 @@
-// import HeroSection from "@/components/HeroSection";
-// import CountdownTimer from "@/components/CountdownTimer";
-// import PrizesSection from "@/components/PrizesSection";
-// import JackpotSection from "@/components/JackpotSection";
-// import RulesSection from "@/components/RulesSection";
-// import FormatSection from "@/components/FormatSection";
-// import RegistrationForm from "@/components/RegistrationForm";
-// import FooterSection from "@/components/FooterSection";
-// import SeasonAnnouncement from "@/components/Announcement";
+import { useState, useEffect } from "react";
+import { getCurrentOrNextEdition, type ActiveEditionState } from "@shared/schedule";
+import Navbar from "@/components/Navbar";
+import HeroSection from "@/components/HeroSection";
+import LiveRegistrationSection from "@/components/LiveRegistrationSection";
+import RegisteredTeamsGrid, { type RegisteredTeamItem } from "@/components/RegisteredTeamsGrid";
+import MiniGamesHub from "@/components/MiniGamesHub";
+import RulebookSection from "@/components/RulebookSection";
+import TeamDashboard from "@/components/TeamDashboard";
+import PrizesSection from "@/components/PrizesSection";
+import FooterSection from "@/components/FooterSection";
 
-// export default function Home() {
-//   return (
-//     <div className="min-h-screen bg-background text-foreground">
-//       <HeroSection />
-//       <RegistrationForm />
-//       <CountdownTimer />
-//       <PrizesSection />
-//       <JackpotSection />
-//       <RulesSection />
-//       <FormatSection /> 
-//       <RegistrationForm />
-//       <FooterSection />
-//     </div>
-//   );
-// }
 export default function Home() {
+  const [activeSection, setActiveSection] = useState("hero");
+  const [scheduleState, setScheduleState] = useState<ActiveEditionState>(getCurrentOrNextEdition());
+  const [registeredTeams, setRegisteredTeams] = useState<RegisteredTeamItem[]>([]);
+  const [isLoadingTeams, setIsLoadingTeams] = useState(false);
+
+  // Fetch active registered teams for the upcoming edition
+  const fetchRegistrations = async () => {
+    setIsLoadingTeams(true);
+    try {
+      const editionId = scheduleState.currentEdition.id;
+      const res = await fetch(`/api/registrations/active?editionId=${editionId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRegisteredTeams(data.teams || []);
+      }
+    } catch (err) {
+      console.error("Error fetching registrations:", err);
+    } finally {
+      setIsLoadingTeams(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRegistrations();
+  }, [scheduleState.currentEdition.id]);
+
+  const handleNavigate = (sectionId: string) => {
+    setActiveSection(sectionId);
+    const el = document.getElementById(sectionId);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    } else if (sectionId === "hero") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const editionLabel = `${scheduleState.formattedDate}, ora 20:00`;
+
   return (
-    <div className="min-h-screen w-full bg-gradient-to-b from-[#111f38] via-[#21436e] to-[#c78044] flex flex-col items-center justify-center p-4 md:p-8 select-none">
-      {/* Main Graphic Container */}
-      <main className="w-full max-w-2xl flex items-center justify-center my-auto">
-        <div className="relative w-full rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-amber-200/20 backdrop-blur-sm">
-          <img
-            src="/summer-break.png"
-            alt="Transylvania Trivia - Vacanță Frumoasă! Revenim cu un nou sezon în toamnă."
-            className="w-full h-auto object-cover block"
+    <div className="min-h-screen bg-[#07020d] text-foreground flex flex-col selection:bg-amber-400 selection:text-purple-950">
+      
+      {/* Top Navbar */}
+      <Navbar
+        activeSection={activeSection}
+        onNavigate={handleNavigate}
+        editionLabel={`Ediția #${scheduleState.editionNumber} • Marți 20:00`}
+      />
+
+      {/* Main Content Sections */}
+      <main className="flex-1 space-y-4">
+        
+        {/* 1. Hero & Countdown Section */}
+        <div id="hero">
+          <HeroSection
+            onRegisterClick={() => handleNavigate("registration")}
+            registeredCount={registeredTeams.length}
+            maxTeams={scheduleState.currentEdition.maxTeams}
           />
         </div>
+
+        {/* 2. Live Registration Section */}
+        <LiveRegistrationSection
+          editionId={scheduleState.currentEdition.id}
+          editionLabel={editionLabel}
+          isFull={registeredTeams.length >= scheduleState.currentEdition.maxTeams}
+          onRegistrationSuccess={fetchRegistrations}
+        />
+
+        {/* 3. Live Registered Teams Grid */}
+        <RegisteredTeamsGrid
+          teams={registeredTeams}
+          maxTeams={scheduleState.currentEdition.maxTeams}
+          editionLabel={`Ediția #${scheduleState.editionNumber} (${scheduleState.formattedDate})`}
+          onRefresh={fetchRegistrations}
+          isLoading={isLoadingTeams}
+        />
+
+        {/* 4. Weekly Mini-Games Hub */}
+        <MiniGamesHub
+          editionId={scheduleState.currentEdition.id}
+          editionNumber={scheduleState.editionNumber}
+          theme={scheduleState.theme}
+          secretClue={scheduleState.secretClue}
+        />
+
+        {/* 5. Rulebook & Theme Validator */}
+        <RulebookSection editionId={scheduleState.currentEdition.id} />
+
+        {/* 6. Team Dashboard */}
+        <TeamDashboard />
+
+        {/* 7. Prizes & Venue */}
+        <PrizesSection />
+
       </main>
+
+      {/* Footer */}
+      <FooterSection />
+
     </div>
   );
 }

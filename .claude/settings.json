@@ -1,0 +1,6 @@
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://router.bynara.id/v1",
+    "ANTHROPIC_AUTH_TOKEN": "sk-nry-tVZEEFlF6ENQPQHxDWIKOHV45MfOblaxumbnimtWxd0"
+  }
+}

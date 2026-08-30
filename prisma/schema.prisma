@@ -1,0 +1,147 @@
+// Prisma Schema for Transilvania Trivia
+// Configured for PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  TEAM_LEADER
+  MEMBER
+  ADMIN
+}
+
+enum GameType {
+  WORDLE
+  SUDOKU
+  REBUS
+  TIMELINE
+  CONNECTIONS
+  GLOBLE
+}
+
+enum ThemeStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id                    String                 @id @default(uuid())
+  name                  String
+  email                 String                 @unique
+  password              String?
+  role                  Role                   @default(MEMBER)
+  avatar                String?
+  teamId                String?
+  team                  Team?                  @relation("TeamMembers", fields: [teamId], references: [id])
+  ledTeams              Team[]                 @relation("TeamLeader")
+  solvedPuzzles         WeeklyPuzzleProgress[]
+  createdAt             DateTime               @default(now())
+
+  @@index([email])
+  @@index([teamId])
+}
+
+model Team {
+  id                    String                 @id @default(uuid())
+  name                  String                 @unique
+  leaderId              String
+  leader                User                   @relation("TeamLeader", fields: [leaderId], references: [id])
+  inviteCode            String                 @unique
+  tagline               String?
+  score                 Int                    @default(0)
+  members               User[]                 @relation("TeamMembers")
+  registrations         Registration[]
+  puzzleProgress        WeeklyPuzzleProgress[]
+  themeSuggestions      ThemeSuggestion[]
+  createdAt             DateTime               @default(now())
+
+  @@index([inviteCode])
+}
+
+model Season {
+  id                    String                 @id @default(uuid())
+  number                Int                    @unique
+  name                  String
+  totalEditions         Int                    @default(15)
+  startDate             DateTime
+  endDate               DateTime
+  isActive              Boolean                @default(false)
+  editions              Edition[]
+  createdAt             DateTime               @default(now())
+}
+
+model Edition {
+  id                    String                 @id @default(uuid())
+  seasonId              String
+  season                Season                 @relation(fields: [seasonId], references: [id])
+  editionNumber         Int                    // 1 to 15
+  eventDate             DateTime               // Tuesdays at 20:00
+  theme                 String?
+  isCompleted           Boolean                @default(false)
+  maxTeams              Int                    @default(25)
+  secretClue            String?
+  registrations         Registration[]
+  puzzleProgress        WeeklyPuzzleProgress[]
+  themeSuggestions      ThemeSuggestion[]
+  createdAt             DateTime               @default(now())
+
+  @@unique([seasonId, editionNumber])
+  @@index([eventDate])
+}
+
+model Registration {
+  id                    String                 @id @default(uuid())
+  teamId                String?
+  team                  Team?                  @relation(fields: [teamId], references: [id])
+  editionId             String
+  edition               Edition                @relation(fields: [editionId], references: [id])
+  teamName              String
+  captainName           String
+  email                 String
+  phoneNumber           String?
+  memberCount           Int
+  reminderSent          Boolean                @default(false)
+  registeredAt          DateTime               @default(now())
+
+  @@index([editionId])
+  @@index([teamId])
+}
+
+model WeeklyPuzzleProgress {
+  id                    String                 @id @default(uuid())
+  teamId                String
+  team                  Team                   @relation(fields: [teamId], references: [id])
+  editionId             String
+  edition               Edition                @relation(fields: [editionId], references: [id])
+  gameType              GameType
+  isSolved              Boolean                @default(false)
+  solvedByUserId        String?
+  solvedByUser          User?                  @relation(fields: [solvedByUserId], references: [id])
+  data                  Json?                  // state, guesses, board progress
+  solvedAt              DateTime?
+  updatedAt             DateTime               @updatedAt
+
+  @@unique([teamId, editionId, gameType])
+  @@index([editionId])
+}
+
+model ThemeSuggestion {
+  id                    String                 @id @default(uuid())
+  teamId                String?
+  team                  Team?                  @relation(fields: [teamId], references: [id])
+  editionId             String?
+  edition               Edition?               @relation(fields: [editionId], references: [id])
+  themeName             String
+  description           String?
+  popularityScore       Int                    @default(0)
+  status                ThemeStatus            @default(PENDING)
+  proposedBy            String
+  createdAt             DateTime               @default(now())
+}

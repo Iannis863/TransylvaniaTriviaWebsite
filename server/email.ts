@@ -1,10 +1,9 @@
 import { Resend } from 'resend';
 
-// Initialize the client using the Vercel Environment Variable
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize the client using the Vercel Environment Variable if present
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 // The "Intelligence" Check: Determine the 'From' email
-// Use your verified domain if you have one, otherwise Resend's testing address
 const FROM_EMAIL = 'Transylvania Trivia <contact@transylvaniatrivia.com>';
 
 export async function sendReminderEmail(
@@ -14,6 +13,10 @@ export async function sendReminderEmail(
   memberCount: number
 ) {
   try {
+    if (!resend) {
+      console.log(`[Email Mock] Reminder would be sent to ${toEmail} for team "${teamName}"`);
+      return { success: true, data: { mock: true } };
+    }
     const totalFee = memberCount * 10;
     const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,
@@ -43,6 +46,10 @@ export async function sendRegistrationConfirmation(
   memberCount: number
 ) {
   try {
+    if (!resend) {
+      console.log(`[Email Mock] Registration confirmation would be sent to ${toEmail} for team "${teamName}"`);
+      return { success: true, data: { mock: true } };
+    }
     const totalFee = memberCount * 10;
     const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,

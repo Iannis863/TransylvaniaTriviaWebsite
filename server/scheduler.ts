@@ -33,7 +33,7 @@ async function sendTodayReminders() {
     
     const todayTeams = allRegistrations.filter(reg => {
       if (reg.reminderSent) return false;
-      const eventDate = getEventTuesday(new Date(reg.createdAt));
+      const eventDate = getEventTuesday(new Date(reg.registeredAt));
       const eventKey = eventDate.toISOString().split('T')[0];
       return eventKey === today;
     });
