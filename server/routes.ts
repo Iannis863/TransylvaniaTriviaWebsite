@@ -438,6 +438,20 @@ export async function registerRoutes(
     }
   });
 
+  // Reset puzzle progress for testing / new session
+  app.post("/api/games/progress/reset", async (req, res) => {
+    try {
+      const { teamId, editionId } = req.body;
+      if (!teamId || !editionId) {
+        return res.status(400).json({ message: "teamId și editionId sunt obligatorii" });
+      }
+      await storage.resetPuzzleProgress(teamId, editionId);
+      res.json({ message: "Progresul jocurilor a fost resetat la 0/6!" });
+    } catch (error) {
+      res.status(500).json({ message: "Eroare la resetarea progresului" });
+    }
+  });
+
   // ==========================================
   // 6. THEME ELIGIBILITY VALIDATOR TOOL
   // ==========================================

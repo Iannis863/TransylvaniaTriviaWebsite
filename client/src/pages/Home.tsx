@@ -97,7 +97,7 @@ export default function Home() {
         />
 
         {/* 5. Rulebook & Theme Validator */}
-        <RulebookSection editionId={scheduleState.currentEdition.id} />
+        <RulebookSection />
 
         {/* 6. Team Dashboard */}
         <TeamDashboard />

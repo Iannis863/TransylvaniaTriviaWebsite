@@ -40,6 +40,7 @@ export interface IStorage {
   // Weekly Mini-Games Progress
   getPuzzleProgress(teamId: string, editionId: string): Promise<WeeklyPuzzleProgress[]>;
   savePuzzleProgress(progress: InsertPuzzleProgress): Promise<WeeklyPuzzleProgress>;
+  resetPuzzleProgress(teamId: string, editionId: string): Promise<void>;
 
   // Theme Suggestions
   getThemeSuggestions(editionId?: string): Promise<ThemeSuggestion[]>;
@@ -171,32 +172,17 @@ export class MemStorage implements IStorage {
       });
     }
 
-    // Seed Initial Solved Games for demo team
-    const wordleProg: WeeklyPuzzleProgress = {
-      id: randomUUID(),
-      teamId: demoTeam.id,
-      editionId,
-      gameType: "WORDLE",
-      isSolved: true,
-      solvedByUserId: leaderUser.id,
-      data: { solution: "CASTEL", attempts: 3 },
-      solvedAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.puzzleProgress.set(`${demoTeam.id}_${editionId}_WORDLE`, wordleProg);
+    // All weekly puzzles start strictly UNRESOLVED (0/6) by default
+  }
 
-    const sudokuProg: WeeklyPuzzleProgress = {
-      id: randomUUID(),
-      teamId: demoTeam.id,
-      editionId,
-      gameType: "SUDOKU",
-      isSolved: true,
-      solvedByUserId: memberUser.id,
-      data: { completedTimeSeconds: 240 },
-      solvedAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.puzzleProgress.set(`${demoTeam.id}_${editionId}_SUDOKU`, sudokuProg);
+  async resetPuzzleProgress(teamId: string, editionId: string): Promise<void> {
+    const keysToDelete: string[] = [];
+    this.puzzleProgress.forEach((val, key) => {
+      if (val.teamId === teamId && val.editionId === editionId) {
+        keysToDelete.push(key);
+      }
+    });
+    keysToDelete.forEach((k) => this.puzzleProgress.delete(k));
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -502,6 +488,15 @@ export class DatabaseStorage implements IStorage {
 
     const [result] = await db.insert(weeklyPuzzleProgress).values(progress).returning();
     return result;
+  }
+
+  async resetPuzzleProgress(teamId: string, editionId: string): Promise<void> {
+    await db.delete(weeklyPuzzleProgress).where(
+      and(
+        eq(weeklyPuzzleProgress.teamId, teamId),
+        eq(weeklyPuzzleProgress.editionId, editionId)
+      )
+    );
   }
 
   async getThemeSuggestions(editionId?: string): Promise<ThemeSuggestion[]> {

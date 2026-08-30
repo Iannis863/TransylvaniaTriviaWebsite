@@ -1,187 +1,205 @@
 import { useState } from "react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { 
   BookOpen, 
-  Smartphone, 
   Sparkles, 
-  Coins, 
-  RefreshCw, 
-  Trophy, 
-  PartyPopper,
-  Brain,
-  Image,
-  Music,
-  Target,
-  Coffee,
-  ShieldAlert,
-  Flame,
-  CheckCircle2
+  Crown, 
+  HelpCircle, 
+  Flame, 
+  Zap, 
+  CheckCircle2, 
+  Scale, 
+  Trophy,
+  Layers,
+  ArrowRight
 } from "lucide-react";
 import ThemeValidator from "./ThemeValidator";
 
-interface RulebookSectionProps {
-  editionId?: string;
-}
+export default function RulebookSection() {
+  const [activeTab, setActiveTab] = useState("rounds");
 
-export default function RulebookSection({ editionId }: RulebookSectionProps) {
-  const [activeTab, setActiveTab] = useState("rules");
-
-  const rulesList = [
+  const rounds = [
     {
-      id: "rule-1",
-      number: "01",
-      title: "Regula de Aur: Fără Telefoane!",
-      icon: Smartphone,
-      badge: "Integritate & Onoare",
-      desc: "Toate telefoanele, smartwatch-urile și dispozitivele conectate rămân în buzunare sau în genți pe toată durata rundelor de întrebări. Folosirea asistenței digitale atrage descalificarea imediată a echipei din runda respectivă.",
+      number: "1",
+      name: "Încălzirea Minții (General Trivia)",
+      questions: "10 Întrebări",
+      points: "1 punct / răspuns corect",
+      desc: "Întrebări diverse din cultură generală, știință, geografie și istorie universală pentru a porni motoarele echipei.",
+      jokerEligible: true,
     },
     {
-      id: "rule-2",
-      number: "02",
-      title: "Mecanica Cardului 'Joker' (x2 Puncte)",
-      icon: Sparkles,
-      badge: "Punctaj Dublu",
-      desc: "Fiecare echipă primește un singur card fizic Joker pe seară. Înainte de începerea oricăreia dintre Rundele 1-5, căpitanul poate alege să joace Joker-ul. Toate punctele obținute de echipă în runda aleasă se dublează automat!",
+      number: "2",
+      name: "Runda Tematică a Ediției",
+      questions: "10 Întrebări",
+      points: "1 punct / răspuns corect",
+      desc: "Dedicată în totalitate temei săptămânale. (Propusă adesea de echipa clasată pe ultimul loc la ediția precedentă!)",
+      jokerEligible: true,
     },
     {
-      id: "rule-3",
-      number: "03",
-      title: "Pariul Final (The Final Gamble)",
-      icon: Coins,
-      badge: "Totul sau Nimic",
-      desc: "La finalul celor 5 runde se joacă o singură întrebare legendară de dificultate maximă. Echipele pot paria orice număr de puncte acumulate (de la 0 până la întregul punctaj). Răspunsul corect adaugă punctele pariate, iar cel greșit le scade!",
+      number: "3",
+      name: "Misterul Transilvaniei & Conexiuni",
+      questions: "10 Întrebări",
+      points: "1 punct / răspuns corect",
+      desc: "Misterele castelelor, legende transilvănene, personalități din Cluj și ghicitori vizuale.",
+      jokerEligible: true,
     },
     {
-      id: "rule-4",
-      number: "04",
-      title: "Sistemul 'Schimbă & Corectează'",
-      icon: RefreshCw,
-      badge: "Corectitudine",
-      desc: "După fiecare bloc de întrebări, foile de răspuns sunt schimbate între mesele vecine pentru verificare reciprocă. Se acordă 1 punct pentru fiecare răspuns corect și 0.5 puncte pentru răspunsuri parțiale justificate de Quizmaster.",
+      number: "4",
+      name: "Audio-Video & Pop Culture",
+      questions: "10 Întrebări (Fragmente)",
+      points: "1 punct / răspuns corect",
+      desc: "Recunoaște coloana sonoră, melodia derulată invers, replica celebră sau cadrul dintr-un film iconic.",
+      jokerEligible: true,
     },
     {
-      id: "rule-5",
-      number: "05",
-      title: "Ultimul Loc Alege Tema Săptămânii Viitoare",
-      icon: Trophy,
-      badge: "Răzbunarea Pierzătorilor",
-      desc: "Echipa care ocupă ultimul loc în clasamentul serii primește privilegiul de a alege tema uneia dintre rundele speciale din ediția următoare (folosind validatorul nostru de teme).",
+      number: "5",
+      name: "Final Gamble (Miza Supremă)",
+      questions: "5 Întrebări de Dificultate Înaltă",
+      points: "Pariu variabil (-2 până la +4 puncte)",
+      desc: "Fiecare echipă pariază puncte înainte de răspuns. Un răspuns corect aduce punctajul pariat; un răspuns greșit scade punctajul pariat din total!",
+      jokerEligible: false,
     },
-    {
-      id: "rule-6",
-      number: "06",
-      title: "Spirit de Joc & Distracție la Insomnia",
-      icon: PartyPopper,
-      badge: "Atmosferă Boemă",
-      desc: "Trivia este înainte de toate o sărbătoare a inteligenței, a bunei dispoziții, a vinului bun și a prieteniei. Respectați gazdele, adversarii și bucurați-vă de spectacol!",
-    },
-  ];
-
-  const roundsFormat = [
-    { num: 1, name: "Cultură Generală", count: "10 Întrebări", icon: Brain, color: "text-emerald-400", desc: "Încălzirea serii cu întrebări diverse din știință, istorie și curiozități pentru a intra în ritm." },
-    { num: 2, name: "Legătura Vizuală", count: "10 Întrebări", icon: Image, color: "text-blue-400", desc: "Identificarea legăturii secrete sau a elementului comun dintre imagini, postere și opere de artă." },
-    { num: 3, name: "Continuă Versurile & Runda Audio", count: "10 Melodii", icon: Music, color: "text-purple-400", desc: "15-20 secunde dintr-un hit celebru, urmate de continuarea versului sau ghicirea artistului." },
-    { num: 4, name: "Pauză de Strategie (15 min)", count: "Pauză", icon: Coffee, color: "text-amber-400", desc: "Timp pentru completarea carnetului de băuturi, calcularea clasamentului provizoriu și decizia pentru Joker." },
-    { num: 5, name: "Runda Tematică a Săptămânii", count: "10 Întrebări", icon: Target, color: "text-pink-400", desc: "Tema specială anunțată în avans sau aleasă de echipa de pe ultimul loc din ediția anterioară." },
-    { num: 6, name: "Runda Fulger / Specială", count: "10 Întrebări", icon: Flame, color: "text-red-400", desc: "Întrebări rapide, provocări de logică și dueluri directe de cunoștințe." },
-    { num: 7, name: "Final Gamble (Pariul Suprem)", count: "1 Întrebare Mistică", icon: Coins, color: "text-amber-300", desc: "Momentul decisiv al serii care poate răsturna complet clasamentul și decide câștigătorii premiilor!" },
   ];
 
   return (
-    <section id="rulebook" className="py-16 px-4 sm:px-6 lg:px-8 relative">
+    <section id="rulebook" className="py-24 px-4 sm:px-6 lg:px-8 relative">
       <div className="max-w-5xl mx-auto">
         
-        {/* Title */}
-        <div className="text-center mb-8">
-          <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/40 text-xs px-3 py-1 font-semibold uppercase tracking-wider mb-2">
-            Ghidul Oficial al Jucătorului
-          </Badge>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-heading tracking-widest text-gold-gradient">
-            REGULAMENT & VALIDATOR DE TEME
+        {/* Section Header */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-purple-950/80 border border-purple-600/40 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-purple-300 mb-3 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
+            <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+            Codul de Onoare & Mecanici
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-heading tracking-widest text-gold-gradient">
+            REGULAMENTUL OFICIAL
           </h2>
-          <p className="text-purple-200/80 text-sm sm:text-base max-w-xl mx-auto mt-1">
-            Tot ce trebuie să știi despre desfășurarea serii de marți la Insomnia Restaurant
+          <p className="text-purple-200/80 text-sm sm:text-base max-w-xl mx-auto mt-2 font-light">
+            Descoperă structura celor 5 runde, puterea cardului Joker și validatorul algoritmic de teme.
           </p>
         </div>
 
-        {/* Tabs Control */}
+        {/* Tab Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 bg-purple-950/80 border border-purple-700/50 p-1 mb-8 max-w-xl mx-auto">
-            <TabsTrigger value="rules" className="data-[state=active]:bg-amber-400 data-[state=active]:text-purple-950 font-heading tracking-wider text-xs sm:text-sm py-2">
-              Reguli & Mecanici
-            </TabsTrigger>
-            <TabsTrigger value="format" className="data-[state=active]:bg-amber-400 data-[state=active]:text-purple-950 font-heading tracking-wider text-xs sm:text-sm py-2">
-              Structura Rundelor
-            </TabsTrigger>
-            <TabsTrigger value="validator" className="data-[state=active]:bg-amber-400 data-[state=active]:text-purple-950 font-heading tracking-wider text-xs sm:text-sm py-2">
-              Validator Teme
-            </TabsTrigger>
-          </TabsList>
+          
+          <div className="flex justify-center mb-8">
+            <TabsList className="bg-purple-950/80 border border-purple-700/50 p-1.5 rounded-full">
+              <TabsTrigger
+                value="rounds"
+                className="data-[state=active]:bg-amber-400 data-[state=active]:text-purple-950 font-heading text-xs sm:text-sm tracking-wider px-6 py-2.5 rounded-full transition-all"
+              >
+                Cele 5 Runde
+              </TabsTrigger>
+              <TabsTrigger
+                value="mechanics"
+                className="data-[state=active]:bg-amber-400 data-[state=active]:text-purple-950 font-heading text-xs sm:text-sm tracking-wider px-6 py-2.5 rounded-full transition-all"
+              >
+                Joker & Reguli Speciale
+              </TabsTrigger>
+              <TabsTrigger
+                value="validator"
+                className="data-[state=active]:bg-amber-400 data-[state=active]:text-purple-950 font-heading text-xs sm:text-sm tracking-wider px-6 py-2.5 rounded-full transition-all"
+              >
+                Validator Teme Noi
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-          {/* TAB 1: RULES */}
-          <TabsContent value="rules" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {rulesList.map((rule) => {
-                const Icon = rule.icon;
-                return (
-                  <Card key={rule.id} className="gold-card border border-purple-700/40 p-5 rounded-xl hover:border-amber-400/50 transition-all">
-                    <CardContent className="p-0 flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-purple-900/60 border border-amber-400/30 flex items-center justify-center font-heading text-xl text-amber-300 flex-shrink-0 shadow">
-                        {rule.number}
+          {/* TAB 1: ROUNDS BREAKDOWN */}
+          <TabsContent value="rounds" className="space-y-4">
+            <div className="grid grid-cols-1 gap-4">
+              {rounds.map((round) => (
+                <div
+                  key={round.number}
+                  className="p-1 rounded-2xl bg-purple-950/20 border border-purple-800/40 hover:border-amber-400/40 transition-all shadow-md"
+                >
+                  <div className="p-5 rounded-xl bg-[#0f041e] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-600 text-purple-950 font-heading text-xl font-bold flex items-center justify-center shadow flex-shrink-0">
+                        R{round.number}
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <h3 className="font-heading text-lg text-white">{rule.title}</h3>
-                          <Badge variant="outline" className="border-purple-600/40 text-purple-300 text-[10px]">
-                            {rule.badge}
-                          </Badge>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-heading text-lg text-white tracking-wide">{round.name}</h3>
+                          {round.jokerEligible ? (
+                            <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/30 text-[10px]">
+                              JOKER APLICABIL (x2)
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-purple-300 text-[10px]">
+                              FĂRĂ JOKER
+                            </Badge>
+                          )}
                         </div>
-                        <p className="text-xs text-purple-200/80 leading-relaxed">{rule.desc}</p>
+                        <p className="text-xs text-purple-300/80 mt-1 leading-relaxed">{round.desc}</p>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                    </div>
+
+                    <div className="flex items-center gap-3 self-end sm:self-center font-mono text-xs flex-shrink-0">
+                      <span className="text-purple-300">{round.questions}</span>
+                      <span className="text-amber-400 font-bold">|</span>
+                      <span className="text-amber-300 font-bold">{round.points}</span>
+                    </div>
+
+                  </div>
+                </div>
+              ))}
             </div>
           </TabsContent>
 
-          {/* TAB 2: FORMAT */}
-          <TabsContent value="format" className="space-y-3">
-            {roundsFormat.map((r) => {
-              const Icon = r.icon;
-              return (
-                <div
-                  key={r.num}
-                  className="gold-card rounded-xl p-4 border border-purple-700/40 flex items-start sm:items-center justify-between gap-4"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-lg bg-purple-900/60 border border-purple-600/40 flex items-center justify-center flex-shrink-0">
-                      <Icon className={`w-5 h-5 ${r.color}`} />
+          {/* TAB 2: SPECIAL MECHANICS */}
+          <TabsContent value="mechanics" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Joker Card */}
+              <div className="p-2 rounded-[2rem] bg-gradient-to-b from-amber-500/15 via-purple-900/10 to-amber-500/5 ring-1 ring-amber-400/30 shadow-xl">
+                <div className="p-6 rounded-[calc(2rem-0.5rem)] bg-[#0e041d] h-full flex flex-col justify-between">
+                  <div>
+                    <div className="w-12 h-12 rounded-2xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-2xl mb-4">
+                      🃏
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-heading text-base sm:text-lg text-white">{r.name}</span>
-                        <Badge className="bg-purple-900/60 border-purple-600/40 text-purple-200 text-[10px]">
-                          {r.count}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-purple-200/80 mt-0.5">{r.desc}</p>
+                    <h3 className="text-xl font-heading text-gold-gradient tracking-wide mb-2">
+                      CARDUL STRATEGIC JOKER (x2)
+                    </h3>
+                    <p className="text-xs text-purple-200/80 leading-relaxed space-y-2">
+                      Fiecare echipă primește un singur card Joker la începutul serii. Căpitanul poate juca Jokerul pe <strong className="text-amber-300">oricare din Rundele 1 - 4</strong> înainte de citirea primei întrebări din runda respectivă.
+                    </p>
+                    <div className="mt-4 p-3 rounded-xl bg-purple-950/60 border border-purple-800/40 text-[11px] text-amber-300 font-medium">
+                      ⚡ Toate punctele obținute în runda aleasă se DUBLEAZĂ automat!
                     </div>
                   </div>
-                  <span className="font-heading text-2xl text-amber-400/50 font-bold hidden sm:block">
-                    0{r.num}
-                  </span>
                 </div>
-              );
-            })}
+              </div>
+
+              {/* Final Gamble */}
+              <div className="p-2 rounded-[2rem] bg-purple-950/20 ring-1 ring-purple-500/30 shadow-xl">
+                <div className="p-6 rounded-[calc(2rem-0.5rem)] bg-[#0e041d] h-full flex flex-col justify-between">
+                  <div>
+                    <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-2xl mb-4">
+                      🎲
+                    </div>
+                    <h3 className="text-xl font-heading text-purple-200 tracking-wide mb-2">
+                      MECANICA FINAL GAMBLE
+                    </h3>
+                    <p className="text-xs text-purple-200/80 leading-relaxed">
+                      În Runda 5, după anunțarea categoriei întrebării, echipa alege câte puncte pariază din zestrea adunată. Răspunsurile corecte adaugă punctele; cele greșite sau lipsă le deduc fără milă!
+                    </p>
+                    <div className="mt-4 p-3 rounded-xl bg-purple-950/60 border border-purple-800/40 text-[11px] text-purple-300 font-medium">
+                      ⚠️ Miza poate propulsa o echipă de pe locul 5 direct pe podium!
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
           </TabsContent>
 
-          {/* TAB 3: THEME VALIDATOR */}
+          {/* TAB 3: THEME VALIDATOR TOOL */}
           <TabsContent value="validator">
-            <ThemeValidator editionId={editionId} />
+            <ThemeValidator />
           </TabsContent>
 
         </Tabs>
