@@ -140,7 +140,7 @@ export default function MiniGamesHub({
   const gamesConfig = [
     { id: "wordle", type: "WORDLE", name: "1. Wordle", desc: "Cuvântul Săptămânii", icon: FileText },
     { id: "sudoku", type: "SUDOKU", name: "2. Sudoku", desc: "Criptograma Gotică", icon: Puzzle },
-    { id: "timeline", type: "TIMELINE", name: "3. Cronologie", desc: "Ordonare Evenimente", icon: ListOrdered },
+    { id: "timeline", type: "TIMELINE", name: "3. Cronologia evenimentelor istorice", desc: "Ordonare Evenimente", icon: ListOrdered },
     { id: "connections", type: "CONNECTIONS", name: "4. Conexiuni", desc: "4 Categorii", icon: Layers },
     { id: "globle", type: "GLOBLE", name: "5. Ghicește Țara", desc: "Ghicește țara secretă", icon: Compass },
   ];

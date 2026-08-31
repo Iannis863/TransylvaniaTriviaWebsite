@@ -123,7 +123,7 @@ export default function SecretClueModal({
             </div>
 
             <div className="text-xs text-purple-300/80 max-w-sm mx-auto leading-relaxed">
-              Colaborează cu coechipierii tăi pentru a finaliza Wordle, Sudoku, Rebusul, Cronologia, Conexiunile și Ghicește Țara!
+              Colaborează cu coechipierii tăi pentru a finaliza Wordle, Sudoku, Cronologia evenimentelor istorice, Conexiunile și Ghicește Țara!
             </div>
           </div>
         )}
