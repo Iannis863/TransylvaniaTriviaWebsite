@@ -72,8 +72,9 @@ export default function GlobleGame({ onSolve, isAlreadySolved = false }: GlobleG
         // Pre-compute centroids and apply Romanian translations
         const enhanced = data.features.map((f: any) => {
           const iso = f.properties.ISO_A3;
+          const admin = f.properties.ADMIN;
           // @ts-ignore
-          const translatedName = roCountries[iso] || f.properties.ADMIN;
+          const translatedName = roCountries[iso] || roCountries[admin] || admin;
           return {
             ...f,
             centroid: getCentroid(f.geometry),
@@ -149,7 +150,7 @@ export default function GlobleGame({ onSolve, isAlreadySolved = false }: GlobleG
     <div className="flex flex-col items-center max-w-md mx-auto w-full">
       <div className="text-center mb-4">
         <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/40 text-xs mb-1">
-          Globle: Ghicește Țara
+          Ghicește Țara
         </Badge>
         <p className="text-xs text-purple-300/80">Introdu o țară. Culorile calde înseamnă că ești mai aproape!</p>
       </div>

@@ -145,7 +145,7 @@ export default function MiniGamesHub({
     { id: "crossword", type: "REBUS", name: "3. Rebus", desc: "Cuvinte Încrucișate", icon: HelpCircle },
     { id: "timeline", type: "TIMELINE", name: "4. Cronologie", desc: "Ordonare Evenimente", icon: ListOrdered },
     { id: "connections", type: "CONNECTIONS", name: "5. Conexiuni", desc: "4 Categorii din 16 Cuvinte", icon: Layers },
-    { id: "globle", type: "GLOBLE", name: "6. Harta Mistică", desc: "Ghicește Orașul Transilvănean", icon: Compass },
+    { id: "globle", type: "GLOBLE", name: "6. Ghicește Țara", desc: "Ghicește țara secretă", icon: Compass },
   ];
 
   return (

@@ -187,7 +187,7 @@ export default function CrosswordGame({ onSolve, isAlreadySolved = false }: Cros
     <div className="flex flex-col items-center max-w-lg mx-auto w-full">
       <div className="text-center mb-4">
         <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/40 text-xs mb-1">
-          NYT Midi-Rebus (5x5)
+          Rebus (5x5)
         </Badge>
         <p className="text-xs text-purple-300/80">Selectează o căsuță și completează careul.</p>
       </div>

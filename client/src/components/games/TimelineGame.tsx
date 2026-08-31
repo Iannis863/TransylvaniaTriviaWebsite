@@ -92,7 +92,7 @@ export default function TimelineGame({ onSolve, isAlreadySolved = false }: Timel
     <div className="flex flex-col items-center max-w-lg mx-auto w-full">
       <div className="text-center mb-4 flex flex-col items-center">
         <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/40 text-xs mb-2">
-          Cronologia Istoriei (Timdle)
+          Cronologia Istoriei
         </Badge>
         <div className="flex items-center gap-1">
           {[1, 2, 3].map((life) => (
