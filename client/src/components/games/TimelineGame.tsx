@@ -84,9 +84,11 @@ export default function TimelineGame({ onSolve, isAlreadySolved = false }: Timel
     }
   };
 
-  const handleRestart = () => {
-    setPlacedEvents([ALL_EVENTS[3]]);
-    setUpcomingEvents([ALL_EVENTS[0], ALL_EVENTS[5], ALL_EVENTS[2], ALL_EVENTS[4], ALL_EVENTS[1]]);
+    const handleRestart = () => {
+    const initialEvent = ALL_EVENTS.length > 0 ? ALL_EVENTS[Math.floor(ALL_EVENTS.length / 2)] : null;
+    const remainingEvents = ALL_EVENTS.filter(e => e.id !== initialEvent?.id).sort(() => Math.random() - 0.5);
+    setPlacedEvents(initialEvent ? [initialEvent] : []);
+    setUpcomingEvents(remainingEvents);
     setLives(3);
     setIsLost(false);
   };
