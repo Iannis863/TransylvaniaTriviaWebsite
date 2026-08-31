@@ -24,10 +24,10 @@ import {
 
 import WordleGame from "./games/WordleGame";
 import SudokuGame from "./games/SudokuGame";
-import CrosswordGame from "./games/CrosswordGame";
 import TimelineGame from "./games/TimelineGame";
 import ConnectionsGame from "./games/ConnectionsGame";
 import GlobleGame from "./games/GlobleGame";
+import { getCurrentWeeklyGameData } from "@/lib/weeklyGames";
 import SecretClueModal from "./games/SecretClueModal";
 
 interface MiniGamesHubProps {
@@ -48,12 +48,12 @@ export default function MiniGamesHub({
   const [activeGameTab, setActiveGameTab] = useState("wordle");
   const [isClueModalOpen, setIsClueModalOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const weeklyData = getCurrentWeeklyGameData();
 
   // Solved state per game type (collaborative progress)
   const [solvedGames, setSolvedGames] = useState<Record<string, boolean>>({
     WORDLE: false,
     SUDOKU: false,
-    REBUS: false,
     TIMELINE: false,
     CONNECTIONS: false,
     GLOBLE: false,
@@ -69,7 +69,6 @@ export default function MiniGamesHub({
         const map: Record<string, boolean> = {
           WORDLE: false,
           SUDOKU: false,
-          REBUS: false,
           TIMELINE: false,
           CONNECTIONS: false,
           GLOBLE: false,
@@ -122,12 +121,11 @@ export default function MiniGamesHub({
         setSolvedGames({
           WORDLE: false,
           SUDOKU: false,
-          REBUS: false,
           TIMELINE: false,
           CONNECTIONS: false,
           GLOBLE: false,
         });
-        toast({ title: "Progres Resetat", description: "Toate cele 6 puzzle-uri au fost resetate la 0/6 pentru testare." });
+        toast({ title: "Progres Resetat", description: "Toate cele 6 puzzle-uri au fost resetate la 0/5 pentru testare." });
       }
     } catch (err) {
       toast({ title: "Eroare", description: "Nu s-a putut reseta progresul", variant: "destructive" });
@@ -137,15 +135,14 @@ export default function MiniGamesHub({
   };
 
   const solvedCount = Object.values(solvedGames).filter(Boolean).length;
-  const allSolved = solvedCount === 6;
+  const allSolved = solvedCount === 5;
 
   const gamesConfig = [
-    { id: "wordle", type: "WORDLE", name: "1. Wordle", desc: "Cuvântul Săptămânii (6 Litere)", icon: FileText },
-    { id: "sudoku", type: "SUDOKU", name: "2. Sudoku", desc: "Criptograma Gotică 6x6", icon: Puzzle },
-    { id: "crossword", type: "REBUS", name: "3. Rebus", desc: "Cuvinte Încrucișate", icon: HelpCircle },
-    { id: "timeline", type: "TIMELINE", name: "4. Cronologie", desc: "Ordonare Evenimente", icon: ListOrdered },
-    { id: "connections", type: "CONNECTIONS", name: "5. Conexiuni", desc: "4 Categorii din 16 Cuvinte", icon: Layers },
-    { id: "globle", type: "GLOBLE", name: "6. Ghicește Țara", desc: "Ghicește țara secretă", icon: Compass },
+    { id: "wordle", type: "WORDLE", name: "1. Wordle", desc: "Cuvântul Săptămânii", icon: FileText },
+    { id: "sudoku", type: "SUDOKU", name: "2. Sudoku", desc: "Criptograma Gotică", icon: Puzzle },
+    { id: "timeline", type: "TIMELINE", name: "3. Cronologie", desc: "Ordonare Evenimente", icon: ListOrdered },
+    { id: "connections", type: "CONNECTIONS", name: "4. Conexiuni", desc: "4 Categorii", icon: Layers },
+    { id: "globle", type: "GLOBLE", name: "5. Ghicește Țara", desc: "Ghicește țara secretă", icon: Compass },
   ];
 
   return (
@@ -186,39 +183,43 @@ export default function MiniGamesHub({
                     Progres Comun: <strong className="text-amber-300">{team ? team.name : "Echipa Ta"}</strong>
                   </div>
                   <div className="font-heading text-2xl sm:text-3xl text-white mt-0.5">
-                    {solvedCount} DIN 6 JOCURI COMPLETATE
+                    {solvedCount} DIN 5 JOCURI COMPLETATE
                   </div>
-                  <div className="text-xs text-amber-300/90 font-medium mt-1">
-                    {allSolved 
-                      ? "✨ Toate cheile au fost obținute! Sigiliul este rupt." 
-                      : `🔒 Sigiliul este blocat. Mai sunt ${6 - solvedCount} puzzle-uri de rezolvat.`}
-                  </div>
+                  {weeklyData.hasEvent && (
+                    <div className="text-xs text-amber-300/90 font-medium mt-1">
+                      {allSolved 
+                        ? "✨ Toate cheile au fost obținute! Sigiliul este rupt." 
+                        : `🔒 Sigiliul este blocat. Mai sunt ${5 - solvedCount} puzzle-uri de rezolvat pentru indiciu.`}
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                <Button
-                  onClick={() => setIsClueModalOpen(true)}
-                  className={allSolved 
-                    ? "gold-btn rounded-full px-6 py-6 font-heading text-base tracking-wider shadow-[0_0_25px_rgba(246,184,40,0.4)] group flex items-center gap-2" 
-                    : "purple-btn rounded-full px-6 py-6 font-heading text-sm tracking-wider group flex items-center gap-2"}
-                >
-                  {allSolved ? (
-                    <>
-                      <Unlock className="w-5 h-5 text-purple-950" />
-                      DESCHIDE PERGAMENTUL SECRET
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="w-4 h-4 text-purple-300" />
-                      VERIFICĂ STAREA SIGILIULUI ({solvedCount}/6)
-                    </>
-                  )}
-                  <span className="w-7 h-7 rounded-full bg-black/10 dark:bg-white/15 flex items-center justify-center text-xs group-hover:translate-x-1 group-hover:-translate-y-0.5 transition-transform">
-                    →
-                  </span>
-                </Button>
+                {weeklyData.hasEvent && (
+                  <Button
+                    onClick={() => setIsClueModalOpen(true)}
+                    className={allSolved 
+                      ? "gold-btn rounded-full px-6 py-6 font-heading text-base tracking-wider shadow-[0_0_25px_rgba(246,184,40,0.4)] group flex items-center gap-2" 
+                      : "purple-btn rounded-full px-6 py-6 font-heading text-sm tracking-wider group flex items-center gap-2"}
+                  >
+                    {allSolved ? (
+                      <>
+                        <Unlock className="w-5 h-5 text-purple-950" />
+                        DESCHIDE PERGAMENTUL SECRET
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-4 h-4 text-purple-300" />
+                        VERIFICĂ STAREA SIGILIULUI ({solvedCount}/5)
+                      </>
+                    )}
+                    <span className="w-7 h-7 rounded-full bg-black/10 dark:bg-white/15 flex items-center justify-center text-xs group-hover:translate-x-1 group-hover:-translate-y-0.5 transition-transform">
+                      →
+                    </span>
+                  </Button>
+                )}
 
                 {/* Reset helper */}
                 <button
@@ -229,14 +230,14 @@ export default function MiniGamesHub({
                   title="Resetează puzzle-urile la 0/6 pentru testare"
                 >
                   <RotateCcw className={`w-3.5 h-3.5 ${isResetting ? "animate-spin" : ""}`} />
-                  Resetează (0/6)
+                  Resetează (0/5)
                 </button>
               </div>
 
             </div>
 
             {/* Mini-Games Status Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 mt-6 pt-5 border-t border-purple-800/40">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 mt-6 pt-5 border-t border-purple-800/40">
               {gamesConfig.map((g) => {
                 const isSolved = solvedGames[g.type];
                 return (
@@ -309,13 +310,6 @@ export default function MiniGamesHub({
                 />
               </TabsContent>
 
-              {/* TAB 3: CROSSWORD */}
-              <TabsContent value="crossword">
-                <CrosswordGame 
-                  onSolve={(data) => handleGameSolved("REBUS", data)} 
-                  isAlreadySolved={solvedGames["REBUS"]} 
-                />
-              </TabsContent>
 
               {/* TAB 4: TIMELINE */}
               <TabsContent value="timeline">
@@ -356,7 +350,7 @@ export default function MiniGamesHub({
         theme={theme}
         editionNumber={editionNumber}
         solvedCount={solvedCount}
-        totalGames={6}
+        totalGames={5}
         isUnlocked={allSolved}
       />
     </section>

@@ -385,7 +385,7 @@ export async function registerRoutes(
       const teamId = (req.query.teamId as string) || "team_night_scholars";
       const progressList = await storage.getPuzzleProgress(teamId, editionId);
 
-      const gameTypes = ["WORDLE", "SUDOKU", "REBUS", "TIMELINE", "CONNECTIONS", "GLOBLE"];
+      const gameTypes = ["WORDLE", "SUDOKU", "TIMELINE", "CONNECTIONS", "GLOBLE"];
       const gamesState: Record<string, { isSolved: boolean; data: any; solvedAt: any }> = {};
 
       gameTypes.forEach((type) => {

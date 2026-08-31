@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Shield, LogOut, ChevronDown, ChevronUp, Edit2, Trash2,
+  Gamepad2, Shield, LogOut, ChevronDown, ChevronUp, Edit2, Trash2,
   Save, X, Users, Calendar, RefreshCw, CheckCircle, AlertCircle
 } from "lucide-react";
 
@@ -61,7 +61,12 @@ export default function AdminPanel() {
   const [inputPw, setInputPw] = useState("");
   const [authError, setAuthError] = useState("");
   const [isAuthed, setIsAuthed] = useState(false);
-  const [activeTab, setActiveTab] = useState<"editions" | "teams">("editions");
+  const [activeTab, setActiveTab] = useState<"editions" | "teams" | "simulator">("editions");
+  
+  // Simulator state
+  const [previewWeek, setPreviewWeek] = useState(
+    localStorage.getItem("admin_preview_week") || ""
+  );
 
   // Editions state
   const [editions, setEditions] = useState<Edition[]>([]);
@@ -256,7 +261,7 @@ export default function AdminPanel() {
 
       {/* Tabs */}
       <div className="border-b border-purple-800/30 px-6 flex gap-1 pt-4">
-        {(["editions", "teams"] as const).map(tab => (
+        {(["editions", "teams", "simulator"] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -268,8 +273,10 @@ export default function AdminPanel() {
           >
             {tab === "editions" ? (
               <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />Ediții</span>
-            ) : (
+            ) : tab === "teams" ? (
               <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />Echipe</span>
+            ) : (
+              <span className="flex items-center gap-1.5"><Gamepad2 className="w-3.5 h-3.5" />Simulator Jocuri</span>
             )}
           </button>
         ))}
@@ -438,6 +445,57 @@ export default function AdminPanel() {
             )}
           </>
         )}
+
+        {/* ── SIMULATOR TAB ── */}
+        {activeTab === "simulator" && (
+          <div className="rounded-xl border border-purple-800/40 bg-purple-950/20 px-6 py-6 space-y-6">
+            <div>
+              <h2 className="text-xl font-bold text-white mb-1">Simulator Jocuri Săptămânale</h2>
+              <p className="text-sm text-purple-300/70 mb-4">Testează cum vor arăta puzzle-urile și dacă este activ indiciul în oricare săptămână din viitor.</p>
+              
+              <div className="flex items-center gap-3 bg-[#0c0317] p-4 rounded-lg border border-purple-800/40 w-fit">
+                <div>
+                  <label className="text-xs text-purple-300/70 block mb-1">Săptămâna curentă în aplicație</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Auto (dinamic)"
+                    value={previewWeek}
+                    onChange={(e) => setPreviewWeek(e.target.value)}
+                    className="w-32 bg-purple-950/60 border border-purple-700/50 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-amber-400/60 text-center font-mono"
+                  />
+                </div>
+                <div className="pt-5 flex gap-2">
+                  <button 
+                    onClick={() => {
+                      if (previewWeek === "") {
+                        localStorage.removeItem("admin_preview_week");
+                        window.location.href = "/";
+                      } else {
+                        localStorage.setItem("admin_preview_week", previewWeek);
+                        window.location.href = "/";
+                      }
+                    }}
+                    className="bg-amber-400 hover:bg-amber-300 text-purple-950 font-bold px-4 py-2 rounded-lg text-sm transition-colors"
+                  >
+                    Setează și Mergi la Jocuri
+                  </button>
+                  <button 
+                    onClick={() => {
+                      localStorage.removeItem("admin_preview_week");
+                      setPreviewWeek("");
+                      setToast({ msg: "Timpul a fost resetat la prezent.", ok: true });
+                    }}
+                    className="border border-red-500/50 text-red-400 hover:bg-red-500/10 px-4 py-2 rounded-lg text-sm transition-colors"
+                  >
+                    Resetează la Prezent
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* ── Edit Registration Modal ── */}

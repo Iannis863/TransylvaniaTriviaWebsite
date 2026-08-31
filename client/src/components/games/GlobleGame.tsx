@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Globe from "react-globe.gl";
+import { getCurrentWeeklyGameData } from "../../lib/weeklyGames";
 import roCountries from "./ro_countries.json";
 
 interface GlobleGameProps {
@@ -22,6 +23,43 @@ const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => 
             Math.sin(dLon/2) * Math.sin(dLon/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
+};
+
+
+const extractCoordinates = (geometry: any): number[][] => {
+  let coords: number[][] = [];
+  if (!geometry) return coords;
+  if (geometry.type === 'Polygon') {
+    geometry.coordinates.forEach((ring: any) => coords.push(...ring));
+  } else if (geometry.type === 'MultiPolygon') {
+    geometry.coordinates.forEach((poly: any) => {
+      poly.forEach((ring: any) => coords.push(...ring));
+    });
+  }
+  return coords;
+};
+
+const getMinPolygonDistance = (geom1: any, geom2: any, centerDist: number) => {
+  // If centroids are very far apart, don't bother doing expensive vertex check
+  if (centerDist > 2000) return centerDist;
+
+  const c1 = extractCoordinates(geom1);
+  const c2 = extractCoordinates(geom2);
+  if (c1.length === 0 || c2.length === 0) return centerDist;
+
+  let minD = Infinity;
+  // Step size for vertex check to maintain high performance
+  const step1 = Math.max(1, Math.floor(c1.length / 50));
+  const step2 = Math.max(1, Math.floor(c2.length / 50));
+  
+  for (let i = 0; i < c1.length; i += step1) {
+    for (let j = 0; j < c2.length; j += step2) {
+      // GeoJSON is [longitude, latitude]
+      const d = getDistance(c1[i][1], c1[i][0], c2[j][1], c2[j][0]);
+      if (d < minD) minD = d;
+    }
+  }
+  return minD < 60 ? 0 : Math.round(minD); // border to border
 };
 
 // Calculate compass heading
@@ -61,8 +99,9 @@ export default function GlobleGame({ onSolve, isAlreadySolved = false }: GlobleG
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const globeRef = useRef<any>(null);
 
-  // Target Country: Let's pick Romania (ISO_A3: ROU) for the test.
-  const targetIso = "ROU";
+  // Target Country: based on current week
+  const weeklyData = getCurrentWeeklyGameData();
+  const targetIso = weeklyData.globleTarget;
 
   useEffect(() => {
     // Fetch world geojson
@@ -106,7 +145,9 @@ export default function GlobleGame({ onSolve, isAlreadySolved = false }: GlobleG
       return;
     }
 
-    const dist = getDistance(country.centroid.lat, country.centroid.lng, targetCountry.centroid.lat, targetCountry.centroid.lng);
+    const centerDist = getDistance(country.centroid.lat, country.centroid.lng, targetCountry.centroid.lat, targetCountry.centroid.lng);
+    const dist = getMinPolygonDistance(country.geometry, targetCountry.geometry, centerDist);
+    country.distance = dist; // store it
     const heading = getHeading(country.centroid.lat, country.centroid.lng, targetCountry.centroid.lat, targetCountry.centroid.lng);
     
     const newGuess = { ...country, dist, heading };
@@ -127,17 +168,23 @@ export default function GlobleGame({ onSolve, isAlreadySolved = false }: GlobleG
   };
 
   const getPolygonColor = (feat: any) => {
-    if (isWon && feat.properties.ISO_A3 === targetIso) return 'rgba(34, 197, 94, 0.8)'; // green
+    // If target is found (or rendering the target itself)
+    if (feat.properties.ISO_A3 === targetIso && isWon) return 'rgba(153, 27, 27, 0.9)'; // Dark Red (Tailwind red-800)
     
     const guessed = guesses.find(g => g.properties.ISO_A3 === feat.properties.ISO_A3);
     if (!guessed) return 'rgba(100, 100, 100, 0.1)'; // default invisible
     
-    if (feat.properties.ISO_A3 === targetIso) return 'rgba(34, 197, 94, 0.8)'; // found it!
+    if (feat.properties.ISO_A3 === targetIso) return 'rgba(153, 27, 27, 0.9)'; // found it!
     
-    // Scale color based on distance. Closer = darker red.
-    const maxD = 10000;
-    const ratio = Math.max(0, 1 - (guessed.dist / maxD));
-    return `rgba(220, 38, 38, ${0.2 + (ratio * 0.8)})`;
+    const d = guessed.distance;
+    
+    // Scheme: Dark Blue -> Light Blue -> Yellow -> Orange -> Bright Red -> Dark Red (adjacent)
+    if (d <= 50) return 'rgba(153, 27, 27, 0.9)'; // Adjacent: Dark Red
+    if (d < 1500) return 'rgba(239, 68, 68, 0.8)'; // Bright Red
+    if (d < 3500) return 'rgba(249, 115, 22, 0.8)'; // Orange
+    if (d < 6000) return 'rgba(234, 179, 8, 0.7)'; // Yellow
+    if (d < 9000) return 'rgba(56, 189, 248, 0.6)'; // Light Blue
+    return 'rgba(30, 58, 138, 0.6)'; // Dark Blue
   };
 
   const getArrow = (heading: number) => {

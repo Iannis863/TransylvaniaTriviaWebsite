@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Heart, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { getCurrentWeeklyGameData } from "../../lib/weeklyGames";
 
 interface TimelineGameProps {
   onSolve: (data: any) => void;
@@ -17,25 +18,27 @@ interface TimelineEvent {
   description: string;
 }
 
-const ALL_EVENTS: TimelineEvent[] = [
-  { id: "e1", title: "Prima atestare documentară a cetății Clujului (Castrum Clus)", year: 1213, description: "Apare în documentele cancelariei maghiare." },
-  { id: "e2", title: "Vlad Țepeș urcă pe tronul Țării Românești", year: 1456, description: "Începutul domniei sale legendare." },
-  { id: "e3", title: "Publicarea romanului 'Dracula' de Bram Stoker", year: 1897, description: "Capodopera gotică vede lumina tiparului la Londra." },
-  { id: "e4", title: "Marea Unire de la Alba Iulia", year: 1918, description: "Transilvania se unește cu Regatul României." },
-  { id: "e5", title: "Deschiderea Cafenelei & Restaurant Insomnia", year: 1997, description: "Locul de întâlnire al boemilor clujeni." },
-  { id: "e6", title: "Lansarea primului sezon Transilvania Trivia", year: 2026, description: "Nașterea celui mai spectaculos concurs de quiz." },
-];
+const weeklyData = getCurrentWeeklyGameData();
+const ALL_EVENTS: TimelineEvent[] = weeklyData.timelineEvents.map(e => ({
+  id: e.id,
+  title: e.content,
+  year: e.year,
+  description: e.content,
+}));
 
 export default function TimelineGame({ onSolve, isAlreadySolved = false }: TimelineGameProps) {
   const { toast } = useToast();
   
-  // Timdle State
+  // Timdle State - Dynamic Initialization
+  const initialEvent = ALL_EVENTS.length > 0 ? ALL_EVENTS[Math.floor(ALL_EVENTS.length / 2)] : null;
+  const remainingEvents = ALL_EVENTS.filter(e => e.id !== initialEvent?.id).sort(() => Math.random() - 0.5);
+
   const [placedEvents, setPlacedEvents] = useState<TimelineEvent[]>(
-    isAlreadySolved ? [...ALL_EVENTS] : [ALL_EVENTS[3]] // Start with 1918
+    isAlreadySolved ? [...ALL_EVENTS].sort((a,b) => a.year - b.year) : (initialEvent ? [initialEvent] : [])
   );
   
   const [upcomingEvents, setUpcomingEvents] = useState<TimelineEvent[]>(
-    isAlreadySolved ? [] : [ALL_EVENTS[0], ALL_EVENTS[5], ALL_EVENTS[2], ALL_EVENTS[4], ALL_EVENTS[1]] // Shuffled remainder
+    isAlreadySolved ? [] : remainingEvents
   );
   
   const [lives, setLives] = useState(3);

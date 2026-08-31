@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Shuffle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getCurrentWeeklyGameData } from "../../lib/weeklyGames";
 
 interface ConnectionsGameProps {
   onSolve: (data: any) => void;
@@ -16,32 +17,20 @@ interface Category {
   items: string[];
 }
 
-const CATEGORIES: Category[] = [
-  {
-    id: "castles",
-    name: "Castele Faimoase din Transilvania",
-    color: "bg-amber-500/20 border-amber-400 text-amber-300",
-    items: ["BRAN", "CORVINILOR", "BANFFY", "BETHLEN"],
-  },
-  {
-    id: "creatures",
-    name: "Creaturi din Folclorul Mistic",
-    color: "bg-purple-600/20 border-purple-400 text-purple-200",
-    items: ["STRIGOI", "VÂRCOLAC", "MOROI", "PRICOLICI"],
-  },
-  {
-    id: "prizes",
-    name: "Recompense & Premii la Trivia",
-    color: "bg-emerald-500/20 border-emerald-400 text-emerald-300",
-    items: ["VIN", "BERE", "SHOTURI", "GLORIE"],
-  },
-  {
-    id: "rock",
-    name: "Formații Legendare de Rock Românesc",
-    color: "bg-blue-500/20 border-blue-400 text-blue-300",
-    items: ["PHOENIX", "CARGO", "BUCOVINA", "TROOPER"],
-  },
+const colors = [
+  "bg-amber-500/20 border-amber-400 text-amber-300",
+  "bg-emerald-500/20 border-emerald-400 text-emerald-300",
+  "bg-blue-500/20 border-blue-400 text-blue-300",
+  "bg-purple-500/20 border-purple-400 text-purple-300",
 ];
+
+const weeklyData = getCurrentWeeklyGameData();
+const CATEGORIES: Category[] = weeklyData.connectionsGroups.map((group, idx) => ({
+  id: `cat-${idx}`,
+  name: group.category,
+  color: colors[idx % colors.length],
+  items: group.items,
+}));
 
 // Smart shuffle: avoid having 4 matching words in the same row
 const getSmartShuffled = (words: string[]) => {

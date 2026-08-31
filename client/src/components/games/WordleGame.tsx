@@ -4,6 +4,7 @@ import { CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import VALID_WORDS from "./valid-words.json";
+import { getCurrentWeeklyGameData } from "../../lib/weeklyGames";
 
 interface WordleGameProps {
   onSolve: (data: any) => void;
@@ -12,9 +13,9 @@ interface WordleGameProps {
 
 const WORD_LENGTH = 5;
 
-// Pick a word based on the current day, so it changes daily/weekly but is consistent for everyone
-const todayIndex = Math.floor(Date.now() / 86400000);
-const TARGET_WORD = VALID_WORDS[todayIndex % VALID_WORDS.length];
+// Today's target word based on the weekly engine
+const weeklyData = getCurrentWeeklyGameData();
+const TARGET_WORD = weeklyData.wordleWord;
 
 export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleGameProps) {
   const { toast } = useToast();
