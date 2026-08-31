@@ -143,24 +143,41 @@ export default function Navbar({
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Drive pill position from scroll ──────────────────────────────────────
+  // The pill stays LOCKED on section i until section i+1 physically enters
+  // the viewport from the bottom. It only slides during the window where
+  // both sections are simultaneously on screen, completing when the next
+  // section's top reaches the navbar level.
   useMotionValueEvent(scrollY, "change", (y) => {
     const tops  = cachedTops.current;
     const rects = cachedRects.current;
     if (!tops.length || !rects.length) return;
 
-    const OFFSET = 100;
-    let navIndex = 0;
+    const OFFSET = 100;                  // navbar height + small buffer
+    const vh     = window.innerHeight;
 
-    for (let i = 0; i < tops.length; i++) {
-      const top  = tops[i]  - OFFSET;
-      const next = (tops[i + 1] ?? Infinity) - OFFSET;
+    let navIndex = tops.length - 1;      // default: last section
 
-      if (y >= top && y < next) {
-        const sectionHeight = next === Infinity ? 800 : next - top;
-        navIndex = i + Math.min(Math.max((y - top) / sectionHeight, 0), 0.999);
+    for (let i = 0; i < tops.length - 1; i++) {
+      const currentTop = tops[i]     - OFFSET;
+      const nextTop    = tops[i + 1] - OFFSET;
+
+      // Transition window: next section enters from bottom (y = nextTop - vh)
+      // until its top reaches the navbar (y = nextTop).
+      // Clamped so the window never starts before the current section begins.
+      const transitionStart = Math.max(currentTop, nextTop - vh);
+      const transitionEnd   = nextTop;
+
+      if (y <= transitionStart) {
+        // Firmly inside section i — pill is stationary
+        navIndex = i;
+        break;
+      } else if (y < transitionEnd) {
+        // Inside the overlap window — interpolate i → i+1
+        const t = (y - transitionStart) / (transitionEnd - transitionStart);
+        navIndex = i + Math.min(Math.max(t, 0), 1);
         break;
       }
-      if (i === tops.length - 1 && y >= top) navIndex = i;
+      // y >= transitionEnd: section i+1 fully at top — continue loop to check i+1 → i+2
     }
 
     const lower = Math.floor(navIndex);
@@ -225,7 +242,7 @@ export default function Navbar({
                   key={link.id}
                   ref={(el) => { buttonRefs.current[i] = el; }}
                   onClick={() => onNavigate(link.id)}
-                  className="relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
+                  className="relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap"
                 >
                   {/* Base layer — always light/purple (visible in un-highlighted areas) */}
                   <Icon className="w-3.5 h-3.5 text-amber-400/80" />
