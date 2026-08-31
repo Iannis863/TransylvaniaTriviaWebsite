@@ -16,7 +16,7 @@ export default function FooterSection() {
             </div>
             <div className="text-xs text-purple-300/70 mt-1 flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-amber-400" />
-              Insomnia Restaurant • Str. Universității nr. 2, Cluj-Napoca
+              Insomnia Cafe & Bistro • Str. Universității nr. 2, Cluj-Napoca
             </div>
           </div>
         </div>

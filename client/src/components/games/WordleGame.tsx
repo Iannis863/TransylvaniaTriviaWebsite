@@ -1,24 +1,28 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, RotateCcw, Sparkles, Delete, CornerDownLeft } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
+import VALID_WORDS from "./valid-words.json";
 
 interface WordleGameProps {
   onSolve: (data: any) => void;
   isAlreadySolved?: boolean;
 }
 
-const TARGET_WORD = "CASTEL";
-const WORD_LENGTH = 6;
-const MAX_ATTEMPTS = 6;
+const WORD_LENGTH = 5;
+
+// Pick a word based on the current day, so it changes daily/weekly but is consistent for everyone
+const todayIndex = Math.floor(Date.now() / 86400000);
+const TARGET_WORD = VALID_WORDS[todayIndex % VALID_WORDS.length];
 
 export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleGameProps) {
   const { toast } = useToast();
-  const [guesses, setGuesses] = useState<string[]>([]);
+  const [guesses, setGuesses] = useState<string[]>(isAlreadySolved ? [TARGET_WORD] : []);
   const [currentGuess, setCurrentGuess] = useState("");
   const [gameWon, setGameWon] = useState(isAlreadySolved);
-  const [gameOver, setGameOver] = useState(isAlreadySolved);
+  const [invalidShake, setInvalidShake] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const keyboardRows = [
     ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
@@ -27,7 +31,7 @@ export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleG
   ];
 
   const handleCharInput = (char: string) => {
-    if (gameOver || gameWon) return;
+    if (gameWon) return;
     if (char === "ENTER") {
       submitGuess();
     } else if (char === "⌫" || char === "BACKSPACE") {
@@ -39,7 +43,17 @@ export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleG
 
   const submitGuess = () => {
     if (currentGuess.length !== WORD_LENGTH) {
-      toast({ title: "Cuvânt incomplet", description: `Cuvântul trebuie să aibă exact ${WORD_LENGTH} litere.`, variant: "destructive" });
+      triggerInvalidShake("Cuvânt incomplet", `Cuvântul trebuie să aibă exact ${WORD_LENGTH} litere.`);
+      return;
+    }
+
+    if (!VALID_WORDS.includes(currentGuess)) {
+      triggerInvalidShake("Cuvânt invalid", "Acest cuvânt nu există în dicționarul nostru.");
+      return;
+    }
+
+    if (guesses.includes(currentGuess)) {
+      triggerInvalidShake("Deja încercat", "Ai introdus deja acest cuvânt.");
       return;
     }
 
@@ -47,19 +61,29 @@ export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleG
     setGuesses(newGuesses);
 
     if (currentGuess === TARGET_WORD) {
-      setGameWon(true);
-      setGameOver(true);
-      toast({ title: "🎉 Felicitări!", description: "Ai ghicit cuvântul săptămânii pentru echipa ta!" });
-      onSolve({ solution: TARGET_WORD, attempts: newGuesses.length });
-    } else if (newGuesses.length >= MAX_ATTEMPTS) {
-      setGameOver(true);
-      toast({ title: "Încercări epuizate!", description: `Cuvântul secret era: ${TARGET_WORD}`, variant: "destructive" });
+      setTimeout(() => {
+        setGameWon(true);
+        toast({ title: "🎉 Felicitări!", description: "Ai ghicit cuvântul din dicționar!" });
+        onSolve({ solution: TARGET_WORD, attempts: newGuesses.length });
+      }, WORD_LENGTH * 300 + 500);
     }
 
     setCurrentGuess("");
   };
 
-  // Physical Keyboard Listener
+  const triggerInvalidShake = (title: string, description: string) => {
+    setInvalidShake(true);
+    setTimeout(() => setInvalidShake(false), 500);
+    toast({ title, description, variant: "destructive" });
+  };
+
+  // Scroll to bottom when new guesses are added
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [guesses, currentGuess]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter") handleCharInput("ENTER");
@@ -68,88 +92,144 @@ export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleG
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentGuess, gameOver, gameWon, guesses]);
+  }, [currentGuess, gameWon, guesses]);
 
   const getLetterStatus = (letter: string, index: number, guessWord: string) => {
-    if (TARGET_WORD[index] === letter) return "bg-emerald-600 border-emerald-400 text-white";
-    if (TARGET_WORD.includes(letter)) return "bg-amber-600 border-amber-400 text-white";
-    return "bg-purple-950/70 border-purple-800 text-purple-300";
+    if (!letter) return "empty";
+    if (TARGET_WORD[index] === letter) return "correct";
+    
+    const letterCountInTarget = TARGET_WORD.split("").filter((l) => l === letter).length;
+    let priorOccurrencesInGuess = 0;
+    for (let i = 0; i <= index; i++) {
+      if (guessWord[i] === letter) priorOccurrencesInGuess++;
+    }
+    const correctOccurrences = guessWord.split("").filter((l, i) => l === letter && TARGET_WORD[i] === letter).length;
+    
+    if (TARGET_WORD.includes(letter) && priorOccurrencesInGuess <= letterCountInTarget - correctOccurrences) {
+      return "present";
+    }
+    return "absent";
   };
 
   const getKeyStatus = (key: string) => {
-    let status = "bg-purple-950/60 border-purple-700/50 text-purple-200";
+    let status = "unused";
     for (const guess of guesses) {
       for (let i = 0; i < guess.length; i++) {
         if (guess[i] === key) {
-          if (TARGET_WORD[i] === key) return "bg-emerald-600 border-emerald-400 text-white";
-          if (TARGET_WORD.includes(key)) status = "bg-amber-600 border-amber-400 text-white";
-          else if (status.includes("bg-purple")) status = "bg-gray-800 border-gray-700 text-gray-400";
+          const s = getLetterStatus(key, i, guess);
+          if (s === "correct") return "correct";
+          if (s === "present" && status !== "correct") status = "present";
+          if (s === "absent" && status === "unused") status = "absent";
         }
       }
     }
     return status;
   };
 
+  const getStatusColors = (status: string) => {
+    switch (status) {
+      case "correct": return "bg-emerald-500 border-emerald-500 text-white";
+      case "present": return "bg-amber-500 border-amber-500 text-white";
+      case "absent": return "bg-zinc-800 border-zinc-800 text-white";
+      case "filled": return "border-purple-500 text-white bg-transparent";
+      default: return "border-purple-800/40 bg-purple-950/30 text-white";
+    }
+  };
+
+  // Determine how many rows to show (always at least 6, or more if guesses exceed 5)
+  const totalRows = Math.max(6, guesses.length + (gameWon ? 0 : 1));
+
   return (
-    <div className="flex flex-col items-center max-w-md mx-auto">
-      <div className="text-center mb-4">
+    <div className="flex flex-col items-center max-w-md mx-auto w-full">
+      <div className="text-center mb-6">
         <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/40 text-xs mb-1">
-          Cuvântul Săptămânii • 6 Litere
+          Cuvântul Săptămânii • {WORD_LENGTH} Litere
         </Badge>
-        <p className="text-xs text-purple-300/80">Indiciu: Monument istoric transilvănean de apărare.</p>
+        <p className="text-xs text-purple-300/80">Număr nelimitat de încercări. Trebuie să fie un cuvânt valid.</p>
       </div>
 
-      {/* Grid */}
-      <div className="grid grid-rows-6 gap-2 mb-6">
-        {Array.from({ length: MAX_ATTEMPTS }).map((_, rowIndex) => {
-          const isCurrentRow = rowIndex === guesses.length;
-          const guess = guesses[rowIndex] || (isCurrentRow ? currentGuess : "");
+      {/* Grid Container with Scrolling */}
+      <div 
+        ref={scrollRef}
+        className="mb-8 w-full flex flex-col items-center overflow-y-auto custom-scrollbar pr-2"
+        style={{ 
+          height: '384px', // Exactly fits 6 rows of 56px height + 8px gap
+          scrollBehavior: 'smooth' 
+        }}
+      >
+        <div className="flex flex-col gap-2 pb-1">
+          {Array.from({ length: totalRows }).map((_, rowIndex) => {
+            const isCurrentRow = rowIndex === guesses.length;
+            const guess = guesses[rowIndex] || (isCurrentRow ? currentGuess : "");
+            const isSubmitted = rowIndex < guesses.length;
 
-          return (
-            <div key={rowIndex} className="grid grid-cols-6 gap-2">
-              {Array.from({ length: WORD_LENGTH }).map((_, colIndex) => {
-                const letter = guess[colIndex] || "";
-                const isGuessedRow = rowIndex < guesses.length;
-                const statusClass = isGuessedRow 
-                  ? getLetterStatus(letter, colIndex, guess)
-                  : letter 
-                    ? "border-amber-400 text-amber-300 bg-purple-900/40" 
-                    : "border-purple-800/40 bg-purple-950/30 text-white";
-
-                return (
-                  <div
-                    key={colIndex}
-                    className={`w-11 h-12 sm:w-12 sm:h-13 rounded-lg border-2 flex items-center justify-center font-heading text-2xl font-bold shadow transition-all ${statusClass}`}
-                  >
-                    {letter}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
+            return (
+              <motion.div 
+                key={rowIndex} 
+                className="grid grid-cols-5 gap-2"
+                animate={isCurrentRow && invalidShake ? { x: [-5, 5, -5, 5, 0] } : {}}
+                transition={{ duration: 0.4 }}
+              >
+                {Array.from({ length: WORD_LENGTH }).map((_, colIndex) => {
+                  const letter = guess[colIndex] || "";
+                  const status = isSubmitted ? getLetterStatus(letter, colIndex, guess) : (letter ? "filled" : "empty");
+                  const colors = getStatusColors(status);
+                  
+                  return (
+                    <motion.div
+                      key={colIndex}
+                      initial={false}
+                      animate={
+                        isSubmitted
+                          ? { rotateX: [0, 90, 0] }
+                          : letter
+                          ? { scale: [1, 1.1, 1] }
+                          : {}
+                      }
+                      transition={
+                        isSubmitted 
+                          ? { duration: 0.6, delay: colIndex * 0.3 }
+                          : { duration: 0.1 }
+                      }
+                      className={`w-14 h-14 rounded border-2 flex items-center justify-center font-heading text-3xl font-bold shadow ${colors}`}
+                      style={isSubmitted ? { transformOrigin: "center center" } : {}}
+                    >
+                      {letter}
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Game State Banner */}
       {gameWon && (
         <div className="w-full p-3 rounded-lg bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-center text-sm font-semibold mb-4 flex items-center justify-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          Rezolvat pentru Echipă! Soluție: <strong>{TARGET_WORD}</strong>
+          Rezolvat pentru Echipă din {guesses.length} încercări!
         </div>
       )}
 
       {/* Virtual Keyboard */}
-      <div className="w-full space-y-1.5 select-none">
+      <div className="w-full space-y-2 select-none px-1">
         {keyboardRows.map((row, rIdx) => (
-          <div key={rIdx} className="flex justify-center gap-1">
+          <div key={rIdx} className="flex justify-center gap-1.5">
             {row.map((key) => {
               const isSpecial = key === "ENTER" || key === "⌫";
+              const keyStatus = getKeyStatus(key);
+              let keyBg = "bg-purple-900/60 text-purple-200 border-purple-700/50";
+              if (keyStatus === "correct") keyBg = "bg-emerald-500 border-emerald-500 text-white";
+              if (keyStatus === "present") keyBg = "bg-amber-500 border-amber-500 text-white";
+              if (keyStatus === "absent") keyBg = "bg-zinc-800 border-zinc-800 text-zinc-400";
+              
               return (
                 <button
                   key={key}
                   onClick={() => handleCharInput(key)}
-                  className={`h-11 rounded font-bold text-xs sm:text-sm flex items-center justify-center border transition-all ${
-                    isSpecial ? "px-2.5 sm:px-3 bg-amber-500/20 border-amber-400/40 text-amber-300" : `w-8 sm:w-9 ${getKeyStatus(key)}`
+                  className={`h-14 rounded font-bold text-sm flex items-center justify-center border transition-all ${
+                    isSpecial ? "px-3 bg-purple-800/60 border-purple-600/40 text-purple-100" : `w-10 ${keyBg}`
                   }`}
                 >
                   {key}

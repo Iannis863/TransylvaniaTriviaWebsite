@@ -45,6 +45,13 @@ export interface IStorage {
   // Theme Suggestions
   getThemeSuggestions(editionId?: string): Promise<ThemeSuggestion[]>;
   createThemeSuggestion(suggestion: InsertThemeSuggestion): Promise<ThemeSuggestion>;
+
+  // ── Admin Operations ──────────────────────────────────────────────────────
+  updateRegistration(id: string, data: Partial<Pick<Registration, "teamName" | "captainName" | "memberCount" | "email" | "phoneNumber">>): Promise<Registration | undefined>;
+  updateTeam(id: string, data: Partial<Pick<Team, "name" | "tagline" | "score">>): Promise<Team | undefined>;
+  deleteTeam(id: string): Promise<boolean>;
+  getEditionCapacityOverride(editionId: string): Promise<number | undefined>;
+  setEditionCapacityOverride(editionId: string, maxTeams: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -53,6 +60,7 @@ export class MemStorage implements IStorage {
   private registrations: Map<string, Registration> = new Map();
   private puzzleProgress: Map<string, WeeklyPuzzleProgress> = new Map();
   private themeSuggestions: Map<string, ThemeSuggestion> = new Map();
+  private editionCapacityOverrides: Map<string, number> = new Map();
 
   constructor() {
     this.seedInitialData();
@@ -371,6 +379,44 @@ export class MemStorage implements IStorage {
     this.themeSuggestions.set(id, record);
     return record;
   }
+
+  // ── Admin Operations ───────────────────────────────────────────────────────
+
+  async updateRegistration(id: string, data: Partial<Pick<Registration, "teamName" | "captainName" | "memberCount" | "email" | "phoneNumber">>): Promise<Registration | undefined> {
+    const reg = this.registrations.get(id);
+    if (!reg) return undefined;
+    const updated = { ...reg, ...data };
+    this.registrations.set(id, updated);
+    return updated;
+  }
+
+  async updateTeam(id: string, data: Partial<Pick<Team, "name" | "tagline" | "score">>): Promise<Team | undefined> {
+    const team = this.teams.get(id);
+    if (!team) return undefined;
+    const updated = { ...team, ...data };
+    this.teams.set(id, updated);
+    return updated;
+  }
+
+  async deleteTeam(id: string): Promise<boolean> {
+    // Detach all members from this team
+    this.users.forEach((user, uid) => {
+      if (user.teamId === id) this.users.set(uid, { ...user, teamId: null, role: "MEMBER" });
+    });
+    // Remove all registrations linked to this team
+    this.registrations.forEach((reg, rid) => {
+      if (reg.teamId === id) this.registrations.delete(rid);
+    });
+    return this.teams.delete(id);
+  }
+
+  async getEditionCapacityOverride(editionId: string): Promise<number | undefined> {
+    return this.editionCapacityOverrides.get(editionId);
+  }
+
+  async setEditionCapacityOverride(editionId: string, maxTeams: number): Promise<void> {
+    this.editionCapacityOverrides.set(editionId, maxTeams);
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -509,6 +555,36 @@ export class DatabaseStorage implements IStorage {
   async createThemeSuggestion(suggestion: InsertThemeSuggestion): Promise<ThemeSuggestion> {
     const [result] = await db.insert(themeSuggestions).values(suggestion).returning();
     return result;
+  }
+
+  // ── Admin Operations ───────────────────────────────────────────────────────
+
+  async updateRegistration(id: string, data: Partial<Pick<Registration, "teamName" | "captainName" | "memberCount" | "email" | "phoneNumber">>): Promise<Registration | undefined> {
+    const [result] = await db.update(registrations).set(data).where(eq(registrations.id, id)).returning();
+    return result;
+  }
+
+  async updateTeam(id: string, data: Partial<Pick<Team, "name" | "tagline" | "score">>): Promise<Team | undefined> {
+    const [result] = await db.update(teams).set(data).where(eq(teams.id, id)).returning();
+    return result;
+  }
+
+  async deleteTeam(id: string): Promise<boolean> {
+    await db.update(users).set({ teamId: null, role: "MEMBER" }).where(eq(users.teamId, id));
+    await db.delete(registrations).where(eq(registrations.teamId, id));
+    const result = await db.delete(teams).where(eq(teams.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Capacity overrides are runtime-only (not persisted to DB — admin can set per restart)
+  private static capacityOverrides: Map<string, number> = new Map();
+
+  async getEditionCapacityOverride(editionId: string): Promise<number | undefined> {
+    return DatabaseStorage.capacityOverrides.get(editionId);
+  }
+
+  async setEditionCapacityOverride(editionId: string, maxTeams: number): Promise<void> {
+    DatabaseStorage.capacityOverrides.set(editionId, maxTeams);
   }
 }
 

@@ -62,6 +62,15 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
     { label: "SECUNDE", value: secondsRemaining.toString().padStart(2, "0"), color: "text-purple-400" },
   ];
 
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+  const toRoman = (n: number) => (["", "I", "II", "III", "IV", "V"][n] ?? String(n));
+
+  const editionDescription = (() => {
+    if (editionNumber === 1)  return `Marea deschidere a sezonului ${seasonNumber}`;
+    if (editionNumber === 15) return `Marea finală a sezonului ${seasonNumber}`;
+    return `Sezonul ${seasonNumber} continuă`;
+  })();
+
   const fullSchedule = getFullSchedule();
   const season1Editions = fullSchedule.filter((e) => e.seasonNumber === 1);
   const season2Editions = fullSchedule.filter((e) => e.seasonNumber === 2);
@@ -81,8 +90,8 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
           </span>
-          <span className="text-xs font-semibold tracking-wider text-amber-300">
-            {seasonName} • EDIȚIA #{editionNumber} DIN 15
+          <span className="text-xs font-semibold tracking-wider text-amber-300 whitespace-nowrap">
+            S{seasonNumber}E{editionNumber} · QUIZ SĂPTĂMÂNAL LA INSOMNIA
           </span>
           <button
             onClick={() => setIsCalendarOpen(true)}
@@ -98,18 +107,18 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
           <img
             src="/logo-main.png"
             alt="Transilvania Trivia Logo"
-            className="relative w-64 sm:w-80 md:w-96 lg:w-[400px] h-auto object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.9)] filter hover:scale-102 transition-transform duration-500"
+            className="relative w-[282px] sm:w-[352px] md:w-[422px] lg:w-[440px] h-auto object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.9)] filter hover:scale-102 transition-transform duration-500"
           />
         </div>
 
         {/* Master Headline */}
-        <h1 className="text-3xl sm:text-5xl md:text-6xl font-heading tracking-widest text-gold-gradient mt-6 mb-4 drop-shadow-lg max-w-4xl leading-tight">
-          CONCURSUL SUPREM DE TRIVIA LA INSOMNIA
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-heading tracking-widest text-gold-gradient mt-6 mb-4 drop-shadow-lg max-w-4xl leading-snug pt-2 pb-2 whitespace-nowrap">
+          QUIZ SĂPTĂMÂNAL LA INSOMNIA
         </h1>
         
         {/* Value Proposition */}
-        <p className="text-base sm:text-lg md:text-xl text-purple-200/90 max-w-2xl font-light mb-10 leading-relaxed">
-          5 runde de glorie, întrebări de foc, cardul strategic <strong className="text-amber-400 font-semibold">Joker</strong> și miza legendară la <strong className="text-purple-300 font-semibold">Final Gamble</strong>.
+        <p className="text-base sm:text-lg md:text-xl text-purple-200/90 max-w-2xl font-light mb-10 leading-relaxed whitespace-nowrap">
+          5 runde, 10 întrebări pe rundă + <strong className="text-purple-300 font-semibold">Pariul</strong>.
         </p>
 
         {/* Double-Bezel Countdown Machine */}
@@ -161,8 +170,8 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
                 </div>
                 <div>
                   <div className="text-[10px] text-purple-300/70 font-bold uppercase tracking-wider">Când & La ce oră</div>
-                  <div className="text-sm font-bold text-white mt-0.5">{formattedDate}</div>
-                  <div className="text-xs text-amber-300 font-medium">{formattedTime}</div>
+                  <div className="text-sm font-bold text-white mt-0.5 whitespace-nowrap">{formattedDate}</div>
+                  <div className="text-xs text-amber-300 font-medium whitespace-nowrap">{formattedTime}</div>
                 </div>
               </div>
 
@@ -173,8 +182,8 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
                 </div>
                 <div>
                   <div className="text-[10px] text-purple-300/70 font-bold uppercase tracking-wider">Locație & Atmosferă</div>
-                  <div className="text-sm font-bold text-white mt-0.5">Insomnia Restaurant</div>
-                  <div className="text-xs text-purple-300/80">Str. Universității nr. 2, Cluj</div>
+                  <div className="text-sm font-bold text-white mt-0.5 whitespace-nowrap">Insomnia Cafe & Bistro</div>
+                  <div className="text-xs text-purple-300/80 whitespace-nowrap">Str. Universității nr. 2, Cluj</div>
                 </div>
               </div>
 
@@ -196,14 +205,15 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
 
             {/* Theme Strip */}
             {theme && (
-              <div className="mt-5 pt-4 border-t border-purple-800/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-purple-950/50 px-4 py-3 rounded-xl">
-                <div className="flex items-center gap-2">
+              <div className="mt-5 pt-4 border-t border-purple-800/40 flex items-center justify-between gap-3 bg-purple-950/50 px-4 py-3 rounded-xl overflow-hidden">
+                <div className="flex items-center gap-2 min-w-0">
                   <Flame className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                  <span className="text-xs text-purple-300 font-bold uppercase mr-1">Tema Ediției:</span>
-                  <span className="text-xs sm:text-sm font-bold text-amber-300">{theme}</span>
+                  <span className="text-sm text-purple-300 font-bold uppercase whitespace-nowrap">Sezonul {toRoman(seasonNumber)}:</span>
+                  <span className="text-sm sm:text-base font-bold text-amber-300 whitespace-nowrap">Ediția {editionNumber}</span>
+                  <span className="text-sm sm:text-base font-bold text-white/60 whitespace-nowrap">· Transilvania Trivia</span>
                 </div>
-                <Badge className="bg-purple-900/60 border-purple-600/40 text-purple-200 text-[11px]">
-                  {currentEdition.description}
+                <Badge className="bg-purple-900/60 border-purple-600/40 text-purple-200 text-xs whitespace-nowrap flex-shrink-0 px-3 py-1">
+                  {editionDescription}
                 </Badge>
               </div>
             )}
@@ -243,7 +253,7 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
               CALENDARUL SEZOANELOR 1 & 2
             </DialogTitle>
             <DialogDescription className="text-purple-300/70 text-xs">
-              Toate cele 30 de ediții programate în fiecare zi de Marți la ora 20:00 la Insomnia Restaurant
+              Toate cele 30 de ediții programate în fiecare zi de Marți la ora 20:00 la Insomnia Cafe & Bistro
             </DialogDescription>
           </DialogHeader>
 

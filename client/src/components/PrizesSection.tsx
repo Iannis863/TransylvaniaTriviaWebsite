@@ -61,7 +61,7 @@ export default function PrizesSection() {
             PREMIILE SĂPTĂMÂNALE
           </h2>
           <p className="text-purple-200/80 text-sm sm:text-base max-w-xl mx-auto mt-2 font-light">
-            La fiecare ediție de marți, primele 3 echipe sunt premiate pe loc la Insomnia Restaurant!
+            La fiecare ediție de marți, primele 3 echipe sunt premiate pe loc la Insomnia Cafe & Bistro!
           </p>
         </div>
 

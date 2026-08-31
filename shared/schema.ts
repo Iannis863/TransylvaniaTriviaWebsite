@@ -90,7 +90,7 @@ export const editions = pgTable("editions", {
   eventDate: timestamp("event_date").notNull(),
   theme: text("theme"),
   isCompleted: boolean("is_completed").default(false).notNull(),
-  maxTeams: integer("max_teams").default(25).notNull(),
+  maxTeams: integer("max_teams").default(10).notNull(),
   secretClue: text("secret_clue"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

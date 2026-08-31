@@ -27,7 +27,7 @@ import SudokuGame from "./games/SudokuGame";
 import CrosswordGame from "./games/CrosswordGame";
 import TimelineGame from "./games/TimelineGame";
 import ConnectionsGame from "./games/ConnectionsGame";
-import GlobleMapGame from "./games/GlobleMapGame";
+import GlobleGame from "./games/GlobleGame";
 import SecretClueModal from "./games/SecretClueModal";
 
 interface MiniGamesHubProps {
@@ -335,7 +335,7 @@ export default function MiniGamesHub({
 
               {/* TAB 6: GLOBLE MAP */}
               <TabsContent value="globle">
-                <GlobleMapGame 
+                <GlobleGame 
                   onSolve={(data) => handleGameSolved("GLOBLE", data)} 
                   isAlreadySolved={solvedGames["GLOBLE"]} 
                 />

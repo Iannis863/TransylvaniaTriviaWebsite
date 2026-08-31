@@ -85,7 +85,7 @@ export default function LiveRegistrationSection({
         toast({ title: "Înregistrare eșuată", description: data.message, variant: "destructive" });
       } else {
         setIsSuccess(true);
-        toast({ title: "🎉 Echipa ta a fost înscrisă!", description: `Ne vedem ${editionLabel} la Insomnia Restaurant!` });
+        toast({ title: "🎉 Echipa ta a fost înscrisă!", description: `Ne vedem ${editionLabel} la Insomnia Cafe & Bistro!` });
         onRegistrationSuccess();
       }
     } catch (err) {
@@ -135,8 +135,8 @@ export default function LiveRegistrationSection({
             <Crown className="w-3.5 h-3.5 text-amber-400" />
             Rezervare Masă & Locuri
           </div>
-          <h2 className="text-3xl sm:text-5xl font-heading tracking-widest text-gold-gradient">
-            ÎNREGISTRARE EDIȚIA CURENTĂ
+          <h2 className="text-3xl sm:text-5xl font-heading tracking-widest text-gold-gradient pt-2 pb-1">
+            ÎNREGISTRARE LA EDIȚIA CURENTĂ
           </h2>
           <p className="text-purple-200/80 text-sm sm:text-base max-w-xl mx-auto mt-2 font-light">
             Asigură masa echipei tale pentru {editionLabel}. Taxa este de 10 lei de persoană.
@@ -154,7 +154,7 @@ export default function LiveRegistrationSection({
                 LOCUL VOSTRU ESTE CONFIRMAT!
               </h3>
               <p className="text-emerald-100/90 max-w-md mx-auto text-sm sm:text-base mb-6 font-light">
-                Masa este rezervată la Insomnia Restaurant pentru <strong>{editionLabel}</strong>. Vă așteptăm cu drag!
+                Masa este rezervată la Insomnia Cafe & Bistro pentru <strong>{editionLabel}</strong>. Vă așteptăm cu drag!
               </p>
               <Button
                 onClick={() => setIsSuccess(false)}
@@ -220,10 +220,10 @@ export default function LiveRegistrationSection({
                   </div>
                   <div>
                     <h3 className="font-heading text-xl text-white tracking-wider">
-                      Formular Oficial de Înregistrare Echipă
+                      Formular Oficial de Înregistrare Echipei
                     </h3>
                     <p className="text-xs text-purple-300/70">
-                      Completează datele echipei pentru rezervarea mesei la Insomnia Restaurant
+                      Completează datele echipei pentru rezervarea mesei la Insomnia Cafe & Bistro
                     </p>
                   </div>
                 </div>
@@ -255,7 +255,7 @@ export default function LiveRegistrationSection({
                         name="captainName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs text-purple-200">Nume Căpitan / Reprezentant *</FormLabel>
+                            <FormLabel className="text-xs text-purple-200">Nume Căpitan *</FormLabel>
                             <FormControl>
                               <Input 
                                 placeholder="Ex: Vlad Țepeș" 
@@ -275,7 +275,7 @@ export default function LiveRegistrationSection({
                         name="email"
                         render={({ field }) => (
                           <FormItem className="md:col-span-2">
-                            <FormLabel className="text-xs text-purple-200">Adresă Email (pentru confirmare & memento) *</FormLabel>
+                            <FormLabel className="text-xs text-purple-200">Adresă Email (pentru confirmare) *</FormLabel>
                             <FormControl>
                               <Input 
                                 type="email"
@@ -324,7 +324,7 @@ export default function LiveRegistrationSection({
                       name="phoneNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs text-purple-200">Număr de Telefon (Opțional, pentru reminder SMS)</FormLabel>
+                          <FormLabel className="text-xs text-purple-200">Număr de Telefon (Opțional)</FormLabel>
                           <FormControl>
                             <Input 
                               type="tel"

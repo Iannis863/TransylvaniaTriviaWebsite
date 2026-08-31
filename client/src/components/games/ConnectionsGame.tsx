@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Sparkles, AlertCircle } from "lucide-react";
+import { CheckCircle2, Shuffle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ConnectionsGameProps {
@@ -43,18 +43,44 @@ const CATEGORIES: Category[] = [
   },
 ];
 
+// Smart shuffle: avoid having 4 matching words in the same row
+const getSmartShuffled = (words: string[]) => {
+  if (words.length <= 4) return [...words].sort(() => Math.random() - 0.5);
+
+  let shuffled = [...words];
+  for (let attempt = 0; attempt < 100; attempt++) {
+    shuffled.sort(() => Math.random() - 0.5);
+    let hasAccidentalSolve = false;
+    
+    for (let i = 0; i < shuffled.length; i += 4) {
+      const row = shuffled.slice(i, i + 4);
+      const isSolved = CATEGORIES.some(cat => row.every(w => cat.items.includes(w)));
+      if (isSolved) {
+        hasAccidentalSolve = true;
+        break;
+      }
+    }
+    if (!hasAccidentalSolve) break;
+  }
+  return shuffled;
+};
+
 export default function ConnectionsGame({ onSolve, isAlreadySolved = false }: ConnectionsGameProps) {
   const { toast } = useToast();
   const [solvedCategories, setSolvedCategories] = useState<Category[]>(
     isAlreadySolved ? CATEGORIES : []
   );
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
-  const [attemptsLeft, setAttemptsLeft] = useState(4);
   const [isWon, setIsWon] = useState(isAlreadySolved);
+  const [boardWords, setBoardWords] = useState<string[]>([]);
 
-  // All remaining words
-  const solvedWords = new Set(solvedCategories.flatMap((c) => c.items));
-  const remainingWords = CATEGORIES.flatMap((c) => c.items).filter((w) => !solvedWords.has(w));
+  // Initialize board on mount
+  useEffect(() => {
+    if (!isAlreadySolved) {
+      const allWords = CATEGORIES.flatMap((c) => c.items);
+      setBoardWords(getSmartShuffled(allWords));
+    }
+  }, [isAlreadySolved]);
 
   const toggleWord = (word: string) => {
     if (isWon) return;
@@ -63,6 +89,10 @@ export default function ConnectionsGame({ onSolve, isAlreadySolved = false }: Co
     } else if (selectedWords.length < 4) {
       setSelectedWords([...selectedWords, word]);
     }
+  };
+
+  const handleShuffle = () => {
+    setBoardWords(getSmartShuffled(boardWords));
   };
 
   const submitGroup = () => {
@@ -78,6 +108,10 @@ export default function ConnectionsGame({ onSolve, isAlreadySolved = false }: Co
       const nextSolved = [...solvedCategories, matched];
       setSolvedCategories(nextSolved);
       setSelectedWords([]);
+      
+      const newBoard = boardWords.filter(w => !matched.items.includes(w));
+      setBoardWords(newBoard);
+      
       toast({ title: `Grup Găsit: ${matched.name}`, description: "Excelentă conexiune!" });
 
       if (nextSolved.length === CATEGORIES.length) {
@@ -86,14 +120,8 @@ export default function ConnectionsGame({ onSolve, isAlreadySolved = false }: Co
         onSolve({ completed: true });
       }
     } else {
-      const nextAttempts = attemptsLeft - 1;
-      setAttemptsLeft(nextAttempts);
       setSelectedWords([]);
-      if (nextAttempts <= 0) {
-        toast({ title: "Ai rămas fără încercări!", description: "Mai încearcă odată pentru a ajuta echipa.", variant: "destructive" });
-      } else {
-        toast({ title: "Grup incorect", description: `Mai ai ${nextAttempts} încercări.`, variant: "destructive" });
-      }
+      toast({ title: "Grup incorect", description: "Aceste cuvinte nu formează o categorie. Încearcă din nou!", variant: "destructive" });
     }
   };
 
@@ -103,7 +131,7 @@ export default function ConnectionsGame({ onSolve, isAlreadySolved = false }: Co
         <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/40 text-xs mb-1">
           Conexiuni Trivia (4 Categorii x 4 Cuvinte)
         </Badge>
-        <p className="text-xs text-purple-300/80">Selectează 4 cuvinte care aparțin aceleiași categorii tematice.</p>
+        <p className="text-xs text-purple-300/80">Selectează 4 cuvinte care aparțin aceleiași categorii. (Încercări nelimitate)</p>
       </div>
 
       {/* Solved Categories Banners */}
@@ -122,14 +150,14 @@ export default function ConnectionsGame({ onSolve, isAlreadySolved = false }: Co
       {/* Remaining Words Grid */}
       {!isWon && (
         <div className="grid grid-cols-4 gap-2 w-full mb-5">
-          {remainingWords.map((word) => {
+          {boardWords.map((word) => {
             const isSelected = selectedWords.includes(word);
             return (
               <button
                 key={word}
                 type="button"
                 onClick={() => toggleWord(word)}
-                className={`h-16 rounded-xl border font-heading text-xs sm:text-sm font-bold transition-all flex items-center justify-center p-1 text-center leading-tight shadow ${
+                className={`h-16 rounded-xl border font-heading text-xs sm:text-xs md:text-sm font-bold transition-all flex items-center justify-center p-1 text-center leading-tight shadow ${
                   isSelected
                     ? "bg-amber-400 text-purple-950 border-amber-300 scale-102 shadow-md"
                     : "bg-purple-950/60 border-purple-700/50 text-purple-200 hover:bg-purple-900/40 hover:border-amber-400/50"
@@ -142,20 +170,18 @@ export default function ConnectionsGame({ onSolve, isAlreadySolved = false }: Co
         </div>
       )}
 
-      {/* Attempts & Actions */}
+      {/* Actions */}
       {!isWon && (
         <div className="w-full flex items-center justify-between gap-4 mt-2">
-          <div className="flex items-center gap-1.5 text-xs text-purple-300 font-medium">
-            <span>Încercări:</span>
-            {Array.from({ length: 4 }).map((_, i) => (
-              <span
-                key={i}
-                className={`w-2.5 h-2.5 rounded-full ${
-                  i < attemptsLeft ? "bg-amber-400 shadow-[0_0_8px_rgba(246,184,40,0.6)]" : "bg-purple-950 border border-purple-800"
-                }`}
-              />
-            ))}
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleShuffle}
+            className="text-xs text-purple-300 hover:text-amber-300 hover:bg-purple-900/40"
+          >
+            <Shuffle className="w-4 h-4 mr-1.5" />
+            Amestecă
+          </Button>
 
           <div className="flex items-center gap-2">
             <Button

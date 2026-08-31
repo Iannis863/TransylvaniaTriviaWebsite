@@ -26,7 +26,7 @@ export async function sendReminderEmail(
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #1a1a2e; color: #ffffff; padding: 40px; border-radius: 8px;">
           <h1 style="color: #a855f7; text-align: center; font-size: 28px; margin-bottom: 30px;">See You Tonight!</h1>
           <p>Hello <strong>${captainName}</strong>, your team <strong>${teamName}</strong> is ready for trivia glory!</p>
-          <p><strong>Fee:</strong> ${totalFee} LEI at Insomnia Restaurant (20:00).</p>
+          <p><strong>Fee:</strong> ${totalFee} LEI at Insomnia Cafe & Bistro (20:00).</p>
         </div>
       `
     });
@@ -63,7 +63,7 @@ export async function sendRegistrationConfirmation(
              <p><strong>Team Size:</strong> ${memberCount} members</p>
              <p><strong>Entry Fee:</strong> ${totalFee} LEI</p>
           </div>
-          <p style="text-align: center;">See you at Insomnia Restaurant next Tuesday at 20:00!</p>
+          <p style="text-align: center;">See you at Insomnia Cafe & Bistro next Tuesday at 20:00!</p>
         </div>
       `
     });

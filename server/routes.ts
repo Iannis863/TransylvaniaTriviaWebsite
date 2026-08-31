@@ -491,7 +491,7 @@ export async function registerRoutes(
       if (matchedNarrow) {
         score = 12;
         status = "REJECTED";
-        feedback = "Tema este mult prea personală sau îngustă pentru un concurs public de 25 de echipe.";
+        feedback = "Tema este mult prea personală sau îngustă pentru un concurs public de 10 echipe.";
       } else if (matchedBroad.length > 0) {
         score = Math.min(98, 70 + matchedBroad.length * 10 + Math.floor(Math.random() * 10));
         status = score >= 65 ? "APPROVED" : "BORDERLINE";
@@ -536,6 +536,105 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Theme validator error:", error);
       res.status(500).json({ message: "Eroare la validarea temei" });
+    }
+  });
+
+  // ============================================================
+  // ADMIN PANEL ROUTES  (all protected by checkAuth middleware)
+  // ============================================================
+
+  // Verify admin password
+  app.post("/api/admin/verify", checkAuth, (_req, res) => {
+    res.json({ ok: true });
+  });
+
+  // List all editions with live registration counts + capacity overrides
+  app.get("/api/admin/editions", checkAuth, async (_req, res) => {
+    try {
+      const schedule = getFullSchedule();
+      const result = await Promise.all(
+        schedule.map(async (ed) => {
+          const regs = await storage.getRegistrations(ed.id);
+          const override = await storage.getEditionCapacityOverride(ed.id);
+          return {
+            ...ed,
+            maxTeams: override ?? ed.maxTeams,
+            registeredCount: regs.length,
+            registrations: regs,
+          };
+        })
+      );
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ message: "Eroare la încărcarea edițiilor" });
+    }
+  });
+
+  // Override capacity for an edition
+  app.patch("/api/admin/editions/:editionId/capacity", checkAuth, async (req, res) => {
+    try {
+      const { editionId } = req.params;
+      const maxTeams = parseInt(req.body.maxTeams, 10);
+      if (isNaN(maxTeams) || maxTeams < 1) return res.status(400).json({ message: "Valoare invalidă" });
+      await storage.setEditionCapacityOverride(editionId, maxTeams);
+      res.json({ ok: true, editionId, maxTeams });
+    } catch (err) {
+      res.status(500).json({ message: "Eroare la actualizarea capacității" });
+    }
+  });
+
+  // Update a registration
+  app.patch("/api/admin/registrations/:id", checkAuth, async (req, res) => {
+    try {
+      const updated = await storage.updateRegistration(req.params.id, req.body);
+      if (!updated) return res.status(404).json({ message: "Înregistrare negăsită" });
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ message: "Eroare la actualizare" });
+    }
+  });
+
+  // Delete a registration (remove a team from an edition)
+  app.delete("/api/admin/registrations/:id", checkAuth, async (req, res) => {
+    try {
+      const ok = await storage.deleteRegistration(req.params.id);
+      res.json({ ok });
+    } catch (err) {
+      res.status(500).json({ message: "Eroare la ștergere" });
+    }
+  });
+
+  // List all teams with members
+  app.get("/api/admin/teams", checkAuth, async (_req, res) => {
+    try {
+      const allTeams = await storage.getAllTeams();
+      const withMembers = await Promise.all(
+        allTeams.map(async (t) => ({ ...t, members: await storage.getTeamMembers(t.id) }))
+      );
+      res.json(withMembers);
+    } catch (err) {
+      res.status(500).json({ message: "Eroare la încărcarea echipelor" });
+    }
+  });
+
+  // Update a team
+  app.patch("/api/admin/teams/:id", checkAuth, async (req, res) => {
+    try {
+      const updated = await storage.updateTeam(req.params.id, req.body);
+      if (!updated) return res.status(404).json({ message: "Echipă negăsită" });
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ message: "Eroare la actualizare" });
+    }
+  });
+
+  // Delete a team entirely
+  app.delete("/api/admin/teams/:id", checkAuth, async (req, res) => {
+    try {
+      const ok = await storage.deleteTeam(req.params.id);
+      res.json({ ok });
+    } catch (err) {
+      res.status(500).json({ message: "Eroare la ștergere" });
     }
   });
 
