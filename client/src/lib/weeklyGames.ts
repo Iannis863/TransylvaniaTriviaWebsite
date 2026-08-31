@@ -70,8 +70,8 @@ const WORDLE_WORDS = [
   "CARTE",
   "SPION",
   "BILET",
-  "TRUPE",
-  "REGIA",
+  "TRUPA",
+  "FILME",
   "ECRAN",
   "PISTA",
   "BARCA",
@@ -84,9 +84,9 @@ const WORDLE_WORDS = [
   "LIDER",
   "MAGIC",
   "POKER",
-  "ZARUR",
+  "CURAT",
   "TABLA",
-  "TURNE",
+  "CINCI",
   "SPORT",
   "ATLET"
 ];
@@ -138,1081 +138,1081 @@ const TIMELINE_SETS = [
   [
     {
       "id": "t0_0",
-      "year": 1918,
-      "content": "Marea Unire de la Alba Iulia"
+      "year": 2019,
+      "content": "Vizita Papei Francisc în România"
     },
-    {
-      "id": "t8_0",
-      "year": 1600,
-      "content": "Unirea realizată de Mihai Viteazul"
-    },
-    {
-      "id": "t16_0",
-      "year": 1973,
-      "content": "Inaugurarea Sydney Opera House"
-    },
-    {
-      "id": "t24_0",
-      "year": 1687,
-      "content": "Publicarea legilor mișcării de către Newton"
-    },
-    {
-      "id": "t32_0",
-      "year": 2018,
-      "content": "Simona Halep câștigă Roland Garros"
-    }
-  ],
-  [
     {
       "id": "t0_1",
-      "year": 1859,
-      "content": "Mica Unire (Unirea Principatelor)"
+      "year": 1998,
+      "content": "Franța câștigă Cupa Mondială acasă"
     },
-    {
-      "id": "t8_1",
-      "year": 1453,
-      "content": "Căderea Constantinopolului"
-    },
-    {
-      "id": "t16_1",
-      "year": 1889,
-      "content": "Inaugurarea Turnului Eiffel"
-    },
-    {
-      "id": "t24_1",
-      "year": 1859,
-      "content": "Originea Speciilor (Charles Darwin)"
-    },
-    {
-      "id": "t32_1",
-      "year": 2019,
-      "content": "Simona Halep câștigă Wimbledon"
-    }
-  ],
-  [
     {
       "id": "t0_2",
-      "year": 1989,
-      "content": "Revoluția Română"
+      "year": 1876,
+      "content": "Inventarea telefonului (Bell)"
     },
-    {
-      "id": "t8_2",
-      "year": 1595,
-      "content": "Bătălia de la Călugăreni"
-    },
-    {
-      "id": "t16_2",
-      "year": 1886,
-      "content": "Inaugurarea Statuii Libertății"
-    },
-    {
-      "id": "t24_2",
-      "year": 1439,
-      "content": "Invenția tiparului (Gutenberg)"
-    },
-    {
-      "id": "t32_2",
-      "year": 1960,
-      "content": "Iolanda Balaș ia aur olimpic la Roma"
-    }
-  ],
-  [
     {
       "id": "t0_3",
-      "year": 2007,
-      "content": "Intrarea României în UE"
+      "year": 1931,
+      "content": "Inaugurarea Empire State Building"
     },
-    {
-      "id": "t8_3",
-      "year": 1475,
-      "content": "Bătălia de la Vaslui"
-    },
-    {
-      "id": "t16_3",
-      "year": 1906,
-      "content": "Inaugurarea Cazinoului din Constanța"
-    },
-    {
-      "id": "t24_3",
-      "year": 1796,
-      "content": "Primul vaccin (Edward Jenner)"
-    },
-    {
-      "id": "t32_3",
-      "year": 1984,
-      "content": "România participă la JO de la Los Angeles"
-    }
-  ],
-  [
     {
       "id": "t0_4",
-      "year": 2004,
-      "content": "Intrarea României în NATO"
-    },
-    {
-      "id": "t8_4",
-      "year": 1330,
-      "content": "Bătălia de la Posada"
-    },
-    {
-      "id": "t16_4",
-      "year": 1933,
-      "content": "Hitler devine cancelar al Germaniei"
-    },
-    {
-      "id": "t24_4",
-      "year": 1971,
-      "content": "Trimiterea primului e-mail"
-    },
-    {
-      "id": "t32_4",
-      "year": 2004,
-      "content": "România ia 3 aur la gimnastică (Atena)"
+      "year": 1949,
+      "content": "Înființarea NATO"
     }
   ],
   [
     {
       "id": "t1_0",
-      "year": 1877,
-      "content": "Independența României"
+      "year": 1980,
+      "content": "Boicotul Jocurilor Olimpice de la Moscova"
     },
-    {
-      "id": "t9_0",
-      "year": 1955,
-      "content": "Înființarea Pactului de la Varșovia"
-    },
-    {
-      "id": "t17_0",
-      "year": 1922,
-      "content": "Mussolini vine la putere"
-    },
-    {
-      "id": "t25_0",
-      "year": 1992,
-      "content": "Trimiterea primului SMS"
-    },
-    {
-      "id": "t33_0",
-      "year": 1930,
-      "content": "Primul Campionat Mondial de Fotbal (Uruguay)"
-    }
-  ],
-  [
     {
       "id": "t1_1",
-      "year": 1914,
-      "content": "Începutul Primului Război Mondial"
+      "year": 2007,
+      "content": "Intrarea României în UE"
     },
-    {
-      "id": "t9_1",
-      "year": 1949,
-      "content": "Înființarea NATO"
-    },
-    {
-      "id": "t17_1",
-      "year": 1936,
-      "content": "Începutul Războiului Civil Spaniol"
-    },
-    {
-      "id": "t25_1",
-      "year": 1983,
-      "content": "Apariția protocolului TCP/IP"
-    },
-    {
-      "id": "t33_1",
-      "year": 1950,
-      "content": "Maracanazo (Uruguay bate Brazilia)"
-    }
-  ],
-  [
     {
       "id": "t1_2",
-      "year": 1939,
-      "content": "Începutul celui de-Al Doilea Război Mondial"
+      "year": 2020,
+      "content": "Începutul pandemiei de COVID-19"
     },
-    {
-      "id": "t9_2",
-      "year": 1962,
-      "content": "Criza Rachetelor din Cuba"
-    },
-    {
-      "id": "t17_2",
-      "year": 1945,
-      "content": "Bombardamentele de la Hiroshima și Nagasaki"
-    },
-    {
-      "id": "t25_2",
-      "year": 1993,
-      "content": "Lansarea primului browser (Mosaic)"
-    },
-    {
-      "id": "t33_2",
-      "year": 1954,
-      "content": "Miracolul de la Berna (Germania bate Ungaria)"
-    }
-  ],
-  [
     {
       "id": "t1_3",
-      "year": 1945,
-      "content": "Sfârșitul celui de-Al Doilea Război Mondial"
+      "year": 1979,
+      "content": "Revoluția Islamică din Iran"
     },
-    {
-      "id": "t9_3",
-      "year": 1986,
-      "content": "Dezastrul nuclear de la Cernobîl"
-    },
-    {
-      "id": "t17_3",
-      "year": 1950,
-      "content": "Începutul Războiului din Coreea"
-    },
-    {
-      "id": "t25_3",
-      "year": 1995,
-      "content": "Lansarea Amazon și eBay"
-    },
-    {
-      "id": "t33_3",
-      "year": 1966,
-      "content": "Anglia câștigă singura sa Cupă Mondială"
-    }
-  ],
-  [
     {
       "id": "t1_4",
-      "year": 1989,
-      "content": "Căderea Zidului Berlinului"
-    },
-    {
-      "id": "t9_4",
-      "year": 1911,
-      "content": "Atingerea Polului Sud (Amundsen)"
-    },
-    {
-      "id": "t17_4",
-      "year": 1955,
-      "content": "Începutul Războiului din Vietnam"
-    },
-    {
-      "id": "t25_4",
-      "year": 2005,
-      "content": "Lansarea YouTube"
-    },
-    {
-      "id": "t33_4",
-      "year": 1998,
-      "content": "Franța câștigă Cupa Mondială acasă"
+      "year": 1992,
+      "content": "Trimiterea primului SMS"
     }
   ],
   [
     {
       "id": "t2_0",
-      "year": 1969,
-      "content": "Aterizarea pe Lună"
+      "year": 1939,
+      "content": "Începutul celui de-Al Doilea Război Mondial"
     },
-    {
-      "id": "t10_0",
-      "year": 1909,
-      "content": "Atingerea Polului Nord (Peary)"
-    },
-    {
-      "id": "t18_0",
-      "year": 1990,
-      "content": "Războiul din Golful Persic"
-    },
-    {
-      "id": "t26_0",
-      "year": 2006,
-      "content": "Lansarea Twitter"
-    },
-    {
-      "id": "t34_0",
-      "year": 2022,
-      "content": "Argentina câștigă Cupa Mondială (Qatar)"
-    }
-  ],
-  [
     {
       "id": "t2_1",
-      "year": 1963,
-      "content": "Asasinarea lui JFK"
+      "year": 1896,
+      "content": "Primele Jocuri Olimpice moderne (Atena)"
     },
     {
-      "id": "t10_1",
+      "id": "t2_2",
+      "year": 1898,
+      "content": "Descoperirea radiului (Marie Curie)"
+    },
+    {
+      "id": "t2_3",
       "year": 1953,
       "content": "Escaladarea Muntelui Everest (Hillary)"
     },
     {
-      "id": "t18_1",
-      "year": 1999,
-      "content": "Intervenția NATO în Iugoslavia"
-    },
-    {
-      "id": "t26_1",
-      "year": 2010,
-      "content": "Lansarea Instagram"
-    },
-    {
-      "id": "t34_1",
-      "year": 1896,
-      "content": "Primele Jocuri Olimpice moderne (Atena)"
-    }
-  ],
-  [
-    {
-      "id": "t2_2",
-      "year": 1912,
-      "content": "Scufundarea Titanicului"
-    },
-    {
-      "id": "t10_2",
-      "year": 1922,
-      "content": "Descoperirea mormântului lui Tutankhamon"
-    },
-    {
-      "id": "t18_2",
-      "year": 2003,
-      "content": "Începutul Războiului din Irak"
-    },
-    {
-      "id": "t26_2",
-      "year": 1976,
-      "content": "Fondarea companiei Apple"
-    },
-    {
-      "id": "t34_2",
-      "year": 1936,
-      "content": "JO de la Berlin (Jesse Owens)"
-    }
-  ],
-  [
-    {
-      "id": "t2_3",
-      "year": 2001,
-      "content": "Atentatele din 11 septembrie"
-    },
-    {
-      "id": "t10_3",
-      "year": 1944,
-      "content": "Debarcarea din Normandia (Ziua Z)"
-    },
-    {
-      "id": "t18_3",
-      "year": 2016,
-      "content": "Referendumul pentru Brexit"
-    },
-    {
-      "id": "t26_3",
-      "year": 1984,
-      "content": "Lansarea primului Macintosh"
-    },
-    {
-      "id": "t34_3",
-      "year": 1972,
-      "content": "Masacrul de la Jocurile Olimpice din München"
-    }
-  ],
-  [
-    {
       "id": "t2_4",
-      "year": 1492,
-      "content": "Descoperirea Americii de Columb"
-    },
-    {
-      "id": "t10_4",
-      "year": 1941,
-      "content": "Atacul de la Pearl Harbor"
-    },
-    {
-      "id": "t18_4",
-      "year": 1920,
-      "content": "Înființarea Ligii Națiunilor"
-    },
-    {
-      "id": "t26_4",
-      "year": 2010,
-      "content": "Lansarea primului iPad"
-    },
-    {
-      "id": "t34_4",
-      "year": 1980,
-      "content": "Boicotul Jocurilor Olimpice de la Moscova"
+      "year": 1881,
+      "content": "România devine Regat"
     }
   ],
   [
     {
       "id": "t3_0",
-      "year": 1789,
-      "content": "Începutul Revoluției Franceze"
+      "year": 1927,
+      "content": "Primul film cu sunet (The Jazz Singer)"
     },
-    {
-      "id": "t11_0",
-      "year": 1991,
-      "content": "Destrămarea Uniunii Sovietice"
-    },
-    {
-      "id": "t19_0",
-      "year": 1945,
-      "content": "Înființarea Organizației Națiunilor Unite"
-    },
-    {
-      "id": "t27_0",
-      "year": 1968,
-      "content": "Asasinarea lui Martin Luther King Jr."
-    },
-    {
-      "id": "t35_0",
-      "year": 2008,
-      "content": "Jocurile Olimpice de la Beijing"
-    }
-  ],
-  [
     {
       "id": "t3_1",
       "year": 1919,
       "content": "Tratatul de la Versailles"
     },
     {
-      "id": "t11_1",
-      "year": 1993,
-      "content": "Divizarea Cehoslovaciei"
-    },
-    {
-      "id": "t19_1",
-      "year": 1948,
-      "content": "Declarația Universală a Drepturilor Omului"
-    },
-    {
-      "id": "t27_1",
-      "year": 1965,
-      "content": "Asasinarea lui Malcolm X"
-    },
-    {
-      "id": "t35_1",
-      "year": 2024,
-      "content": "Jocurile Olimpice de la Paris"
-    }
-  ],
-  [
-    {
       "id": "t3_2",
-      "year": 1998,
-      "content": "Crearea motorului de căutare Google"
+      "year": 1901,
+      "content": "Acordarea primelor Premii Nobel"
     },
-    {
-      "id": "t11_2",
-      "year": 1990,
-      "content": "Eliberarea lui Nelson Mandela"
-    },
-    {
-      "id": "t19_2",
-      "year": 1957,
-      "content": "Tratatul de la Roma (baza UE)"
-    },
-    {
-      "id": "t27_2",
-      "year": 1948,
-      "content": "Asasinarea lui Mahatma Gandhi"
-    },
-    {
-      "id": "t35_2",
-      "year": 1956,
-      "content": "Revoluția Maghiară (înăbușită de URSS)"
-    }
-  ],
-  [
     {
       "id": "t3_3",
-      "year": 2007,
-      "content": "Lansarea primului iPhone"
+      "year": 1912,
+      "content": "Scufundarea Titanicului"
     },
-    {
-      "id": "t11_3",
-      "year": 1997,
-      "content": "Retrocedarea Hong Kong-ului"
-    },
-    {
-      "id": "t19_3",
-      "year": 2002,
-      "content": "Introducerea monedei Euro"
-    },
-    {
-      "id": "t27_3",
-      "year": 1865,
-      "content": "Asasinarea lui Abraham Lincoln"
-    },
-    {
-      "id": "t35_3",
-      "year": 1968,
-      "content": "Primăvara de la Praga"
-    }
-  ],
-  [
     {
       "id": "t3_4",
-      "year": 1989,
-      "content": "Invenția World Wide Web (WWW)"
-    },
-    {
-      "id": "t11_4",
-      "year": 2008,
-      "content": "Criza Financiară Globală"
-    },
-    {
-      "id": "t19_4",
-      "year": 1912,
-      "content": "Inventarea parașutei"
-    },
-    {
-      "id": "t27_4",
-      "year": 1901,
-      "content": "Asasinarea președintelui McKinley"
-    },
-    {
-      "id": "t35_4",
-      "year": 1979,
-      "content": "Revoluția Islamică din Iran"
+      "year": 1883,
+      "content": "Inaugurarea Castelului Peleș"
     }
   ],
   [
     {
       "id": "t4_0",
-      "year": 1975,
-      "content": "Fondarea companiei Microsoft"
+      "year": 1994,
+      "content": "Deschiderea Tunelului Mânecii"
     },
-    {
-      "id": "t12_0",
-      "year": 2011,
-      "content": "Accidentul nuclear de la Fukushima"
-    },
-    {
-      "id": "t20_0",
-      "year": 1876,
-      "content": "Inventarea telefonului (Bell)"
-    },
-    {
-      "id": "t28_0",
-      "year": 1881,
-      "content": "Asasinarea Țarului Alexandru al II-lea"
-    },
-    {
-      "id": "t36_0",
-      "year": 1979,
-      "content": "Invazia sovietică în Afganistan"
-    }
-  ],
-  [
     {
       "id": "t4_1",
-      "year": 2004,
-      "content": "Lansarea platformei Facebook"
+      "year": 2006,
+      "content": "Lansarea Twitter"
     },
-    {
-      "id": "t12_1",
-      "year": 2020,
-      "content": "Începutul pandemiei de COVID-19"
-    },
-    {
-      "id": "t20_1",
-      "year": 1879,
-      "content": "Inventarea becului (Edison)"
-    },
-    {
-      "id": "t28_1",
-      "year": 1916,
-      "content": "Asasinarea lui Grigori Rasputin"
-    },
-    {
-      "id": "t36_1",
-      "year": 2010,
-      "content": "Începutul Primăverii Arabe"
-    }
-  ],
-  [
     {
       "id": "t4_2",
-      "year": 1961,
-      "content": "Primul zbor în spațiu (Iuri Gagarin)"
-    },
-    {
-      "id": "t12_2",
-      "year": 1912,
-      "content": "Primul Război Balcanic"
-    },
-    {
-      "id": "t20_2",
-      "year": 1895,
-      "content": "Prima proiecție cinematografică (Lumière)"
-    },
-    {
-      "id": "t28_2",
-      "year": 1940,
-      "content": "Asasinarea lui Lev Troțki"
-    },
-    {
-      "id": "t36_2",
-      "year": 1994,
-      "content": "Începutul genocidului din Rwanda"
-    }
-  ],
-  [
-    {
-      "id": "t4_3",
       "year": 1928,
       "content": "Descoperirea penicilinei (Fleming)"
     },
     {
-      "id": "t12_3",
-      "year": 1913,
-      "content": "Al Doilea Război Balcanic"
+      "id": "t4_3",
+      "year": 1933,
+      "content": "Hitler devine cancelar al Germaniei"
     },
     {
-      "id": "t20_3",
-      "year": 1927,
-      "content": "Primul film cu sunet (The Jazz Singer)"
-    },
-    {
-      "id": "t28_3",
-      "year": 1978,
-      "content": "Asasinarea lui Aldo Moro"
-    },
-    {
-      "id": "t36_3",
-      "year": 1995,
-      "content": "Masacrul de la Srebrenica"
+      "id": "t4_4",
+      "year": 1859,
+      "content": "Mica Unire (Unirea Principatelor)"
     }
   ],
   [
     {
-      "id": "t4_4",
-      "year": 1903,
-      "content": "Primul zbor al fraților Wright"
+      "id": "t5_0",
+      "year": 2023,
+      "content": "Lansarea filmelor Barbie și Oppenheimer"
+    },
+    {
+      "id": "t5_1",
+      "year": 1883,
+      "content": "Erupția vulcanului Krakatoa"
+    },
+    {
+      "id": "t5_2",
+      "year": 1912,
+      "content": "Primul Război Balcanic"
+    },
+    {
+      "id": "t5_3",
+      "year": 1796,
+      "content": "Primul vaccin (Edward Jenner)"
+    },
+    {
+      "id": "t5_4",
+      "year": 1595,
+      "content": "Bătălia de la Călugăreni"
+    }
+  ],
+  [
+    {
+      "id": "t6_0",
+      "year": 2024,
+      "content": "Jocurile Olimpice de la Paris"
+    },
+    {
+      "id": "t6_1",
+      "year": 1991,
+      "content": "Destrămarea Uniunii Sovietice"
+    },
+    {
+      "id": "t6_2",
+      "year": 1990,
+      "content": "Lansarea telescopului spațial Hubble"
+    },
+    {
+      "id": "t6_3",
+      "year": 1475,
+      "content": "Bătălia de la Vaslui"
+    },
+    {
+      "id": "t6_4",
+      "year": 1911,
+      "content": "Atingerea Polului Sud (Amundsen)"
+    }
+  ],
+  [
+    {
+      "id": "t7_0",
+      "year": 1956,
+      "content": "Revoluția Maghiară (înăbușită de URSS)"
+    },
+    {
+      "id": "t7_1",
+      "year": 1906,
+      "content": "Inaugurarea Cazinoului din Constanța"
+    },
+    {
+      "id": "t7_2",
+      "year": 2011,
+      "content": "Accidentul nuclear de la Fukushima"
+    },
+    {
+      "id": "t7_3",
+      "year": 1985,
+      "content": "Concertul Live Aid"
+    },
+    {
+      "id": "t7_4",
+      "year": 1995,
+      "content": "Lansarea Amazon și eBay"
+    }
+  ],
+  [
+    {
+      "id": "t8_0",
+      "year": 1859,
+      "content": "Originea Speciilor (Charles Darwin)"
+    },
+    {
+      "id": "t8_1",
+      "year": 1990,
+      "content": "Mineriada din iunie"
+    },
+    {
+      "id": "t8_2",
+      "year": 2001,
+      "content": "Lansarea filmului Lord of the Rings"
+    },
+    {
+      "id": "t8_3",
+      "year": 1945,
+      "content": "Înființarea Organizației Națiunilor Unite"
+    },
+    {
+      "id": "t8_4",
+      "year": 1889,
+      "content": "Inaugurarea Turnului Eiffel"
+    }
+  ],
+  [
+    {
+      "id": "t9_0",
+      "year": 1999,
+      "content": "Vizita Papei Ioan Paul al II-lea în România"
+    },
+    {
+      "id": "t9_1",
+      "year": 1967,
+      "content": "Primul transplant de inimă (Barnard)"
+    },
+    {
+      "id": "t9_2",
+      "year": 1997,
+      "content": "Lansarea filmului Titanic"
+    },
+    {
+      "id": "t9_3",
+      "year": 1914,
+      "content": "Finalizarea Canalului Panama"
+    },
+    {
+      "id": "t9_4",
+      "year": 1945,
+      "content": "Sfârșitul celui de-Al Doilea Război Mondial"
+    }
+  ],
+  [
+    {
+      "id": "t10_0",
+      "year": 1977,
+      "content": "Cutremurul devastator din Vrancea"
+    },
+    {
+      "id": "t10_1",
+      "year": 1895,
+      "content": "Prima proiecție cinematografică (Lumière)"
+    },
+    {
+      "id": "t10_2",
+      "year": 2003,
+      "content": "Dezastrul navetei Columbia"
+    },
+    {
+      "id": "t10_3",
+      "year": 1983,
+      "content": "Apariția protocolului TCP/IP"
+    },
+    {
+      "id": "t10_4",
+      "year": 1848,
+      "content": "Revoluția Pașoptistă"
+    }
+  ],
+  [
+    {
+      "id": "t11_0",
+      "year": 1986,
+      "content": "Dezastrul navetei Challenger"
+    },
+    {
+      "id": "t11_1",
+      "year": 1970,
+      "content": "Inundațiile catastrofale din România"
+    },
+    {
+      "id": "t11_2",
+      "year": 1885,
+      "content": "Inventarea automobilului (Karl Benz)"
+    },
+    {
+      "id": "t11_3",
+      "year": 2011,
+      "content": "Premiera serialului Game of Thrones"
+    },
+    {
+      "id": "t11_4",
+      "year": 1917,
+      "content": "Revoluția Bolșevică"
+    }
+  ],
+  [
+    {
+      "id": "t12_0",
+      "year": 1963,
+      "content": "Asasinarea lui JFK"
+    },
+    {
+      "id": "t12_1",
+      "year": 1936,
+      "content": "Inaugurarea Muzeului Satului din București"
+    },
+    {
+      "id": "t12_2",
+      "year": 1944,
+      "content": "Debarcarea din Normandia (Ziua Z)"
+    },
+    {
+      "id": "t12_3",
+      "year": 2007,
+      "content": "Lansarea primului iPhone"
     },
     {
       "id": "t12_4",
+      "year": 1999,
+      "content": "Lansarea filmului The Matrix"
+    }
+  ],
+  [
+    {
+      "id": "t13_0",
+      "year": 1945,
+      "content": "Bombardamentele atomice (Hiroshima/Nagasaki)"
+    },
+    {
+      "id": "t13_1",
+      "year": 1948,
+      "content": "Declarația Universală a Drepturilor Omului"
+    },
+    {
+      "id": "t13_2",
+      "year": 1993,
+      "content": "Lansarea primului browser (Mosaic)"
+    },
+    {
+      "id": "t13_3",
+      "year": 1982,
+      "content": "Lansarea albumului Thriller (M. Jackson)"
+    },
+    {
+      "id": "t13_4",
+      "year": 1919,
+      "content": "Revolta de la Brașov"
+    }
+  ],
+  [
+    {
+      "id": "t14_0",
+      "year": 1869,
+      "content": "Finalizarea Canalului Suez"
+    },
+    {
+      "id": "t14_1",
+      "year": 2012,
+      "content": "Descoperirea Bosonului Higgs"
+    },
+    {
+      "id": "t14_2",
+      "year": 1957,
+      "content": "Tratatul de la Roma (baza UE)"
+    },
+    {
+      "id": "t14_3",
+      "year": 1997,
+      "content": "Prima carte Harry Potter este publicată"
+    },
+    {
+      "id": "t14_4",
+      "year": 1857,
+      "content": "București, primul oraș iluminat cu petrol lampant"
+    }
+  ],
+  [
+    {
+      "id": "t15_0",
+      "year": 2006,
+      "content": "Pluto este retrogradată ca planetă pitică"
+    },
+    {
+      "id": "t15_1",
+      "year": 1967,
+      "content": "Dacia începe producția la Mioveni"
+    },
+    {
+      "id": "t15_2",
+      "year": 1886,
+      "content": "Inaugurarea Statuii Libertății"
+    },
+    {
+      "id": "t15_3",
+      "year": 1993,
+      "content": "Divizarea Cehoslovaciei"
+    },
+    {
+      "id": "t15_4",
+      "year": 1930,
+      "content": "Primul Campionat Mondial de Fotbal (Uruguay)"
+    }
+  ],
+  [
+    {
+      "id": "t16_0",
+      "year": 1947,
+      "content": "Abdicarea Regelui Mihai I"
+    },
+    {
+      "id": "t16_1",
+      "year": 1755,
+      "content": "Cutremurul din Lisabona"
+    },
+    {
+      "id": "t16_2",
+      "year": 1941,
+      "content": "Atacul de la Pearl Harbor"
+    },
+    {
+      "id": "t16_3",
+      "year": 1977,
+      "content": "Lansarea primului film Star Wars"
+    },
+    {
+      "id": "t16_4",
+      "year": 1961,
+      "content": "Primul zbor în spațiu (Iuri Gagarin)"
+    }
+  ],
+  [
+    {
+      "id": "t17_0",
+      "year": 1997,
+      "content": "Retrocedarea Hong Kong-ului"
+    },
+    {
+      "id": "t17_1",
+      "year": 1962,
+      "content": "Criza Rachetelor din Cuba (Tensiune nucleară)"
+    },
+    {
+      "id": "t17_2",
+      "year": 1877,
+      "content": "Independența României"
+    },
+    {
+      "id": "t17_3",
+      "year": 1972,
+      "content": "Masacrul de la Jocurile Olimpice din München"
+    },
+    {
+      "id": "t17_4",
+      "year": 1915,
+      "content": "Teoria Relativității Generale (Einstein)"
+    }
+  ],
+  [
+    {
+      "id": "t18_0",
+      "year": 1940,
+      "content": "Asasinarea lui Lev Troțki"
+    },
+    {
+      "id": "t18_1",
+      "year": 1991,
+      "content": "Mineriada din septembrie"
+    },
+    {
+      "id": "t18_2",
+      "year": 2022,
+      "content": "Argentina câștigă Cupa Mondială (Qatar)"
+    },
+    {
+      "id": "t18_3",
+      "year": 1968,
+      "content": "Primăvara de la Praga"
+    },
+    {
+      "id": "t18_4",
+      "year": 1969,
+      "content": "Aterizarea pe Lună"
+    }
+  ],
+  [
+    {
+      "id": "t19_0",
+      "year": 1994,
+      "content": "Lansarea consolei PlayStation 1"
+    },
+    {
+      "id": "t19_1",
+      "year": 1453,
+      "content": "Căderea Constantinopolului"
+    },
+    {
+      "id": "t19_2",
+      "year": 1600,
+      "content": "Unirea realizată de Mihai Viteazul"
+    },
+    {
+      "id": "t19_3",
+      "year": 1908,
+      "content": "Modelul T Ford revoluționează industria"
+    },
+    {
+      "id": "t19_4",
+      "year": 1948,
+      "content": "Asasinarea lui Mahatma Gandhi"
+    }
+  ],
+  [
+    {
+      "id": "t20_0",
+      "year": 1984,
+      "content": "România participă la JO de la Los Angeles"
+    },
+    {
+      "id": "t20_1",
+      "year": 1922,
+      "content": "Mussolini vine la putere"
+    },
+    {
+      "id": "t20_2",
+      "year": 1984,
+      "content": "Lansarea primului Macintosh"
+    },
+    {
+      "id": "t20_3",
+      "year": 1821,
+      "content": "Tudor Vladimirescu și Revoluția"
+    },
+    {
+      "id": "t20_4",
+      "year": 1865,
+      "content": "Asasinarea lui Abraham Lincoln"
+    }
+  ],
+  [
+    {
+      "id": "t21_0",
+      "year": 2004,
+      "content": "Intrarea României în NATO"
+    },
+    {
+      "id": "t21_1",
+      "year": 2004,
+      "content": "Lansarea platformei Facebook"
+    },
+    {
+      "id": "t21_2",
+      "year": 1937,
+      "content": "Inaugurarea Golden Gate Bridge"
+    },
+    {
+      "id": "t21_3",
+      "year": 1979,
+      "content": "Invazia sovietică în Afganistan"
+    },
+    {
+      "id": "t21_4",
+      "year": 1930,
+      "content": "Descoperirea planetei Pluto"
+    }
+  ],
+  [
+    {
+      "id": "t22_0",
+      "year": 1960,
+      "content": "Iolanda Balaș ia aur olimpic la Roma"
+    },
+    {
+      "id": "t22_1",
+      "year": 79,
+      "content": "Erupția vulcanului Vezuviu (Pompeii)"
+    },
+    {
+      "id": "t22_2",
+      "year": 1784,
+      "content": "Răscoala lui Horea, Cloșca și Crișan"
+    },
+    {
+      "id": "t22_3",
+      "year": 1975,
+      "content": "Fondarea companiei Microsoft"
+    },
+    {
+      "id": "t22_4",
+      "year": 1950,
+      "content": "Începutul Războiului din Coreea"
+    }
+  ],
+  [
+    {
+      "id": "t23_0",
+      "year": 1965,
+      "content": "Asasinarea lui Malcolm X"
+    },
+    {
+      "id": "t23_1",
+      "year": 2003,
+      "content": "Începutul Războiului din Irak"
+    },
+    {
+      "id": "t23_2",
+      "year": 1996,
+      "content": "Emil Constantinescu câștigă alegerile"
+    },
+    {
+      "id": "t23_3",
+      "year": 1996,
+      "content": "Clonarea oii Dolly"
+    },
+    {
+      "id": "t23_4",
+      "year": 2019,
+      "content": "Simona Halep câștigă Wimbledon"
+    }
+  ],
+  [
+    {
+      "id": "t24_0",
+      "year": 1789,
+      "content": "Începutul Revoluției Franceze"
+    },
+    {
+      "id": "t24_1",
+      "year": 2010,
+      "content": "Lansarea Instagram"
+    },
+    {
+      "id": "t24_2",
+      "year": 1895,
+      "content": "Descoperirea razelor X (Röntgen)"
+    },
+    {
+      "id": "t24_3",
+      "year": 1923,
+      "content": "Cutremurul din Kanto (Japonia)"
+    },
+    {
+      "id": "t24_4",
+      "year": 2008,
+      "content": "Summitul NATO de la București"
+    }
+  ],
+  [
+    {
+      "id": "t25_0",
+      "year": 1912,
+      "content": "Inventarea parașutei"
+    },
+    {
+      "id": "t25_1",
+      "year": 2015,
+      "content": "Tragedia de la Colectiv"
+    },
+    {
+      "id": "t25_2",
+      "year": 1950,
+      "content": "Maracanazo (Uruguay bate Brazilia)"
+    },
+    {
+      "id": "t25_3",
+      "year": 1955,
+      "content": "Înființarea Pactului de la Varșovia"
+    },
+    {
+      "id": "t25_4",
+      "year": 2001,
+      "content": "Atentatele din 11 septembrie"
+    }
+  ],
+  [
+    {
+      "id": "t26_0",
+      "year": 1957,
+      "content": "Lansarea satelitului Sputnik"
+    },
+    {
+      "id": "t26_1",
+      "year": 1923,
+      "content": "Adoptarea Constituției României Mari"
+    },
+    {
+      "id": "t26_2",
+      "year": 1986,
+      "content": "Dezastrul nuclear de la Cernobîl"
+    },
+    {
+      "id": "t26_3",
+      "year": 1974,
+      "content": "Abba câștigă Eurovision cu Waterloo"
+    },
+    {
+      "id": "t26_4",
+      "year": 1936,
+      "content": "Începutul Războiului Civil Spaniol"
+    }
+  ],
+  [
+    {
+      "id": "t27_0",
+      "year": 1965,
+      "content": "Ceaușescu devine liderul PCR"
+    },
+    {
+      "id": "t27_1",
+      "year": 1913,
+      "content": "Al Doilea Război Balcanic"
+    },
+    {
+      "id": "t27_2",
+      "year": 1966,
+      "content": "Anglia câștigă singura sa Cupă Mondială"
+    },
+    {
+      "id": "t27_3",
+      "year": 2010,
+      "content": "Lansarea primului iPad"
+    },
+    {
+      "id": "t27_4",
+      "year": 1922,
+      "content": "Descoperirea mormântului lui Tutankhamon"
+    }
+  ],
+  [
+    {
+      "id": "t28_0",
+      "year": 2000,
+      "content": "Alegerile cu Ion Iliescu și C.V. Tudor"
+    },
+    {
+      "id": "t28_1",
+      "year": 2004,
+      "content": "România ia 3 aur la gimnastică (Atena)"
+    },
+    {
+      "id": "t28_2",
+      "year": 1998,
+      "content": "Crearea motorului de căutare Google"
+    },
+    {
+      "id": "t28_3",
+      "year": 1990,
+      "content": "Războiul din Golful Persic"
+    },
+    {
+      "id": "t28_4",
+      "year": 1937,
+      "content": "Dezastrul Hindenburg"
+    }
+  ],
+  [
+    {
+      "id": "t29_0",
+      "year": 1330,
+      "content": "Bătălia de la Posada"
+    },
+    {
+      "id": "t29_1",
+      "year": 1492,
+      "content": "Descoperirea Americii de Columb"
+    },
+    {
+      "id": "t29_2",
+      "year": 2016,
+      "content": "Referendumul pentru Brexit"
+    },
+    {
+      "id": "t29_3",
+      "year": 1929,
+      "content": "Prima ediție a Premiilor Oscar"
+    },
+    {
+      "id": "t29_4",
+      "year": 1971,
+      "content": "Trimiterea primului e-mail"
+    }
+  ],
+  [
+    {
+      "id": "t30_0",
+      "year": 1999,
+      "content": "Pacea de la Cozia (Mineriada din 1999)"
+    },
+    {
+      "id": "t30_1",
+      "year": 1901,
+      "content": "Asasinarea președintelui McKinley"
+    },
+    {
+      "id": "t30_2",
+      "year": 1989,
+      "content": "Debutul serialului The Simpsons"
+    },
+    {
+      "id": "t30_3",
+      "year": 1687,
+      "content": "Publicarea legilor mișcării de către Newton"
+    },
+    {
+      "id": "t30_4",
+      "year": 1999,
+      "content": "Intervenția NATO în Iugoslavia"
+    }
+  ],
+  [
+    {
+      "id": "t31_0",
+      "year": 1987,
+      "content": "Revolta muncitorilor din Brașov"
+    },
+    {
+      "id": "t31_1",
+      "year": 1914,
+      "content": "Începutul Primului Război Mondial"
+    },
+    {
+      "id": "t31_2",
+      "year": 1968,
+      "content": "Asasinarea lui Martin Luther King Jr."
+    },
+    {
+      "id": "t31_3",
+      "year": 2001,
+      "content": "Primul film Harry Potter"
+    },
+    {
+      "id": "t31_4",
+      "year": 1981,
+      "content": "Lansarea primului PC IBM"
+    }
+  ],
+  [
+    {
+      "id": "t32_0",
+      "year": 1989,
+      "content": "Căderea Zidului Berlinului"
+    },
+    {
+      "id": "t32_1",
+      "year": 2009,
+      "content": "Lansarea filmului Avatar"
+    },
+    {
+      "id": "t32_2",
+      "year": 2002,
+      "content": "Introducerea monedei Euro"
+    },
+    {
+      "id": "t32_3",
+      "year": 1918,
+      "content": "Marea Unire de la Alba Iulia"
+    },
+    {
+      "id": "t32_4",
+      "year": 1879,
+      "content": "Inventarea becului (Edison)"
+    }
+  ],
+  [
+    {
+      "id": "t33_0",
+      "year": 1984,
+      "content": "Inaugurarea Canalului Dunăre-Marea Neagră"
+    },
+    {
+      "id": "t33_1",
       "year": 1878,
       "content": "Tratatul de la Berlin"
     },
     {
-      "id": "t20_4",
-      "year": 1937,
-      "content": "Dezastrul Hindenburg"
+      "id": "t33_2",
+      "year": 1976,
+      "content": "Fondarea companiei Apple"
     },
     {
-      "id": "t28_4",
-      "year": 2007,
-      "content": "Asasinarea lui Benazir Bhutto"
+      "id": "t33_3",
+      "year": 1969,
+      "content": "Festivalul Woodstock"
     },
     {
-      "id": "t36_4",
+      "id": "t33_4",
       "year": 2004,
       "content": "Tsunamiul devastator din Oceanul Indian"
     }
   ],
   [
     {
-      "id": "t5_0",
-      "year": 1957,
-      "content": "Lansarea satelitului Sputnik"
+      "id": "t34_0",
+      "year": 1884,
+      "content": "Timișoara, primul oraș european cu iluminat electric"
     },
     {
-      "id": "t13_0",
-      "year": 1866,
-      "content": "Aducerea lui Carol I în România"
-    },
-    {
-      "id": "t21_0",
-      "year": 1986,
-      "content": "Dezastrul navetei Challenger"
-    },
-    {
-      "id": "t29_0",
-      "year": 1919,
-      "content": "Revolta de la Brașov"
-    },
-    {
-      "id": "t37_0",
-      "year": 1906,
-      "content": "Cutremurul din San Francisco"
-    }
-  ],
-  [
-    {
-      "id": "t5_1",
-      "year": 1981,
-      "content": "Lansarea primului PC IBM"
-    },
-    {
-      "id": "t13_1",
-      "year": 1881,
-      "content": "România devine Regat"
-    },
-    {
-      "id": "t21_1",
-      "year": 2003,
-      "content": "Dezastrul navetei Columbia"
-    },
-    {
-      "id": "t29_1",
-      "year": 1924,
-      "content": "Răscoala de la Tatarbunar"
-    },
-    {
-      "id": "t37_1",
-      "year": 1923,
-      "content": "Cutremurul din Kanto (Japonia)"
-    }
-  ],
-  [
-    {
-      "id": "t5_2",
-      "year": 1977,
-      "content": "Lansarea primului film Star Wars"
-    },
-    {
-      "id": "t13_2",
-      "year": 1923,
-      "content": "Adoptarea Constituției României Mari"
-    },
-    {
-      "id": "t21_2",
-      "year": 1990,
-      "content": "Lansarea telescopului spațial Hubble"
-    },
-    {
-      "id": "t29_2",
-      "year": 1933,
-      "content": "Grevele de la Grivița"
-    },
-    {
-      "id": "t37_2",
-      "year": 1914,
-      "content": "Finalizarea Canalului Panama"
-    }
-  ],
-  [
-    {
-      "id": "t5_3",
-      "year": 1999,
-      "content": "Lansarea filmului The Matrix"
-    },
-    {
-      "id": "t13_3",
-      "year": 1947,
-      "content": "Abdicarea Regelui Mihai I"
-    },
-    {
-      "id": "t21_3",
-      "year": 2021,
-      "content": "Lansarea telescopului James Webb"
-    },
-    {
-      "id": "t29_3",
-      "year": 1987,
-      "content": "Revolta muncitorilor din Brașov"
-    },
-    {
-      "id": "t37_3",
-      "year": 1869,
-      "content": "Finalizarea Canalului Suez"
-    }
-  ],
-  [
-    {
-      "id": "t5_4",
-      "year": 2001,
-      "content": "Primul film Harry Potter"
-    },
-    {
-      "id": "t13_4",
-      "year": 1965,
-      "content": "Ceaușescu devine liderul PCR"
-    },
-    {
-      "id": "t21_4",
-      "year": 1921,
-      "content": "Descoperirea insulinei (Banting)"
-    },
-    {
-      "id": "t29_4",
-      "year": 1990,
-      "content": "Mineriada din iunie"
-    },
-    {
-      "id": "t37_4",
-      "year": 1931,
-      "content": "Inaugurarea Empire State Building"
-    }
-  ],
-  [
-    {
-      "id": "t6_0",
-      "year": 2009,
-      "content": "Lansarea filmului Avatar"
-    },
-    {
-      "id": "t14_0",
-      "year": 1977,
-      "content": "Cutremurul devastator din România"
-    },
-    {
-      "id": "t22_0",
-      "year": 1953,
-      "content": "Descoperirea structurii ADN-ului"
-    },
-    {
-      "id": "t30_0",
-      "year": 1991,
-      "content": "Mineriada din septembrie"
-    },
-    {
-      "id": "t38_0",
-      "year": 2010,
-      "content": "Inaugurarea Burj Khalifa"
-    }
-  ],
-  [
-    {
-      "id": "t6_1",
-      "year": 1994,
-      "content": "Lansarea consolei PlayStation 1"
-    },
-    {
-      "id": "t14_1",
-      "year": 1996,
-      "content": "Emil Constantinescu câștigă alegerile"
-    },
-    {
-      "id": "t22_1",
-      "year": 1895,
-      "content": "Descoperirea razelor X (Röntgen)"
-    },
-    {
-      "id": "t30_1",
-      "year": 1999,
-      "content": "Pacea de la Cozia (Mineriada din 1999)"
-    },
-    {
-      "id": "t38_1",
-      "year": 1883,
-      "content": "Erupția vulcanului Krakatoa"
-    }
-  ],
-  [
-    {
-      "id": "t6_2",
+      "id": "t34_1",
       "year": 1989,
-      "content": "Debutul serialului The Simpsons"
+      "content": "Invenția World Wide Web (WWW)"
     },
     {
-      "id": "t14_2",
-      "year": 2000,
-      "content": "Alegerile cu Ion Iliescu și C.V. Tudor"
+      "id": "t34_2",
+      "year": 1909,
+      "content": "Atingerea Polului Nord (Peary)"
     },
     {
-      "id": "t22_2",
-      "year": 1898,
-      "content": "Descoperirea radiului (Marie Curie)"
-    },
-    {
-      "id": "t30_2",
-      "year": 2008,
-      "content": "Summitul NATO de la București"
-    },
-    {
-      "id": "t38_2",
-      "year": 79,
-      "content": "Erupția vulcanului Vezuviu (Pompeii)"
-    }
-  ],
-  [
-    {
-      "id": "t6_3",
-      "year": 1982,
-      "content": "Lansarea albumului Thriller (M. Jackson)"
-    },
-    {
-      "id": "t14_3",
-      "year": 2015,
-      "content": "Tragedia de la Colectiv"
-    },
-    {
-      "id": "t22_3",
-      "year": 1967,
-      "content": "Primul transplant de inimă (Barnard)"
-    },
-    {
-      "id": "t30_3",
-      "year": 2019,
-      "content": "Vizita Papei Francisc în România"
-    },
-    {
-      "id": "t38_3",
-      "year": 1666,
-      "content": "Marele Incendiu din Londra"
-    }
-  ],
-  [
-    {
-      "id": "t6_4",
-      "year": 1997,
-      "content": "Lansarea filmului Titanic"
-    },
-    {
-      "id": "t14_4",
-      "year": 1984,
-      "content": "Inaugurarea Canalului Dunăre-Marea Neagră"
-    },
-    {
-      "id": "t22_4",
-      "year": 1996,
-      "content": "Clonarea oii Dolly"
-    },
-    {
-      "id": "t30_4",
-      "year": 1999,
-      "content": "Vizita Papei Ioan Paul al II-lea în România"
-    },
-    {
-      "id": "t38_4",
-      "year": 1755,
-      "content": "Cutremurul din Lisabona"
-    }
-  ],
-  [
-    {
-      "id": "t7_0",
-      "year": 1929,
-      "content": "Prima ediție a Premiilor Oscar"
-    },
-    {
-      "id": "t15_0",
-      "year": 1974,
-      "content": "Abba câștigă Eurovision cu Waterloo"
-    },
-    {
-      "id": "t23_0",
-      "year": 2012,
-      "content": "Descoperirea Bosonului Higgs"
-    },
-    {
-      "id": "t31_0",
-      "year": 1974,
-      "content": "România se califică la CM după 36 ani"
-    },
-    {
-      "id": "t39_0",
-      "year": 1927,
-      "content": "Zborul transatlantic al lui Charles Lindbergh"
-    }
-  ],
-  [
-    {
-      "id": "t7_1",
-      "year": 1776,
-      "content": "Declarația de Independență a SUA"
-    },
-    {
-      "id": "t15_1",
-      "year": 1969,
-      "content": "Festivalul Woodstock"
-    },
-    {
-      "id": "t23_1",
-      "year": 1901,
-      "content": "Acordarea primelor Premii Nobel"
-    },
-    {
-      "id": "t31_1",
-      "year": 1994,
-      "content": "Generația de Aur la World Cup USA"
-    },
-    {
-      "id": "t39_1",
-      "year": 1937,
-      "content": "Inaugurarea Golden Gate Bridge"
-    }
-  ],
-  [
-    {
-      "id": "t7_2",
-      "year": 1815,
-      "content": "Bătălia de la Waterloo"
-    },
-    {
-      "id": "t15_2",
-      "year": 1985,
-      "content": "Concertul Live Aid"
-    },
-    {
-      "id": "t23_2",
-      "year": 1930,
-      "content": "Descoperirea planetei Pluto"
-    },
-    {
-      "id": "t31_2",
-      "year": 1986,
-      "content": "Steaua București câștigă CCE"
-    },
-    {
-      "id": "t39_2",
-      "year": 1885,
-      "content": "Inventarea automobilului (Karl Benz)"
-    }
-  ],
-  [
-    {
-      "id": "t7_3",
-      "year": 1917,
-      "content": "Revoluția Bolșevică"
-    },
-    {
-      "id": "t15_3",
+      "id": "t34_3",
       "year": 1991,
       "content": "Moartea lui Freddie Mercury"
     },
     {
-      "id": "t23_3",
-      "year": 2006,
-      "content": "Pluto este retrogradată ca planetă pitică"
-    },
-    {
-      "id": "t31_3",
-      "year": 1989,
-      "content": "Dinamo București în semifinalele Cupei Cupelor"
-    },
-    {
-      "id": "t39_3",
-      "year": 1908,
-      "content": "Modelul T Ford revoluționează industria"
+      "id": "t34_4",
+      "year": 1914,
+      "content": "Asasinarea Arhiducelui Franz Ferdinand"
     }
   ],
   [
     {
-      "id": "t7_4",
-      "year": 1848,
-      "content": "Revoluția Pașoptistă"
+      "id": "t35_0",
+      "year": 1953,
+      "content": "Descoperirea structurii ADN-ului"
     },
     {
-      "id": "t15_4",
+      "id": "t35_1",
       "year": 1980,
       "content": "Asasinarea lui John Lennon"
     },
     {
-      "id": "t23_4",
-      "year": 1915,
-      "content": "Teoria Relativității Generale (Einstein)"
+      "id": "t35_2",
+      "year": 2008,
+      "content": "Criza Financiară Globală"
     },
     {
-      "id": "t31_4",
-      "year": 1973,
-      "content": "Ilie Năstase devine nr 1 ATP"
+      "id": "t35_3",
+      "year": 1955,
+      "content": "Începutul Războiului din Vietnam"
+    },
+    {
+      "id": "t35_4",
+      "year": 1866,
+      "content": "Aducerea lui Carol I în România"
+    }
+  ],
+  [
+    {
+      "id": "t36_0",
+      "year": 1906,
+      "content": "Cutremurul din San Francisco"
+    },
+    {
+      "id": "t36_1",
+      "year": 1924,
+      "content": "Răscoala de la Tatarbunar"
+    },
+    {
+      "id": "t36_2",
+      "year": 1982,
+      "content": "Războiul din Insulele Falkland"
+    },
+    {
+      "id": "t36_3",
+      "year": 2021,
+      "content": "Lansarea telescopului James Webb"
+    },
+    {
+      "id": "t36_4",
+      "year": 2008,
+      "content": "Jocurile Olimpice de la Beijing"
+    }
+  ],
+  [
+    {
+      "id": "t37_0",
+      "year": 1439,
+      "content": "Invenția tiparului (Gutenberg)"
+    },
+    {
+      "id": "t37_1",
+      "year": 1936,
+      "content": "JO de la Berlin (Jesse Owens)"
+    },
+    {
+      "id": "t37_2",
+      "year": 1927,
+      "content": "Zborul transatlantic al lui Charles Lindbergh"
+    },
+    {
+      "id": "t37_3",
+      "year": 1956,
+      "content": "Înființarea Televiziunii Române (TVR)"
+    },
+    {
+      "id": "t37_4",
+      "year": 1861,
+      "content": "Începutul Războiului Civil American"
+    }
+  ],
+  [
+    {
+      "id": "t38_0",
+      "year": 1666,
+      "content": "Marele Incendiu din Londra"
+    },
+    {
+      "id": "t38_1",
+      "year": 1933,
+      "content": "Grevele de la Grivița"
+    },
+    {
+      "id": "t38_2",
+      "year": 2005,
+      "content": "Lansarea YouTube"
+    },
+    {
+      "id": "t38_3",
+      "year": 1920,
+      "content": "Înființarea Ligii Națiunilor"
+    },
+    {
+      "id": "t38_4",
+      "year": 1921,
+      "content": "Descoperirea insulinei (Banting)"
+    }
+  ],
+  [
+    {
+      "id": "t39_0",
+      "year": 1954,
+      "content": "Miracolul de la Berna (Germania bate Ungaria)"
+    },
+    {
+      "id": "t39_1",
+      "year": 2010,
+      "content": "Inaugurarea Burj Khalifa"
+    },
+    {
+      "id": "t39_2",
+      "year": 1990,
+      "content": "Eliberarea lui Nelson Mandela"
+    },
+    {
+      "id": "t39_3",
+      "year": 1903,
+      "content": "Primul zbor al fraților Wright"
     },
     {
       "id": "t39_4",
-      "year": 1994,
-      "content": "Deschiderea Tunelului Mânecii"
+      "year": 1989,
+      "content": "Revoluția Română"
     }
   ]
 ];
