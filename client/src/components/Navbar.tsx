@@ -264,14 +264,14 @@ export default function Navbar({
             })}
           </nav>
 
-          {/* Right User / Auth Status */}
+          {/* Right User / Auth Status (Desktop Only) */}
           <div className="flex items-center gap-1 sm:gap-2 pr-1 sm:pr-2">
             {user ? (
-              <div className="flex items-center gap-1.5">
+              <div className="hidden lg:flex items-center gap-1.5">
                 {team && (
                   <button
                     onClick={copyInviteCode}
-                    className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-900/50 border border-purple-600/40 hover:border-amber-400/60 text-[11px] font-mono transition-colors text-purple-200"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-900/50 border border-purple-600/40 hover:border-amber-400/60 text-[11px] font-mono transition-colors text-purple-200"
                     title="Copiază codul de invitație pentru coechipieri"
                   >
                     <span className="text-amber-400 font-bold">Cod:</span>
@@ -286,7 +286,7 @@ export default function Navbar({
                   <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-400 to-purple-600 flex items-center justify-center text-xs shadow">
                     {user.avatar || (user.role === "TEAM_LEADER" ? "👑" : "👤")}
                   </div>
-                  <span className="hidden md:inline text-xs font-bold text-amber-300">
+                  <span className="text-xs font-bold text-amber-300">
                     {user.name.split(" ")[0]}
                   </span>
                 </div>
@@ -301,17 +301,17 @@ export default function Navbar({
             ) : (
               <Button
                 onClick={() => setIsAuthOpen(true)}
-                className="gold-btn rounded-full text-[10px] sm:text-xs font-heading tracking-wider px-2.5 sm:px-4 py-1.5 h-7 sm:h-8 flex items-center gap-1"
+                className="hidden lg:flex gold-btn rounded-full text-xs font-heading tracking-wider px-4 py-1.5 h-8 items-center gap-1.5"
               >
-                <LogIn className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
-                <span>INTRĂ</span>
+                <LogIn className="w-3.5 h-3.5" />
+                AUTENTIFICARE
               </Button>
             )}
 
-            {/* Mobile Menu Toggle */}
+            {/* Mobile Menu Toggle (Always visible on mobile) */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-purple-900/60 border border-purple-700/50 text-purple-200 flex items-center justify-center shrink-0"
+              className="lg:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-purple-900/60 border border-purple-700/50 text-purple-200 flex items-center justify-center shrink-0 hover:bg-purple-800/60 transition-colors"
             >
               {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
@@ -321,28 +321,78 @@ export default function Navbar({
 
         {/* Mobile Flyout Menu */}
         {mobileMenuOpen && (
-          <div className="pointer-events-auto max-w-sm mx-auto mt-2 rounded-2xl border border-purple-700/50 bg-[#0f041e]/95 backdrop-blur-2xl p-3 space-y-1 shadow-2xl animate-in slide-in-from-top-3 duration-200">
-            {NAV_LINKS.map((link) => {
-              const Icon     = link.icon;
-              const isActive = activeSection === link.id;
-              return (
-                <button
-                  key={link.id}
-                  onClick={() => {
-                    onNavigate(link.id);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-left ${
-                    isActive
-                      ? "bg-amber-400 text-purple-950 font-bold"
-                      : "text-purple-200 hover:bg-purple-900/40"
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {link.label}
-                </button>
-              );
-            })}
+          <div className="lg:hidden pointer-events-auto max-w-sm mx-auto mt-2 rounded-3xl border border-purple-700/50 bg-[#0f041e]/95 backdrop-blur-2xl p-4 shadow-2xl animate-in slide-in-from-top-3 duration-200">
+            
+            {/* Mobile Auth / Profile Section */}
+            {user ? (
+              <div className="flex flex-col gap-3 p-3 bg-purple-950/40 border border-purple-800/50 rounded-2xl mb-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-purple-600 flex items-center justify-center text-lg shadow-inner ring-1 ring-amber-400/30">
+                      {user.avatar || (user.role === "TEAM_LEADER" ? "👑" : "👤")}
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-white leading-tight">{user.name}</div>
+                      <div className="text-[10px] text-amber-300 uppercase tracking-widest font-semibold mt-0.5">{user.role === "TEAM_LEADER" ? "Căpitan" : "Membru"}</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="p-2.5 rounded-xl text-purple-400 hover:text-red-400 bg-purple-900/40 border border-purple-700/40 transition-colors shadow-sm"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+                {team && (
+                  <button
+                    onClick={copyInviteCode}
+                    className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-black/40 border border-purple-700/40 hover:border-amber-400/50 transition-all text-xs w-full text-left"
+                  >
+                    <span className="text-purple-300">Cod echipă: <span className="font-mono text-amber-400 font-bold ml-1.5 tracking-wider">{team.inviteCode}</span></span>
+                    {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-purple-400" />}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <Button
+                onClick={() => {
+                  setIsAuthOpen(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full gold-btn rounded-xl py-6 text-sm font-heading tracking-widest flex items-center justify-center gap-2.5 mb-4 shadow-[0_0_20px_rgba(246,184,40,0.15)]"
+              >
+                <LogIn className="w-4 h-4" />
+                AUTENTIFICARE
+              </Button>
+            )}
+
+            {/* Navigation Links */}
+            <div className="space-y-1">
+              {NAV_LINKS.map((link) => {
+                const Icon     = link.icon;
+                const isActive = activeSection === link.id;
+                return (
+                  <button
+                    key={link.id}
+                    onClick={() => {
+                      onNavigate(link.id);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium text-left transition-colors ${
+                      isActive
+                        ? "bg-amber-400 text-purple-950 font-bold"
+                        : "text-purple-200 hover:bg-purple-900/40"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {link.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
