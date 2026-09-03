@@ -1,11 +1,8 @@
-import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { 
   Users, 
-  Search, 
   Crown, 
   Clock, 
   ShieldCheck, 
@@ -36,14 +33,6 @@ export default function RegisteredTeamsGrid({
   maxTeams = 25,
   editionLabel,
 }: RegisteredTeamsGridProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const filteredTeams = teams.filter(
-    (t) =>
-      t.teamName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.captainName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const percentageOccupied = Math.min(100, Math.round((teams.length / maxTeams) * 100));
 
   return (
@@ -54,7 +43,7 @@ export default function RegisteredTeamsGrid({
         <div className="p-2 sm:p-2.5 rounded-[2.5rem] bg-gradient-to-b from-amber-500/15 via-purple-900/10 to-amber-500/5 ring-1 ring-amber-400/30 shadow-2xl mb-8">
           <div className="p-6 sm:p-8 rounded-[calc(2.5rem-0.5rem)] bg-[#0e041d] shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)]">
             
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-purple-800/40">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-2 border-purple-800/40">
               <div className="text-center md:text-left">
                 <div className="text-[10px] text-amber-400 uppercase tracking-widest font-bold flex items-center justify-center md:justify-start gap-1.5 mb-1">
                   <Flame className="w-3.5 h-3.5" />
@@ -83,34 +72,18 @@ export default function RegisteredTeamsGrid({
               </div>
             </div>
 
-            {/* Search filter */}
-            <div className="mt-6 flex items-center gap-3">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <Input
-                  placeholder="Caută echipă sau căpitan..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-purple-950/40 border-purple-700/50 focus:border-amber-400 text-xs h-10 rounded-full text-white placeholder:text-purple-400/60"
-                />
-              </div>
-              <div className="text-xs text-purple-300 font-mono hidden sm:block whitespace-nowrap">
-                {filteredTeams.length} {filteredTeams.length === 1 ? "rezultat" : "rezultate"}
-              </div>
-            </div>
-
           </div>
         </div>
 
         {/* Squad Cards Grid */}
-        {filteredTeams.length === 0 ? (
+        {teams.length === 0 ? (
           <div className="text-center py-12 p-6 rounded-2xl bg-purple-950/20 border border-purple-800/40">
             <Users className="w-10 h-10 text-purple-500/50 mx-auto mb-2" />
-            <p className="text-sm text-purple-300/70">Nu a fost găsită nicio echipă conform căutării.</p>
+            <p className="text-sm text-purple-300/70">Încă nu s-a înregistrat nicio echipă.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredTeams.map((team, idx) => (
+            {teams.map((team, idx) => (
               <div
                 key={team.id || idx}
                 className="p-1 rounded-2xl bg-purple-950/30 border border-purple-800/50 hover:border-amber-400/50 transition-all hover:-translate-y-0.5 group shadow-lg"

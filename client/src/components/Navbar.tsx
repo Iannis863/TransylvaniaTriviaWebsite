@@ -265,7 +265,7 @@ export default function Navbar({
           </nav>
 
           {/* Right User / Auth Status */}
-          <div className="flex items-center gap-2 pr-1 sm:pr-2">
+          <div className="flex items-center gap-1 sm:gap-2 pr-1 sm:pr-2">
             {user ? (
               <div className="flex items-center gap-1.5">
                 {team && (
@@ -301,17 +301,17 @@ export default function Navbar({
             ) : (
               <Button
                 onClick={() => setIsAuthOpen(true)}
-                className="gold-btn rounded-full text-xs font-heading tracking-wider px-4 py-1.5 h-8 flex items-center gap-1.5"
+                className="gold-btn rounded-full text-[10px] sm:text-xs font-heading tracking-wider px-2.5 sm:px-4 py-1.5 h-7 sm:h-8 flex items-center gap-1"
               >
-                <LogIn className="w-3.5 h-3.5" />
-                AUTENTIFICARE
+                <LogIn className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
+                <span>INTRĂ</span>
               </Button>
             )}
 
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden w-8 h-8 rounded-full bg-purple-900/60 border border-purple-700/50 text-purple-200 flex items-center justify-center"
+              className="lg:hidden w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-purple-900/60 border border-purple-700/50 text-purple-200 flex items-center justify-center shrink-0"
             >
               {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
