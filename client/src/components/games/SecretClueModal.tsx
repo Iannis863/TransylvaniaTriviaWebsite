@@ -19,6 +19,7 @@ interface SecretClueModalProps {
   onClose: () => void;
   secretClue: string;
   theme: string;
+  seasonNumber: number;
   editionNumber: number;
   solvedCount: number;
   totalGames: number;
@@ -30,9 +31,10 @@ export default function SecretClueModal({
   onClose,
   secretClue,
   theme,
+  seasonNumber,
   editionNumber,
   solvedCount,
-  totalGames = 6,
+  totalGames = 5,
   isUnlocked,
 }: SecretClueModalProps) {
   const remaining = totalGames - solvedCount;
@@ -55,7 +57,7 @@ export default function SecretClueModal({
           <Badge className={`mx-auto mb-2 text-xs font-bold uppercase tracking-wider px-3 py-1 ${
             isUnlocked ? "bg-amber-400 text-purple-950" : "bg-purple-900/60 text-purple-200 border-purple-600/40"
           }`}>
-            {isUnlocked ? "SIGILIUL ESTE RUPT" : `SIGILIU DE CEARĂ BLOCAT (${solvedCount}/${totalGames})`}
+            {isUnlocked ? "LACĂTUL ESTE DESCHIS" : `LACĂTUL ESTE BLOCAT (${solvedCount}/${totalGames})`}
           </Badge>
 
           <DialogTitle className="text-2xl sm:text-3xl font-heading tracking-widest text-gold-gradient">
@@ -63,18 +65,18 @@ export default function SecretClueModal({
           </DialogTitle>
           <DialogDescription className="text-purple-300/80 text-xs sm:text-sm">
             {isUnlocked
-              ? "Felicitări! Echipa ta a descifrat toate cele 6 puzzle-uri săptămânale."
-              : `Mai aveți de rezolvat ${remaining} puzzle-${remaining === 1 ? 'ul rămas' : 'uri rămase'} pentru a obține indiciul oficial.`}
+              ? "Felicitări! Echipa ta a rezolvat toate cele 5 puzzle-uri săptămânale."
+              : `Mai aveți de rezolvat ${remaining} ${remaining === 1 ? 'puzzle' : 'puzzle-uri'} pentru a descoperi indiciul.`}
           </DialogDescription>
         </DialogHeader>
 
         {/* Dynamic Content: Locked Vault vs Unlocked Lore Card */}
         {isUnlocked ? (
           <div className="relative my-4 p-6 rounded-2xl bg-gradient-to-b from-[#2a1740] via-[#1b0a2e] to-[#120520] border border-amber-400/60 shadow-inner text-left animate-in zoom-in-95 duration-300">
-            <div className="flex items-center gap-2 mb-3">
-              <Flame className="w-5 h-5 text-amber-400" />
-              <span className="text-xs uppercase tracking-wider font-bold text-amber-300">
-                Tema Oficială: {theme}
+            <div className="flex items-center gap-2.5 mb-4">
+              <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400 flex-shrink-0" />
+              <span className="text-sm sm:text-base uppercase tracking-wider font-bold text-amber-300">
+                Sezonul {["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"][seasonNumber] || seasonNumber}, Ediția {editionNumber} • Runda IV
               </span>
             </div>
 
@@ -91,7 +93,7 @@ export default function SecretClueModal({
             <div className="flex items-start gap-2.5 text-xs text-emerald-400 bg-emerald-950/40 p-3 rounded-lg border border-emerald-500/30">
               <ShieldCheck className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>
-                <strong>Avantaj Strategic de Concurs:</strong> Acest indiciu se va regăsi garantat într-o întrebare din Runda Tematică sau din Final Gamble marți seară la Insomnia!
+                <strong>Avantaj Strategic la Quiz:</strong> Prin acest indiciu știi tema Rundei IV de la Quiz-ul următor.
               </span>
             </div>
           </div>
@@ -114,7 +116,7 @@ export default function SecretClueModal({
 
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-xs p-4">
                 <span className="font-mono text-xs font-bold text-amber-300">
-                  🔒 ACCES INTERZIS FĂRĂ CELE 6 CHEI
+                  🔒 ACCES INTERZIS FĂRĂ CELE 5 CHEI
                 </span>
                 <span className="text-[11px] text-purple-300 mt-1">
                   Progres actual: <strong>{solvedCount} / {totalGames} jocuri rezolvate</strong>
@@ -123,7 +125,7 @@ export default function SecretClueModal({
             </div>
 
             <div className="text-xs text-purple-300/80 max-w-sm mx-auto leading-relaxed">
-              Colaborează cu coechipierii tăi pentru a finaliza Wordle, Sudoku, Cronologia evenimentelor istorice, Conexiunile și Ghicește Țara!
+              Colaborează cu coechipierii tăi pentru a finaliza Wordle, Sudoku, Cronologie, Conexiunile și Ghicește Țara!
             </div>
           </div>
         )}
@@ -132,7 +134,7 @@ export default function SecretClueModal({
           onClick={onClose}
           className={isUnlocked ? "w-full gold-btn py-5 font-heading text-base tracking-widest" : "w-full purple-btn py-4 font-heading text-sm tracking-wider"}
         >
-          {isUnlocked ? "AM REȚINUT SECRETUL" : "ÎNAPOI LA MINI-JOCURI"}
+          {isUnlocked ? "AM REȚINUT SECRETUL" : "ÎNAPOI LA JOCURI"}
         </Button>
       </DialogContent>
     </Dialog>

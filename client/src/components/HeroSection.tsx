@@ -181,7 +181,7 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
                   <MapPin className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
-                  <div className="text-[10px] text-purple-300/70 font-bold uppercase tracking-wider">Locație & Atmosferă</div>
+                  <div className="text-[10px] text-purple-300/70 font-bold uppercase tracking-wider">Locație</div>
                   <div className="text-sm font-bold text-white mt-0.5 whitespace-nowrap">Insomnia Cafe & Bistro</div>
                   <div className="text-xs text-purple-300/80 whitespace-nowrap">Str. Universității nr. 2, Cluj</div>
                 </div>

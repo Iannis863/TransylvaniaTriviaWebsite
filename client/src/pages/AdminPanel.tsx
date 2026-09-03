@@ -56,12 +56,24 @@ function Toast({ msg, ok }: { msg: string; ok: boolean }) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
+interface ThemeSuggestion {
+  id: string;
+  themeName: string;
+  description: string;
+  popularityScore: number;
+  status: string;
+  proposedBy: string;
+  teamId: string | null;
+  editionId: string | null;
+  createdAt: string;
+}
+
 export default function AdminPanel() {
   const [password, setPassword] = useState("");
   const [inputPw, setInputPw] = useState("");
   const [authError, setAuthError] = useState("");
   const [isAuthed, setIsAuthed] = useState(false);
-  const [activeTab, setActiveTab] = useState<"editions" | "teams" | "simulator">("editions");
+  const [activeTab, setActiveTab] = useState<"editions" | "teams" | "themes" | "simulator">("editions");
   
   // Simulator state
   const [previewWeek, setPreviewWeek] = useState(
@@ -79,6 +91,9 @@ export default function AdminPanel() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [teamDraft, setTeamDraft] = useState<Partial<Team>>({});
+
+  // Themes state
+  const [themeSuggestions, setThemeSuggestions] = useState<ThemeSuggestion[]>([]);
 
   // Loading & toast
   const [loading, setLoading] = useState(false);
@@ -138,11 +153,21 @@ export default function AdminPanel() {
     finally { setLoading(false); }
   }, [api]);
 
+  const loadThemes = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api("GET", "/api/admin/theme-suggestions");
+      setThemeSuggestions(data);
+    } catch (e: any) { showToast(e.message, false); }
+    finally { setLoading(false); }
+  }, [api]);
+
   useEffect(() => {
     if (!isAuthed) return;
     if (activeTab === "editions") loadEditions();
-    else loadTeams();
-  }, [isAuthed, activeTab, loadEditions, loadTeams]);
+    else if (activeTab === "teams") loadTeams();
+    else if (activeTab === "themes") loadThemes();
+  }, [isAuthed, activeTab, loadEditions, loadTeams, loadThemes]);
 
   // ─── Edition capacity ────────────────────────────────────────────────────────
   const saveCapacity = async (editionId: string) => {
@@ -260,8 +285,8 @@ export default function AdminPanel() {
       </header>
 
       {/* Tabs */}
-      <div className="border-b border-purple-800/30 px-6 flex gap-1 pt-4">
-        {(["editions", "teams", "simulator"] as const).map(tab => (
+      <div className="border-b border-purple-800/30 px-6 flex gap-1 pt-4 overflow-x-auto whitespace-nowrap">
+        {(["editions", "teams", "themes", "simulator"] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -275,13 +300,15 @@ export default function AdminPanel() {
               <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />Ediții</span>
             ) : tab === "teams" ? (
               <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />Echipe</span>
+            ) : tab === "themes" ? (
+              <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />Teme Propuse</span>
             ) : (
               <span className="flex items-center gap-1.5"><Gamepad2 className="w-3.5 h-3.5" />Simulator Jocuri</span>
             )}
           </button>
         ))}
         <button
-          onClick={() => activeTab === "editions" ? loadEditions() : loadTeams()}
+          onClick={() => activeTab === "editions" ? loadEditions() : activeTab === "teams" ? loadTeams() : activeTab === "themes" ? loadThemes() : undefined}
           className="ml-auto mb-1 flex items-center gap-1 text-purple-400 hover:text-white text-xs transition-colors"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> Reîncarcă
@@ -444,6 +471,35 @@ export default function AdminPanel() {
               <p className="text-purple-400/50 text-sm text-center py-8">Nicio echipă înregistrată.</p>
             )}
           </>
+        )}
+
+        {/* ── THEMES TAB ── */}
+        {activeTab === "themes" && (
+          <div className="space-y-4">
+            {themeSuggestions.map(theme => (
+              <div key={theme.id} className="rounded-xl border border-purple-800/40 bg-purple-950/20 px-6 py-4 flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
+                <div>
+                  <h3 className="font-bold text-white text-lg">{theme.themeName}</h3>
+                  <div className="text-xs text-purple-400 mt-1">Propus de: <span className="text-amber-300">{theme.proposedBy}</span> {theme.createdAt ? `la ${new Date(theme.createdAt).toLocaleDateString("ro-RO")}` : ""}</div>
+                  <div className="mt-2 text-sm text-purple-200 bg-purple-950/40 p-3 rounded-lg max-w-xl">
+                    {theme.description}
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-2 shrink-0">
+                  <div className="bg-[#0d041a] px-3 py-1.5 rounded-lg border border-purple-800/40 text-center">
+                    <span className="block text-[10px] text-purple-400 uppercase tracking-widest">Scor Popularitate</span>
+                    <span className="font-bold text-amber-400 text-lg">{theme.popularityScore}</span>
+                  </div>
+                  <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${theme.status === "APPROVED" ? "bg-emerald-500/20 text-emerald-300" : theme.status === "BORDERLINE" ? "bg-amber-500/20 text-amber-300" : "bg-red-500/20 text-red-300"}`}>
+                    {theme.status === "PENDING" ? "ÎN AȘTEPTARE" : theme.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+            {!loading && themeSuggestions.length === 0 && (
+              <p className="text-purple-400/50 text-sm text-center py-8">Nicio temă propusă până acum.</p>
+            )}
+          </div>
         )}
 
         {/* ── SIMULATOR TAB ── */}

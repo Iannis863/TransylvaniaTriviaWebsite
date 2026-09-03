@@ -15,15 +15,15 @@ const SOLUTION_BOARD = weeklyData.sudokuBoard;
 
 // Apply a fixed mask to create the initial puzzle (0 means empty)
 const MASK = [
-  [1, 1, 0, 0, 1, 0, 0, 0, 0],
+  [1, 1, 1, 0, 1, 0, 0, 0, 0],
   [1, 0, 0, 1, 1, 1, 0, 0, 0],
   [0, 1, 1, 0, 0, 0, 0, 1, 0],
   [1, 0, 0, 0, 1, 0, 0, 0, 1],
-  [1, 0, 0, 1, 0, 1, 0, 0, 1],
+  [1, 0, 1, 1, 0, 1, 1, 0, 1],
   [1, 0, 0, 0, 1, 0, 0, 0, 1],
   [0, 1, 0, 0, 0, 0, 1, 1, 0],
   [0, 0, 0, 1, 1, 1, 0, 0, 1],
-  [0, 0, 0, 0, 1, 0, 0, 1, 1],
+  [0, 0, 0, 0, 1, 0, 1, 1, 1],
 ];
 
 const INITIAL_BOARD = SOLUTION_BOARD.map((row, r) => 
@@ -78,6 +78,14 @@ export default function SudokuGame({ onSolve, isAlreadySolved = false }: SudokuG
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent intercepting if user is typing in an input or textarea
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA"
+      ) {
+        return;
+      }
+
       if (!selectedCell || isWon) {
         // Allow arrow keys to select a starting cell if none is selected
         if (!selectedCell && !isWon && e.key.startsWith("Arrow")) {

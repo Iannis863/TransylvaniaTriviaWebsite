@@ -466,43 +466,117 @@ export async function registerRoutes(
       const cleanTheme = theme.trim();
       const lower = cleanTheme.toLowerCase();
 
-      // Feasibility algorithm: analyzes popularity, breadth, suitability for pub trivia
+      // Algorithm to simulate Google search volume / popularity
       let score = 50;
       let status: "APPROVED" | "BORDERLINE" | "REJECTED" = "APPROVED";
       let feedback = "";
       let category = "Cultură Generală";
       let sampleQuestions: string[] = [];
 
-      // Keyword suitability checks
-      const broadKeywords = [
-        "muzica", "film", "cinema", "ani", "istorie", "geografie", "arta", "stiinta", 
-        "jocuri", "literatura", "sport", "gastronomie", "univers", "rock", "harry potter", 
-        "disney", "mitologie", "marvel", "star wars", "animale", "tehnologie", "seriale",
-        "romania", "transilvania", "europa", "clasic", "cultura"
+      // Keyword dictionaries
+      const highPopularityKWs = [
+        "istorie", "geografie", "cultura generala", "film", "muzica", "cinema", 
+        "sport", "fotbal", "animale", "literatura", "romania", "stiinta", 
+        "mitologie", "arta", "capitale", "univers"
+      ];
+      const mediumPopularityKWs = [
+        "harry potter", "star wars", "lord of the rings", "marvel", "disney",
+        "anii 90", "anii 80", "anii 2000", "tehnologie", "jocuri video", 
+        "mitologia nordica", "mitologia greaca", "rock", "pop"
+      ];
+      const lowPopularityKWs = [
+        "teologie", "fizica cuantica", "biologie moleculara", "chimie organica", 
+        "matematica avansata", "filosofie", "anatomie", "fizica nucleara"
       ];
 
-      const tooNarrowKeywords = [
-        "viata mea", "vecinul", "apartamentul 4", "masina mea", "pisica mea", "nimic"
-      ];
+      // Helper for fuzzy matching
+      const levenshtein = (a: string, b: string): number => {
+        const matrix = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+        for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+        for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+        for (let i = 1; i <= a.length; i++) {
+          for (let j = 1; j <= b.length; j++) {
+            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+            matrix[i][j] = Math.min(
+              matrix[i - 1][j] + 1,
+              matrix[i][j - 1] + 1,
+              matrix[i - 1][j - 1] + cost
+            );
+          }
+        }
+        return matrix[a.length][b.length];
+      };
 
-      const matchedBroad = broadKeywords.filter((kw) => lower.includes(kw));
-      const matchedNarrow = tooNarrowKeywords.some((kw) => lower.includes(kw));
-
-      if (matchedNarrow) {
-        score = 12;
-        status = "REJECTED";
-        feedback = "Tema este mult prea personală sau îngustă pentru un concurs public de 10 echipe.";
-      } else if (matchedBroad.length > 0) {
-        score = Math.min(98, 70 + matchedBroad.length * 10 + Math.floor(Math.random() * 10));
-        status = score >= 65 ? "APPROVED" : "BORDERLINE";
-        feedback = `Tema "${cleanTheme}" este excelentă! Are suficientă profunzime și interes pentru toate categoriile de jucători.`;
-      } else {
-        // General calculation based on length and structure
-        const wordCount = cleanTheme.split(/\s+/).length;
-        score = Math.min(85, Math.max(45, wordCount * 18 + Math.floor(Math.random() * 15)));
-        status = score >= 60 ? "APPROVED" : "BORDERLINE";
-        feedback = `Tema "${cleanTheme}" are potențial. Asigură-te că pot fi formulate 10 întrebări variate (de la ușor la greu).`;
+      // A deterministic hash function to generate a consistent base score (0-100) for unknown terms
+      let hash = 0;
+      for (let i = 0; i < lower.length; i++) {
+        hash = (hash * 31 + lower.charCodeAt(i)) % 100;
       }
+      
+      let isHigh = highPopularityKWs.some(kw => lower.includes(kw));
+      let isMedium = mediumPopularityKWs.some(kw => lower.includes(kw));
+      let isLow = lowPopularityKWs.some(kw => lower.includes(kw));
+      
+      const hasVowels = /[aeiouăîâ]/.test(lower);
+      const hasTooManyConsonants = /[bcdfghjklmnpqrstvwxyz]{5,}/i.test(lower);
+      let isGibberish = !hasVowels || cleanTheme.length < 4 || /^[a-z]\1+$/.test(lower) || hasTooManyConsonants;
+
+      let typoMatch = "";
+
+      if (!isHigh && !isMedium && !isLow) {
+        // Check if it's a typo of a high popularity keyword
+        for (const kw of highPopularityKWs) {
+          if (levenshtein(lower, kw) <= 2 && lower.length >= 5) {
+            typoMatch = kw;
+            isHigh = true;
+            isGibberish = false;
+            break;
+          }
+        }
+        
+        // If it looks randomly mashed like 'wfdsfaffas' but passes the above checks, we can do a ratio check
+        if (!isGibberish && !typoMatch && lower.length > 6) {
+          const vowelMatch = lower.match(/[aeiouăîâ]/g);
+          const vowelCount = vowelMatch ? vowelMatch.length : 0;
+          if (vowelCount / lower.length < 0.25) {
+            isGibberish = true; // e.g. wfdsfaffas (2 vowels / 10 chars = 0.2 < 0.25)
+          }
+        }
+      }
+
+      if (isGibberish) {
+        score = 5 + (hash % 10); // 5-14
+        feedback = `Eroare: "${cleanTheme}" nu pare a fi un cuvânt sau o expresie validă. Te rugăm să introduci o temă reală.`;
+      } else if (isLow) {
+        score = 20 + (hash % 20); // 20-39
+        feedback = `Tema propusă ("${cleanTheme}") este mult prea nișată, specifică sau tehnică. Subiectul are un volum redus de interes general și ar putea fi prea dificil pentru majoritatea echipelor.`;
+      } else if (isHigh) {
+        score = 85 + (hash % 16); // 85-100
+        feedback = typoMatch 
+          ? `Ai vrut să spui "${typoMatch}"? Este un subiect de interes general excelent, cu o popularitate masivă!`
+          : `Tema "${cleanTheme}" are o popularitate masivă! Este un subiect de interes general, ideal pentru competiție.`;
+      } else if (isMedium) {
+        score = 65 + (hash % 20); // 65-84
+        feedback = `Tema "${cleanTheme}" este bine cunoscută în cultura pop și suficient de populară pentru a asigura o rundă distractivă.`;
+      } else {
+        // Fallback for unknown terms (e.g. biology of animals)
+        score = 45 + (hash % 15); // 45-59
+        if (score >= 50) {
+          feedback = `Tema "${cleanTheme}" este la limită. A înregistrat un volum de căutare moderat spre bun. Poate fi interesantă!`;
+        } else {
+          feedback = `Tema "${cleanTheme}" are un volum de căutare destul de scăzut, riscând să fie ușor prea obscură pentru publicul larg.`;
+        }
+      }
+
+      if (isGibberish || isLow) {
+        status = "REJECTED";
+      } else if (isHigh || isMedium) {
+        status = "APPROVED";
+      } else {
+        status = score >= 50 ? "BORDERLINE" : "REJECTED";
+      }
+      
+      const isEligible = score >= 50; 
 
       // Generate dynamic sample questions for preview
       sampleQuestions = [
@@ -511,27 +585,17 @@ export async function registerRoutes(
         `3. Care este recordul mondial sau curiozitatea cea mai bizară din sfera "${cleanTheme}"?`
       ];
 
-      // Save suggestion to storage
-      if (status === "APPROVED") {
-        await storage.createThemeSuggestion({
-          themeName: cleanTheme,
-          description: feedback,
-          popularityScore: score,
-          status: "PENDING",
-          proposedBy: proposedBy || "Echipa de pe ultimul loc",
-          teamId: teamId || null,
-          editionId: editionId || null,
-        });
-      }
+      // Suggestion creation is handled by the dedicated /api/theme-suggestions endpoint
 
       res.json({
-        theme: cleanTheme,
-        score,
-        status,
-        feedback,
+        themeName: cleanTheme,
+        popularityScore: score,
+        isEligible: isEligible,
+        status: status,
         category,
-        sampleQuestions,
-        isEligible: score >= 60,
+        feedback,
+        difficultyRating: score >= 80 ? "Ușoară (Accesibilă Tuturor)" : score >= 60 ? "Medie (Rezonabilă)" : "Grea (Nișată)",
+        suggestedQuestions: sampleQuestions,
       });
     } catch (error) {
       console.error("Theme validator error:", error);
@@ -544,8 +608,32 @@ export async function registerRoutes(
   // ============================================================
 
   // Verify admin password
+  // Submit a theme suggestion (Public endpoint, used by ThemeValidator)
+  app.post("/api/theme-suggestions", async (req, res) => {
+    try {
+      const data = insertThemeSuggestionSchema.parse(req.body);
+      const suggestion = await storage.createThemeSuggestion(data);
+      res.json(suggestion);
+    } catch (error) {
+      console.error("Error creating theme suggestion:", error);
+      res.status(400).json({ message: "Date invalide" });
+    }
+  });
+
+  // Verify admin password
   app.post("/api/admin/verify", checkAuth, (_req, res) => {
     res.json({ ok: true });
+  });
+
+  // Get all theme suggestions (Admin endpoint)
+  app.get("/api/admin/theme-suggestions", checkAuth, async (_req, res) => {
+    try {
+      const suggestions = await storage.getThemeSuggestions();
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Error fetching suggestions:", error);
+      res.status(500).json({ message: "Eroare la încărcarea sugestiilor" });
+    }
   });
 
   // List all editions with live registration counts + capacity overrides

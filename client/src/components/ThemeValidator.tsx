@@ -4,7 +4,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { 
   Sparkles, 
@@ -24,6 +23,7 @@ interface ValidationResult {
   themeName: string;
   popularityScore: number;
   isEligible: boolean;
+  status: "APPROVED" | "BORDERLINE" | "REJECTED";
   category: string;
   feedback: string;
   difficultyRating: string;
@@ -34,7 +34,6 @@ export default function ThemeValidator() {
   const { user, team } = useAuth();
   const { toast } = useToast();
   const [themeInput, setThemeInput] = useState("");
-  const [descriptionInput, setDescriptionInput] = useState("");
   const [isValidating, setIsValidating] = useState(false);
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,8 +50,7 @@ export default function ThemeValidator() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          themeName: themeInput,
-          description: descriptionInput,
+          theme: themeInput,
         }),
       });
 
@@ -80,7 +78,7 @@ export default function ThemeValidator() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           themeName: result.themeName,
-          description: descriptionInput,
+          description: "Generat automat fără sub-teme",
           popularityScore: result.popularityScore,
           teamId: team?.id || null,
           proposedBy: user?.name || "Echipă Participantă",
@@ -93,7 +91,6 @@ export default function ThemeValidator() {
           description: `Tema "${result.themeName}" a fost transmisă către Quizmaster pentru evaluare finală.`,
         });
         setThemeInput("");
-        setDescriptionInput("");
         setResult(null);
       }
     } catch (err) {
@@ -139,22 +136,10 @@ export default function ThemeValidator() {
               Tema Propusă *
             </label>
             <Input
-              placeholder="Ex: Mitologia Nordică, Anii 90 Pop Rock, Filme Quentin Tarantino..."
+              placeholder="Ex: Mitologia Nordică, Fizică Cuantică, Filme Tarantino..."
               value={themeInput}
               onChange={(e) => setThemeInput(e.target.value)}
               className="bg-purple-950/40 border-purple-700/50 focus:border-amber-400 text-sm h-12 rounded-xl text-white placeholder:text-purple-400/60"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-bold text-purple-200 uppercase tracking-wider block mb-1.5">
-              Detalii / Sub-teme Sugerate (Opțional)
-            </label>
-            <Textarea
-              placeholder="Specifică câteva domenii pe care ți-ar plăcea să le acopere Quizmaster-ul..."
-              value={descriptionInput}
-              onChange={(e) => setDescriptionInput(e.target.value)}
-              className="bg-purple-950/40 border-purple-700/50 focus:border-amber-400 text-xs rounded-xl text-white placeholder:text-purple-400/60 min-h-[70px]"
             />
           </div>
 
@@ -164,7 +149,7 @@ export default function ThemeValidator() {
             className="w-full gold-btn rounded-full py-6 font-heading tracking-widest text-base shadow-[0_0_25px_rgba(246,184,40,0.3)] flex items-center justify-center gap-2"
           >
             <SearchCheck className="w-5 h-5" />
-            <span>{isValidating ? "SE ANALIZEAZĂ POPULARITATEA & FEZABILITATEA..." : "TESTEAZĂ ELIGIBILITATEA TEMEI"}</span>
+            <span>{isValidating ? "SE ANALIZEAZĂ POPULARITATEA..." : "TESTEAZĂ ELIGIBILITATEA TEMEI"}</span>
           </Button>
         </form>
 
@@ -204,26 +189,30 @@ export default function ThemeValidator() {
               <strong>Evaluare Quizmaster AI:</strong> {result.feedback}
             </div>
 
-            {/* Generated Question Samples */}
-            {result.suggestedQuestions.length > 0 && (
-              <div className="text-left my-4">
-                <div className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Exemple Posibile de Întrebări:
+            {/* Score Legend */}
+            <div className="text-left my-4">
+              <div className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                Ce înseamnă scorul?
+              </div>
+              <div className="space-y-1.5">
+                <div className="p-2.5 rounded-lg bg-[#140626] border border-red-500/30 text-xs text-purple-100 flex items-start gap-2">
+                  <span className="text-red-400 font-bold font-mono shrink-0 w-8">&lt; 40</span>
+                  <span>Tema este foarte probabil <strong>neeligibilă</strong> (prea obscură, prea tehnică sau nevalidă).</span>
                 </div>
-                <div className="space-y-1.5">
-                  {result.suggestedQuestions.map((q, idx) => (
-                    <div key={idx} className="p-2.5 rounded-lg bg-[#140626] border border-purple-800/40 text-xs text-purple-100 flex items-start gap-2">
-                      <span className="text-amber-400 font-bold font-mono">Q{idx + 1}:</span>
-                      <span>{q}</span>
-                    </div>
-                  ))}
+                <div className="p-2.5 rounded-lg bg-[#140626] border border-amber-500/30 text-xs text-purple-100 flex items-start gap-2">
+                  <span className="text-amber-400 font-bold font-mono shrink-0 w-8">40-60</span>
+                  <span>Tema este <strong>la limită</strong> și trebuie validată manual de către Quizmaster.</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-[#140626] border border-emerald-500/30 text-xs text-purple-100 flex items-start gap-2">
+                  <span className="text-emerald-400 font-bold font-mono shrink-0 w-8">&gt; 60</span>
+                  <span>Tema este foarte probabil <strong>eligibilă</strong> și pregătită pentru concurs!</span>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Submit Proposal CTA */}
-            {result.isEligible && (
+            {result.status === "BORDERLINE" && team ? (
               <Button
                 onClick={handleProposeTheme}
                 disabled={isSubmitting}
@@ -232,7 +221,11 @@ export default function ThemeValidator() {
                 <Send className="w-4 h-4" />
                 <span>{isSubmitting ? "SE TRANSMITE..." : "TRIMITE PROPUNEREA CĂTRE QUIZMASTER"}</span>
               </Button>
-            )}
+            ) : result.status === "BORDERLINE" && !team ? (
+              <div className="mt-4 text-xs text-amber-400 text-center font-bold">
+                * Doar echipele logate pot trimite propuneri la limită către Quizmaster.
+              </div>
+            ) : null}
 
           </div>
         )}

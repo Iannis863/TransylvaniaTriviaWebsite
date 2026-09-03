@@ -87,6 +87,14 @@ export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleG
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent intercepting if user is typing in an input or textarea
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA"
+      ) {
+        return;
+      }
+      
       if (e.key === "Enter") handleCharInput("ENTER");
       else if (e.key === "Backspace") handleCharInput("⌫");
       else if (/^[a-zA-Z]$/.test(e.key)) handleCharInput(e.key.toUpperCase());

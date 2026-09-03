@@ -138,6 +138,7 @@ export default function Home() {
         {/* 4. Weekly Mini-Games Hub */}
         <MiniGamesHub
           editionId={scheduleState.currentEdition.id}
+          seasonNumber={scheduleState.seasonNumber}
           editionNumber={scheduleState.editionNumber}
           theme={scheduleState.theme}
           secretClue={scheduleState.secretClue}
