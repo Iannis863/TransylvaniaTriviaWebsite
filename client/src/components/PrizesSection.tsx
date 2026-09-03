@@ -18,7 +18,7 @@ export default function PrizesSection() {
     {
       place: "LOCUL I",
       title: "Sticlă de Vin",
-      desc: "Vă puteți alege vinul preferat: alb, roșu sau rosé.",
+      desc: "Sărbătoriți victoria cu vinul preferat: alb, roșu sau rosé.",
       image: "/prize_wine.png",
       badgeColor: "bg-amber-400 text-purple-950",
       borderColor: "ring-2 ring-amber-400/80 shadow-[0_0_35px_rgba(246,184,40,0.4)]",
@@ -29,7 +29,7 @@ export default function PrizesSection() {
     {
       place: "LOCUL II",
       title: "Găleată de Bere",
-      desc: "O găleată cu beri reci pentru toți membrii echipei de pe locul secund pe podium.",
+      desc: "O găleată cu beri reci pentru toți membrii echipei de pe locul secund.",
       image: "/prize_beer.png",
       badgeColor: "bg-gray-300 text-purple-950",
       borderColor: "ring-2 ring-gray-400/70 shadow-[0_0_30px_rgba(156,163,175,0.4)]",
@@ -135,13 +135,13 @@ export default function PrizesSection() {
             <div className="space-y-3">
               <div className="inline-flex items-center justify-center md:justify-start gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider w-full">
                 <MapPin className="w-4 h-4" />
-                Locația Oficială a Concursului
+                Locația Oficială a Quizului
               </div>
               <h3 className="text-2xl sm:text-3xl font-heading text-white tracking-wide">
                 INSOMNIA CAFE & BISTRO
               </h3>
               <p className="text-xs sm:text-sm text-purple-300/80 max-w-lg leading-relaxed font-light mx-auto md:mx-0">
-                Str. Universității nr. 2 (la etaj). Bericică rece, mâncare delicioasă și cea mai caldă comunitate de trivia din Cluj!
+                Str. Universității nr. 2 (la etaj).
               </p>
             </div>
 

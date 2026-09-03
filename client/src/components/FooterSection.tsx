@@ -14,27 +14,27 @@ export default function FooterSection() {
             <div className="font-heading text-2xl text-gold-gradient tracking-widest leading-none">
               TRANSILVANIA TRIVIA
             </div>
-            <div className="text-xs text-purple-300/70 mt-1 flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-amber-400" />
-              Insomnia Cafe & Bistro • Str. Universității nr. 2, Cluj-Napoca
+            <div className="text-[10px] sm:text-xs text-purple-300/70 mt-1 flex items-center gap-1.5 whitespace-nowrap">
+              <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span>Insomnia Cafe & Bistro • Str. Universității nr. 2, Cluj-Napoca</span>
             </div>
           </div>
         </div>
 
         {/* Quick Links */}
-        <div className="flex items-center gap-6 text-xs text-purple-200/80 font-medium">
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-purple-200/80 font-medium">
           <a href="#hero" className="hover:text-amber-300 transition-colors">Eveniment</a>
           <a href="#registration" className="hover:text-amber-300 transition-colors">Înscrieri</a>
-          <a href="#games" className="hover:text-amber-300 transition-colors">Mini-Jocuri</a>
+          <a href="#games" className="hover:text-amber-300 transition-colors">Jocuri</a>
           <a href="#rulebook" className="hover:text-amber-300 transition-colors">Regulament</a>
           <a href="#prizes" className="hover:text-amber-300 transition-colors">Premii</a>
         </div>
 
         {/* Copyright */}
-        <div className="text-xs text-purple-400/60 text-center md:text-right">
-          <div>© {new Date().getFullYear()} Transilvania Trivia. Toate drepturile rezervate.</div>
-          <div className="text-[11px] text-purple-400/40 mt-1">
-            Creat cu pasiune pentru cultura și misterele Transilvaniei.
+        <div className="text-xs text-purple-400/60 text-center md:text-right flex flex-col items-center md:items-end">
+          <div className="whitespace-nowrap">© {new Date().getFullYear()} Transilvania Trivia. Toate drepturile rezervate.</div>
+          <div className="text-[11px] text-purple-400/40 mt-1 whitespace-nowrap">
+            Creat cu pasiune pentru cultură și distracție.
           </div>
         </div>
 
