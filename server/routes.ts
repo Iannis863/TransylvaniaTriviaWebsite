@@ -318,10 +318,19 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Numele echipei și ID-ul liderului sunt obligatorii" });
       }
 
-      // Generate 6-char unique invite code e.g. TRIV-88
-      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      // Generate unique invite code
+      let inviteCode = "";
+      let isUnique = false;
       const codePrefix = name.replace(/[^A-Za-z]/g, "").substring(0, 4).toUpperCase() || "TEAM";
-      const inviteCode = `${codePrefix}-${randomSuffix}`;
+      
+      while (!isUnique) {
+        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+        inviteCode = `${codePrefix}-${randomSuffix}`;
+        const existing = await storage.getTeamByInviteCode(inviteCode);
+        if (!existing) {
+          isUnique = true;
+        }
+      }
 
       const team = await storage.createTeam({
         name,
@@ -359,6 +368,25 @@ export async function registerRoutes(
       res.json({ team, user: updatedUser, members: [...members, updatedUser] });
     } catch (error) {
       res.status(500).json({ message: "Eroare la alăturarea în echipă" });
+    }
+  });
+
+  // Remove team member (kick)
+  app.delete("/api/teams/:teamId/members/:userId", async (req, res) => {
+    try {
+      const { teamId, userId } = req.params;
+      const team = await storage.getTeam(teamId);
+      if (!team) return res.status(404).json({ message: "Echipa nu există" });
+      
+      const userToKick = await storage.getUser(userId);
+      if (!userToKick) return res.status(404).json({ message: "Utilizatorul nu există" });
+      if (userToKick.teamId !== teamId) return res.status(400).json({ message: "Utilizatorul nu este în această echipă" });
+      if (userToKick.role === "TEAM_LEADER") return res.status(400).json({ message: "Căpitanul nu poate fi eliminat" });
+
+      await storage.updateUserTeam(userId, null, "MEMBER");
+      res.json({ ok: true, message: "Membru eliminat" });
+    } catch (error) {
+      res.status(500).json({ message: "Eroare la eliminarea membrului" });
     }
   });
 

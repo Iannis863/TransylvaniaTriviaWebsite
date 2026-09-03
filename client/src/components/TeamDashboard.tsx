@@ -42,6 +42,31 @@ export default function TeamDashboard() {
     }
   };
 
+  const { refreshAuth } = useAuth();
+  const [isKicking, setIsKicking] = useState(false);
+
+  const kickMember = async (memberId: string) => {
+    if (!team) return;
+    if (!confirm("Ești sigur că vrei să elimini acest membru din echipă?")) return;
+    
+    setIsKicking(true);
+    try {
+      const res = await fetch(`/api/teams/${team.id}/members/${memberId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Eroare la eliminare");
+      }
+      toast({ title: "Membru eliminat", description: "Utilizatorul a fost scos din echipă." });
+      await refreshAuth();
+    } catch (error: any) {
+      toast({ title: "Eroare", description: error.message, variant: "destructive" });
+    } finally {
+      setIsKicking(false);
+    }
+  };
+
   if (!user) {
     return (
       <section id="team" className="py-24 px-4 sm:px-6 lg:px-8">
@@ -100,7 +125,7 @@ export default function TeamDashboard() {
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-400/40 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-amber-300 mb-3 shadow-[0_0_15px_rgba(246,184,40,0.15)]">
             <Crown className="w-3.5 h-3.5 text-amber-400" />
-            Tabloul de Comandă al Echipei
+            Panoul de Comandă al Echipei
           </div>
           <h2 className="text-3xl sm:text-5xl font-heading tracking-widest text-gold-gradient">
             {team.name.toUpperCase()}
@@ -126,10 +151,10 @@ export default function TeamDashboard() {
                 <div>
                   <div className="text-[10px] text-purple-300 uppercase tracking-wider font-bold">Rolul Tău</div>
                   <div className="text-base font-bold text-white mt-0.5">
-                    {isLeader ? "Căpitan Echipă" : "Membru Validat"}
+                    {isLeader ? "Căpitan" : "Membru"}
                   </div>
                   <div className="text-xs text-amber-300 font-medium">
-                    {isLeader ? "Administrează echipa" : "Rezolvă mini-jocuri"}
+                    {isLeader ? "Administrează echipa" : "Rezolvă Jocuri"}
                   </div>
                 </div>
               </div>
@@ -140,7 +165,7 @@ export default function TeamDashboard() {
                   <Users className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="text-[10px] text-purple-300 uppercase tracking-wider font-bold">Componență Roster</div>
+                  <div className="text-[10px] text-purple-300 uppercase tracking-wider font-bold">Componența echipei</div>
                   <div className="text-base font-bold text-white mt-0.5">
                     {teamMembers.length} / 6 Membri
                   </div>
@@ -156,11 +181,11 @@ export default function TeamDashboard() {
                   <Trophy className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="text-[10px] text-purple-300 uppercase tracking-wider font-bold">Punctaj Sezon</div>
+                  <div className="text-[10px] text-purple-300 uppercase tracking-wider font-bold">Punctajul echipei</div>
                   <div className="text-base font-bold text-emerald-300 mt-0.5 font-mono">
                     {team.score || 0} Puncte
                   </div>
-                  <div className="text-xs text-purple-300 font-medium">Liga Campionilor</div>
+                  <div className="text-xs text-purple-300 font-medium">Sezonul I</div>
                 </div>
               </div>
 
@@ -171,10 +196,10 @@ export default function TeamDashboard() {
               <div className="text-left">
                 <div className="text-xs text-amber-300 font-bold uppercase tracking-wider flex items-center gap-1.5 mb-1">
                   <Sparkles className="w-4 h-4" />
-                  Invită-ți coechipierii în lot
+                  Invită-ți coechipierii
                 </div>
                 <div className="text-sm text-purple-200">
-                  Trimite-le codul de mai jos pentru a se alătura instant echipei tale.
+                  Trimite-le codul de alături pentru a intra în echipa ta.
                 </div>
               </div>
 
@@ -211,7 +236,7 @@ export default function TeamDashboard() {
                 {teamMembers.map((member) => (
                   <div
                     key={member.id}
-                    className="p-3.5 rounded-xl bg-[#130626] border border-purple-800/40 flex items-center justify-between shadow"
+                    className="group p-3.5 rounded-xl bg-[#130626] border border-purple-800/40 flex items-center justify-between shadow"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-700 to-amber-500 flex items-center justify-center text-sm shadow">
@@ -223,9 +248,20 @@ export default function TeamDashboard() {
                       </div>
                     </div>
 
-                    <Badge className={member.role === "TEAM_LEADER" ? "bg-amber-400 text-purple-950 text-[10px] font-bold" : "bg-purple-900/60 text-purple-200 text-[10px]"}>
-                      {member.role === "TEAM_LEADER" ? "CĂPITAN" : "MEMBRU"}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className={member.role === "TEAM_LEADER" ? "bg-amber-400 text-purple-950 text-[10px] font-bold" : "bg-purple-900/60 text-purple-200 text-[10px]"}>
+                        {member.role === "TEAM_LEADER" ? "CĂPITAN" : "MEMBRU"}
+                      </Badge>
+                      {isLeader && member.role !== "TEAM_LEADER" && (
+                        <button
+                          onClick={() => kickMember(member.id)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-red-400 hover:text-red-300 bg-red-950/40 rounded-full"
+                          title="Elimină membru"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
