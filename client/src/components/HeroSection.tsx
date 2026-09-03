@@ -90,7 +90,7 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
           </span>
-          <span className="text-xs font-semibold tracking-wider text-amber-300 whitespace-nowrap">
+          <span className="text-xs font-semibold tracking-wider text-amber-300">
             S{seasonNumber}E{editionNumber} · QUIZ SĂPTĂMÂNAL LA INSOMNIA
           </span>
           <button
@@ -112,12 +112,12 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
         </div>
 
         {/* Master Headline */}
-        <h1 className="text-3xl sm:text-5xl md:text-6xl font-heading tracking-widest text-gold-gradient mt-6 mb-4 drop-shadow-lg max-w-4xl leading-snug pt-2 pb-2 whitespace-nowrap">
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-heading tracking-widest text-gold-gradient mt-6 mb-4 drop-shadow-lg max-w-4xl leading-snug pt-2 pb-2">
           QUIZ SĂPTĂMÂNAL LA INSOMNIA
         </h1>
         
         {/* Value Proposition */}
-        <p className="text-base sm:text-lg md:text-xl text-purple-200/90 max-w-2xl font-light mb-10 leading-relaxed whitespace-nowrap">
+        <p className="text-base sm:text-lg md:text-xl text-purple-200/90 max-w-2xl font-light mb-10 leading-relaxed">
           5 runde, 10 întrebări pe rundă + <strong className="text-purple-300 font-semibold">Pariul</strong>.
         </p>
 
@@ -170,8 +170,8 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
                 </div>
                 <div>
                   <div className="text-[10px] text-purple-300/70 font-bold uppercase tracking-wider">Când & La ce oră</div>
-                  <div className="text-sm font-bold text-white mt-0.5 whitespace-nowrap">{formattedDate}</div>
-                  <div className="text-xs text-amber-300 font-medium whitespace-nowrap">{formattedTime}</div>
+                  <div className="text-sm font-bold text-white mt-0.5">{formattedDate}</div>
+                  <div className="text-xs text-amber-300 font-medium">{formattedTime}</div>
                 </div>
               </div>
 
@@ -182,8 +182,8 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
                 </div>
                 <div>
                   <div className="text-[10px] text-purple-300/70 font-bold uppercase tracking-wider">Locație</div>
-                  <div className="text-sm font-bold text-white mt-0.5 whitespace-nowrap">Insomnia Cafe & Bistro</div>
-                  <div className="text-xs text-purple-300/80 whitespace-nowrap">Str. Universității nr. 2, Cluj</div>
+                  <div className="text-sm font-bold text-white mt-0.5">Insomnia Cafe & Bistro</div>
+                  <div className="text-xs text-purple-300/80">Str. Universității nr. 2, Cluj</div>
                 </div>
               </div>
 
@@ -205,14 +205,14 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
 
             {/* Theme Strip */}
             {theme && (
-              <div className="mt-5 pt-4 border-t border-purple-800/40 flex items-center justify-between gap-3 bg-purple-950/50 px-4 py-3 rounded-xl overflow-hidden">
-                <div className="flex items-center gap-2 min-w-0">
+              <div className="mt-5 pt-4 border-t border-purple-800/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-purple-950/50 px-4 py-3 rounded-xl overflow-hidden">
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
                   <Flame className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                  <span className="text-sm text-purple-300 font-bold uppercase whitespace-nowrap">Sezonul {toRoman(seasonNumber)}:</span>
-                  <span className="text-sm sm:text-base font-bold text-amber-300 whitespace-nowrap">Ediția {editionNumber}</span>
-                  <span className="text-sm sm:text-base font-bold text-white/60 whitespace-nowrap">· Transilvania Trivia</span>
+                  <span className="text-sm text-purple-300 font-bold uppercase">Sezonul {toRoman(seasonNumber)}:</span>
+                  <span className="text-sm sm:text-base font-bold text-amber-300">Ediția {editionNumber}</span>
+                  <span className="text-sm sm:text-base font-bold text-white/60">· Transilvania Trivia</span>
                 </div>
-                <Badge className="bg-purple-900/60 border-purple-600/40 text-purple-200 text-xs whitespace-nowrap flex-shrink-0 px-3 py-1">
+                <Badge className="bg-purple-900/60 border-purple-600/40 text-purple-200 text-xs flex-shrink-0 px-3 py-1 text-center">
                   {editionDescription}
                 </Badge>
               </div>
