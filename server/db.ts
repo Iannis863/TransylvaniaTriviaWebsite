@@ -15,6 +15,10 @@ if (process.env.DATABASE_URL) {
     connectionTimeoutMillis: 5000,
   });
   dbInstance = drizzle(pool, { schema });
+  
+  // Auto-patch schema: ensure 'name' column exists since it was recently added
+  pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT NOT NULL DEFAULT 'Jucător'`)
+    .catch((err) => console.log("[DB Patch] Could not auto-add name column:", err.message));
 } else {
   console.log("[DB] No DATABASE_URL provided. Running in In-Memory Storage Mode for local preview.");
 }
