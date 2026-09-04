@@ -212,7 +212,7 @@ export default function ThemeValidator() {
             </div>
 
             {/* Submit Proposal CTA */}
-            {result.status === "BORDERLINE" && team ? (
+            {(result.status === "BORDERLINE" || result.status === "APPROVED") && team ? (
               <Button
                 onClick={handleProposeTheme}
                 disabled={isSubmitting}
@@ -221,9 +221,9 @@ export default function ThemeValidator() {
                 <Send className="w-4 h-4" />
                 <span>{isSubmitting ? "SE TRANSMITE..." : "TRIMITE PROPUNEREA CĂTRE QUIZMASTER"}</span>
               </Button>
-            ) : result.status === "BORDERLINE" && !team ? (
+            ) : (result.status === "BORDERLINE" || result.status === "APPROVED") && !team ? (
               <div className="mt-4 text-xs text-amber-400 text-center font-bold">
-                * Doar echipele logate pot trimite propuneri la limită către Quizmaster.
+                * Doar echipele logate pot trimite propuneri către Quizmaster.
               </div>
             ) : null}
 

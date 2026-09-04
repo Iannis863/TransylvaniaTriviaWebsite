@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -28,6 +28,20 @@ export default function Account() {
   const [email, setEmail] = useState(user?.email || "");
   const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [themeSuggestions, setThemeSuggestions] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (user?.teamId) {
+      fetch("/api/auth/me/theme-suggestions", {
+        headers: { "x-user-id": user.id }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setThemeSuggestions(data);
+      })
+      .catch(console.error);
+    }
+  }, [user]);
 
   if (!user) {
     setLocation("/");
@@ -99,7 +113,7 @@ export default function Account() {
           <form onSubmit={handleUpdate} className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nume complet</Label>
+                <Label htmlFor="name">Nume</Label>
                 <Input
                   id="name"
                   value={name}
@@ -188,22 +202,55 @@ export default function Account() {
           <hr className="border-gray-800" />
 
           <div className="space-y-4">
-            <h3 className="text-xl font-semibold text-red-400">Zonă de Pericol</h3>
+            <h3 className="text-xl font-semibold">Propuneri Teme (Echipă)</h3>
+            {themeSuggestions.length > 0 ? (
+              <div className="space-y-3">
+                {themeSuggestions.map((theme: any) => (
+                  <div key={theme.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-950 rounded-lg border border-gray-800 gap-4">
+                    <div>
+                      <p className="font-medium">{theme.themeName}</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Status scor: {theme.popularityScore}
+                      </p>
+                    </div>
+                    <div className="shrink-0">
+                      <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded border ${
+                        theme.status === "APPROVED" 
+                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" 
+                          : theme.status === "REJECTED"
+                          ? "bg-red-500/20 text-red-300 border-red-500/30"
+                          : "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                      }`}>
+                        {theme.status === "PENDING" ? "ÎN AȘTEPTARE" : theme.status === "APPROVED" ? "ACCEPTAT" : "RESPINS"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-400 text-sm">Echipa ta nu a propus nicio temă încă.</p>
+            )}
+          </div>
+
+          <hr className="border-gray-800" />
+
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold text-red-400">Ștergere Cont</h3>
             <p className="text-sm text-gray-400">
-              Odată ce îți ștergi contul, nu mai există cale de întoarcere. Te rugăm să fii sigur.
+              Vei părăsi automat echipa, iar contul tău va fi șters definitiv.
             </p>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" className="w-full sm:w-auto">
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Șterge Contul Definitiv
+                  Șterge Contul
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent className="bg-gray-900 border-gray-800 text-white">
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Ștergere Definitivă</AlertDialogTitle>
+                  <AlertDialogTitle>Ești sigur?</AlertDialogTitle>
                   <AlertDialogDescription className="text-gray-400">
-                    Acest lucru îți va șterge permanent contul și îți va elimina datele de pe serverele noastre.
+                    Acest lucru îți va șterge permanent contul.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

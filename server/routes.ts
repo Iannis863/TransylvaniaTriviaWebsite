@@ -355,6 +355,24 @@ export async function registerRoutes(
     }
   });
 
+  // Get current user's team theme suggestions
+  app.get("/api/auth/me/theme-suggestions", async (req, res) => {
+    try {
+      const userId = req.headers["x-user-id"] as string;
+      if (!userId) return res.status(401).json({ message: "Neautentificat" });
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      
+      const suggestions = await storage.getThemeSuggestions();
+      // Filter suggestions by teamId
+      const teamSuggestions = user.teamId ? suggestions.filter(s => s.teamId === user.teamId) : [];
+      res.json(teamSuggestions);
+    } catch (error: any) {
+      console.error("Fetch theme suggestions error:", error);
+      res.status(500).json({ message: "Eroare la obținerea sugestiilor" });
+    }
+  });
+
   // Leave team
   app.post("/api/teams/leave", async (req, res) => {
     try {
@@ -741,6 +759,22 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching suggestions:", error);
       res.status(500).json({ message: "Eroare la încărcarea sugestiilor" });
+    }
+  });
+
+  // Update theme suggestion status (Admin endpoint)
+  app.patch("/api/admin/theme-suggestions/:id/status", checkAuth, async (req, res) => {
+    try {
+      const { status } = req.body;
+      if (status !== "APPROVED" && status !== "REJECTED") {
+        return res.status(400).json({ message: "Status invalid" });
+      }
+      const updated = await storage.updateThemeSuggestionStatus(req.params.id, status);
+      if (!updated) return res.status(404).json({ message: "Sugestia nu a fost găsită" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating suggestion:", error);
+      res.status(500).json({ message: "Eroare la actualizarea sugestiei" });
     }
   });
 

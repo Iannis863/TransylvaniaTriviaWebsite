@@ -153,7 +153,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
           <TabsContent value="register" className="space-y-4 pt-3">
             <form onSubmit={handleRegister} className="space-y-3">
               <div>
-                <Label className="text-xs text-muted-foreground">Nume Complet / Nickname</Label>
+                <Label className="text-xs text-muted-foreground">Nume / Nickname</Label>
                 <Input
                   type="text"
                   placeholder="Ex: Alexandru Cavalerul"

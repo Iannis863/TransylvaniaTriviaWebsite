@@ -486,13 +486,44 @@ export default function AdminPanel() {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2 shrink-0">
-                  <div className="bg-[#0d041a] px-3 py-1.5 rounded-lg border border-purple-800/40 text-center">
+                  <div className="bg-[#0d041a] px-3 py-1.5 rounded-lg border border-purple-800/40 text-center w-full">
                     <span className="block text-[10px] text-purple-400 uppercase tracking-widest">Scor Popularitate</span>
                     <span className="font-bold text-amber-400 text-lg">{theme.popularityScore}</span>
                   </div>
-                  <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${theme.status === "APPROVED" ? "bg-emerald-500/20 text-emerald-300" : theme.status === "BORDERLINE" ? "bg-amber-500/20 text-amber-300" : "bg-red-500/20 text-red-300"}`}>
-                    {theme.status === "PENDING" ? "ÎN AȘTEPTARE" : theme.status}
-                  </span>
+                  {theme.status === "PENDING" ? (
+                    <div className="flex gap-2 w-full mt-1">
+                      <button 
+                        onClick={async () => {
+                          await fetch(`/api/admin/theme-suggestions/${theme.id}/status`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json", "x-admin-password": password },
+                            body: JSON.stringify({ status: "APPROVED" })
+                          });
+                          fetchData();
+                        }}
+                        className="flex-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 text-xs font-bold py-1.5 rounded border border-emerald-500/30 transition-colors"
+                      >
+                        DA
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          await fetch(`/api/admin/theme-suggestions/${theme.id}/status`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json", "x-admin-password": password },
+                            body: JSON.stringify({ status: "REJECTED" })
+                          });
+                          fetchData();
+                        }}
+                        className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-bold py-1.5 rounded border border-red-500/30 transition-colors"
+                      >
+                        NU
+                      </button>
+                    </div>
+                  ) : (
+                    <span className={`w-full text-center text-[10px] uppercase font-bold px-2 py-1.5 rounded ${theme.status === "APPROVED" ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "bg-red-500/20 text-red-300 border border-red-500/30"}`}>
+                      {theme.status === "APPROVED" ? "ACCEPTAT (ELIGIBIL)" : "RESPINS"}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}

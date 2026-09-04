@@ -47,6 +47,7 @@ export interface IStorage {
   // Theme Suggestions
   getThemeSuggestions(editionId?: string): Promise<ThemeSuggestion[]>;
   createThemeSuggestion(suggestion: InsertThemeSuggestion): Promise<ThemeSuggestion>;
+  updateThemeSuggestionStatus(id: string, status: "APPROVED" | "REJECTED"): Promise<ThemeSuggestion | undefined>;
 
   // ── Admin Operations ──────────────────────────────────────────────────────
   updateRegistration(id: string, data: Partial<Pick<Registration, "teamName" | "captainName" | "memberCount" | "email" | "phoneNumber">>): Promise<Registration | undefined>;
@@ -394,6 +395,14 @@ export class MemStorage implements IStorage {
     return record;
   }
 
+  async updateThemeSuggestionStatus(id: string, status: "APPROVED" | "REJECTED"): Promise<ThemeSuggestion | undefined> {
+    const sug = this.themeSuggestions.get(id);
+    if (!sug) return undefined;
+    const updated = { ...sug, status };
+    this.themeSuggestions.set(id, updated);
+    return updated;
+  }
+
   // ── Admin Operations ───────────────────────────────────────────────────────
 
   async updateRegistration(id: string, data: Partial<Pick<Registration, "teamName" | "captainName" | "memberCount" | "email" | "phoneNumber">>): Promise<Registration | undefined> {
@@ -578,6 +587,11 @@ export class DatabaseStorage implements IStorage {
 
   async createThemeSuggestion(suggestion: InsertThemeSuggestion): Promise<ThemeSuggestion> {
     const [result] = await db.insert(themeSuggestions).values(suggestion).returning();
+    return result;
+  }
+
+  async updateThemeSuggestionStatus(id: string, status: "APPROVED" | "REJECTED"): Promise<ThemeSuggestion | undefined> {
+    const [result] = await db.update(themeSuggestions).set({ status }).where(eq(themeSuggestions.id, id)).returning();
     return result;
   }
 
