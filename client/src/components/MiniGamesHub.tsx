@@ -73,11 +73,18 @@ export default function MiniGamesHub({
     GLOBLE: false,
   });
 
+  const [isLoadingProgress, setIsLoadingProgress] = useState(true);
+
   // Fetch team puzzle progress from server
   const fetchProgress = async () => {
+    if (!user || !team) {
+      setIsLoadingProgress(false);
+      return;
+    }
+    
+    setIsLoadingProgress(true);
     try {
-      const teamId = team?.id || "team_night_scholars";
-      const res = await fetch(`/api/games/progress/${editionId}?teamId=${teamId}`);
+      const res = await fetch(`/api/games/progress/${editionId}?teamId=${team.id}`);
       if (res.ok) {
         const data = await res.json();
         const map: Record<string, boolean> = {
@@ -94,6 +101,8 @@ export default function MiniGamesHub({
       }
     } catch (err) {
       console.error("Failed to fetch game progress:", err);
+    } finally {
+      setIsLoadingProgress(false);
     }
   };
 
@@ -103,16 +112,23 @@ export default function MiniGamesHub({
 
   const handleGameSolved = async (gameType: string, payloadData: any) => {
     setSolvedGames((prev) => ({ ...prev, [gameType]: true }));
+    
+    // Don't save to the backend if not logged in or not in a team
+    if (!user || !team) {
+      toast({ title: "Progres nesalvat (Mod Guest)", description: "Progresul tău este local. Loghează-te și intră într-o echipă pentru a-l salva." });
+      return;
+    }
+    
     try {
       await fetch("/api/games/progress", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          teamId: team?.id || "team_night_scholars",
+          teamId: team.id,
           editionId,
           gameType,
           isSolved: true,
-          solvedByUserId: user?.id || null,
+          solvedByUserId: user.id,
           data: payloadData,
         }),
       });
@@ -123,13 +139,24 @@ export default function MiniGamesHub({
   };
 
   const handleResetProgress = async () => {
+    if (!user || !team) {
+      setSolvedGames({
+        WORDLE: false,
+        SUDOKU: false,
+        TIMELINE: false,
+        CONNECTIONS: false,
+        GLOBLE: false,
+      });
+      toast({ title: "Progres Local Resetat", description: "Toate cele 5 puzzle-uri au fost resetate." });
+      return;
+    }
+    
     setIsResetting(true);
     try {
-      const teamId = team?.id || "team_night_scholars";
       const res = await fetch("/api/games/progress/reset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teamId, editionId }),
+        body: JSON.stringify({ teamId: team.id, editionId }),
       });
       if (res.ok) {
         setSolvedGames({
@@ -287,14 +314,19 @@ export default function MiniGamesHub({
         {/* Double-Bezel Interactive Game Arena Shell */}
         <div className="p-2 sm:p-2.5 rounded-[2.5rem] bg-gradient-to-b from-purple-900/20 to-purple-950/10 ring-1 ring-purple-500/30 shadow-2xl">
           <div className="p-6 sm:p-10 rounded-[calc(2.5rem-0.5rem)] bg-[#0d041a] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
-            
-            <Tabs value={activeGameTab} onValueChange={setActiveGameTab} className="w-full">
-              
-              <TabsList className="w-full grid grid-cols-5 bg-purple-950/80 border border-purple-700/50 p-1.5 rounded-2xl mb-8 h-auto gap-1 sm:gap-2 items-center justify-center">
-                {gamesConfig.map((g) => {
-                  const Icon = g.icon;
-                  const isSolved = solvedGames[g.type];
-                  return (
+            {isLoadingProgress ? (
+              <div className="flex justify-center items-center py-20 text-purple-300">
+                <span className="animate-spin mr-2 w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full" />
+                Se încarcă progresul echipei...
+              </div>
+            ) : (
+              <Tabs value={activeGameTab} onValueChange={setActiveGameTab} className="w-full">
+                
+                <TabsList className="w-full grid grid-cols-5 bg-purple-950/80 border border-purple-700/50 p-1.5 rounded-2xl mb-8 h-auto gap-1 sm:gap-2 items-center justify-center">
+                  {gamesConfig.map((g) => {
+                    const Icon = g.icon;
+                    const isSolved = solvedGames[g.type];
+                    return (
                     <TabsTrigger
                       key={g.id}
                       value={g.id}
@@ -350,7 +382,7 @@ export default function MiniGamesHub({
               </TabsContent>
 
             </Tabs>
-
+            )}
           </div>
         </div>
 
