@@ -24,9 +24,9 @@ interface AuthContextType {
   team: TeamData | null;
   teamMembers: AuthUser[];
   isLoading: boolean;
-  login: (email: string, password?: string) => Promise<boolean>;
-  loginGoogle: (name: string, email: string) => Promise<boolean>;
-  register: (name: string, email: string, password?: string) => Promise<boolean>;
+  login: (email: string, password?: string, keepLoggedIn?: boolean) => Promise<boolean>;
+  loginGoogle: (name: string, email: string, keepLoggedIn?: boolean) => Promise<boolean>;
+  register: (name: string, email: string, password?: string, keepLoggedIn?: boolean) => Promise<boolean>;
   logout: () => void;
   createTeam: (name: string, tagline?: string) => Promise<boolean>;
   joinTeam: (inviteCode: string) => Promise<boolean>;
@@ -42,9 +42,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { toast } = useToast();
 
+  const setStoredUserId = (id: string, keepLoggedIn: boolean) => {
+    if (keepLoggedIn) {
+      localStorage.setItem("tt_user_id", id);
+      sessionStorage.removeItem("tt_user_id");
+    } else {
+      sessionStorage.setItem("tt_user_id", id);
+      localStorage.removeItem("tt_user_id");
+    }
+  };
+
+  const getStoredUserId = () => {
+    return localStorage.getItem("tt_user_id") || sessionStorage.getItem("tt_user_id");
+  };
+
   const refreshAuth = async () => {
     try {
-      const storedUserId = localStorage.getItem("tt_user_id") || "usr_vlad_leader";
+      const storedUserId = getStoredUserId();
+      if (!storedUserId) {
+        setIsLoading(false);
+        return;
+      }
+      
       const res = await fetch("/api/auth/me", {
         headers: { "x-user-id": storedUserId },
       });
@@ -53,6 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(data.user);
         setTeam(data.team);
         setTeamMembers(data.members || []);
+      } else {
+        logout();
       }
     } catch (err) {
       console.error("Auth refresh error:", err);
@@ -65,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshAuth();
   }, []);
 
-  const login = async (email: string, password: string = "password123"): Promise<boolean> => {
+  const login = async (email: string, password: string = "password123", keepLoggedIn: boolean = false): Promise<boolean> => {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -79,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(data.user);
       setTeam(data.team);
-      localStorage.setItem("tt_user_id", data.user.id);
+      setStoredUserId(data.user.id, keepLoggedIn);
       toast({ title: `Bine ai revenit, ${data.user.name}!`, description: "Te-ai autentificat cu succes." });
       await refreshAuth();
       return true;
@@ -89,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const loginGoogle = async (name: string, email: string): Promise<boolean> => {
+  const loginGoogle = async (name: string, email: string, keepLoggedIn: boolean = false): Promise<boolean> => {
     try {
       const res = await fetch("/api/auth/google", {
         method: "POST",
@@ -103,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(data.user);
       setTeam(data.team);
-      localStorage.setItem("tt_user_id", data.user.id);
+      setStoredUserId(data.user.id, keepLoggedIn);
       toast({ title: `Autentificat cu Google!`, description: `Salut, ${data.user.name}!` });
       await refreshAuth();
       return true;
@@ -113,7 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (name: string, email: string, password?: string): Promise<boolean> => {
+  const register = async (name: string, email: string, password?: string, keepLoggedIn: boolean = false): Promise<boolean> => {
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -126,7 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
       setUser(data);
-      localStorage.setItem("tt_user_id", data.id);
+      setStoredUserId(data.id, keepLoggedIn);
       toast({ title: "Cont creat cu succes!", description: "Bine ai venit în Transilvania Trivia." });
       await refreshAuth();
       return true;
@@ -141,6 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setTeam(null);
     setTeamMembers([]);
     localStorage.removeItem("tt_user_id");
+    sessionStorage.removeItem("tt_user_id");
     toast({ title: "Deconectat", description: "Ai ieșit din cont." });
   };
 

@@ -27,11 +27,12 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
   const [teamTagline, setTeamTagline] = useState("");
   const [inviteCodeInput, setInviteCodeInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [keepLoggedIn, setKeepLoggedIn] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const success = await login(loginEmail, loginPassword);
+    const success = await login(loginEmail, loginPassword, keepLoggedIn);
     setIsSubmitting(false);
     if (success) onClose();
   };
@@ -39,14 +40,14 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const success = await register(regName, regEmail, regPassword);
+    const success = await register(regName, regEmail, regPassword, keepLoggedIn);
     setIsSubmitting(false);
     if (success) onClose();
   };
 
   const handleGoogleDemo = async () => {
     setIsSubmitting(true);
-    const success = await loginGoogle("Radu Voievod", "radu@transilvaniatrivia.ro");
+    const success = await loginGoogle("Radu Voievod", "radu@transilvaniatrivia.ro", keepLoggedIn);
     setIsSubmitting(false);
     if (success) onClose();
   };
@@ -123,6 +124,18 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                   required
                 />
               </div>
+              <div className="flex items-center gap-2 pb-1 pt-1">
+                <input
+                  type="checkbox"
+                  id="keepLoggedInLogin"
+                  checked={keepLoggedIn}
+                  onChange={(e) => setKeepLoggedIn(e.target.checked)}
+                  className="w-3.5 h-3.5 rounded border-purple-700/50 bg-purple-950/30 text-amber-500"
+                />
+                <Label htmlFor="keepLoggedInLogin" className="text-xs text-muted-foreground cursor-pointer">
+                  Ține-mă conectat
+                </Label>
+              </div>
               <Button type="submit" disabled={isSubmitting} className="w-full gold-btn font-heading tracking-widest text-base">
                 {isSubmitting ? "CONECTARE..." : "INTRĂ ÎN CONT"}
               </Button>
@@ -184,6 +197,18 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                   className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
                   required
                 />
+              </div>
+              <div className="flex items-center gap-2 pb-1 pt-1">
+                <input
+                  type="checkbox"
+                  id="keepLoggedInReg"
+                  checked={keepLoggedIn}
+                  onChange={(e) => setKeepLoggedIn(e.target.checked)}
+                  className="w-3.5 h-3.5 rounded border-purple-700/50 bg-purple-950/30 text-amber-500"
+                />
+                <Label htmlFor="keepLoggedInReg" className="text-xs text-muted-foreground cursor-pointer">
+                  Ține-mă conectat
+                </Label>
               </div>
               <Button type="submit" disabled={isSubmitting} className="w-full gold-btn font-heading tracking-widest text-base">
                 {isSubmitting ? "CREARE CONT..." : "CREEAZĂ CONTUL"}

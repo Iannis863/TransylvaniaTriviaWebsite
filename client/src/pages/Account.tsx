@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogOut, Trash2, UserMinus } from "lucide-react";
+import { LogOut, Trash2, UserMinus, ArrowLeft } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -105,6 +105,13 @@ export default function Account() {
     <div className="min-h-screen bg-gray-950 text-white font-sans selection:bg-amber-500/30">
       <Navbar activeSection="" onNavigate={() => setLocation("/")} />
       <main className="max-w-2xl mx-auto px-4 py-24">
+        <button 
+          onClick={() => setLocation("/")} 
+          className="flex items-center gap-2 text-purple-400 hover:text-amber-400 transition-colors text-sm font-medium mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Înapoi la Eveniment
+        </button>
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-8">
           Contul Meu
         </h1>
