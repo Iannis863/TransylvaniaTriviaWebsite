@@ -494,6 +494,36 @@ export async function registerRoutes(
     }
   });
 
+  // Transfer Leadership
+  app.patch("/api/teams/:teamId/transfer-leadership", async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const { newLeaderId } = req.body;
+      const requesterId = req.headers["x-user-id"] as string;
+
+      if (!requesterId) return res.status(401).json({ message: "Neautorizat" });
+
+      const team = await storage.getTeam(teamId);
+      if (!team) return res.status(404).json({ message: "Echipa nu există" });
+      if (team.leaderId !== requesterId) return res.status(403).json({ message: "Doar căpitanul curent poate transfera rolul" });
+
+      const newLeader = await storage.getUser(newLeaderId);
+      if (!newLeader) return res.status(404).json({ message: "Noul membru nu există" });
+      if (newLeader.teamId !== teamId) return res.status(400).json({ message: "Acest utilizator nu este în echipa ta" });
+
+      // Demote current leader
+      await storage.updateUserTeam(requesterId, teamId, "MEMBER");
+      // Promote new leader
+      await storage.updateUserTeam(newLeaderId, teamId, "TEAM_LEADER");
+      // Update team's leader_id reference
+      await storage.updateTeam(teamId, { leaderId: newLeaderId });
+
+      res.json({ ok: true, message: "Rol transferat" });
+    } catch (error) {
+      res.status(500).json({ message: "Eroare la transferul rolului" });
+    }
+  });
+
   // Get Team Details & Members
   app.get("/api/teams/:id", async (req, res) => {
     try {

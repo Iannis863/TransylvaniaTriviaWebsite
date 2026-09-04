@@ -238,6 +238,19 @@ export default function Account() {
           </div>
 
           <hr className="border-gray-800" />
+          
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold">Deconectare</h3>
+            <p className="text-sm text-gray-400">
+              Ieși din contul tău de pe acest dispozitiv.
+            </p>
+            <Button variant="outline" onClick={() => { logout(); setLocation("/"); }} className="w-full sm:w-auto text-white border-gray-700 hover:bg-gray-800">
+              <LogOut className="w-4 h-4 mr-2" />
+              Deconectare
+            </Button>
+          </div>
+
+          <hr className="border-gray-800" />
 
           <div className="space-y-4">
             <h3 className="text-xl font-semibold text-red-400">Ștergere Cont</h3>

@@ -13,9 +13,18 @@ import {
   Trophy, 
   ShieldCheck, 
   Flame,
-  ArrowRight
+  ArrowRight,
+  MoreHorizontal,
+  UserX,
+  ArrowUpCircle
 } from "lucide-react";
 import AuthModal from "./AuthModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function TeamDashboard() {
   const { user, team, teamMembers } = useAuth();
@@ -59,6 +68,30 @@ export default function TeamDashboard() {
         throw new Error(data.message || "Eroare la eliminare");
       }
       toast({ title: "Membru eliminat", description: "Utilizatorul a fost scos din echipă." });
+      await refreshAuth();
+    } catch (error: any) {
+      toast({ title: "Eroare", description: error.message, variant: "destructive" });
+    } finally {
+      setIsKicking(false);
+    }
+  };
+
+  const promoteMember = async (memberId: string) => {
+    if (!team) return;
+    if (!confirm("Ești sigur că vrei să transferi titlul de Căpitan către acest membru? Vei deveni un simplu membru.")) return;
+    
+    setIsKicking(true);
+    try {
+      const res = await fetch(`/api/teams/${team.id}/transfer-leadership`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newLeaderId: memberId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Eroare la transfer");
+      }
+      toast({ title: "Transfer reușit", description: "Ai cedat titlul de Căpitan cu succes." });
       await refreshAuth();
     } catch (error: any) {
       toast({ title: "Eroare", description: error.message, variant: "destructive" });
@@ -253,13 +286,23 @@ export default function TeamDashboard() {
                         {member.role === "TEAM_LEADER" ? "CĂPITAN" : "MEMBRU"}
                       </Badge>
                       {isLeader && member.role !== "TEAM_LEADER" && (
-                        <button
-                          onClick={() => kickMember(member.id)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-red-400 hover:text-red-300 bg-red-950/40 rounded-full"
-                          title="Elimină membru"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-purple-400 hover:text-white bg-purple-900/40 rounded-full">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-[#120722] border-purple-800/40 text-purple-200">
+                            <DropdownMenuItem onClick={() => promoteMember(member.id)} className="hover:bg-amber-500/20 hover:text-amber-300 focus:bg-amber-500/20 focus:text-amber-300 cursor-pointer">
+                              <ArrowUpCircle className="w-4 h-4 mr-2" />
+                              Promovează Căpitan
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => kickMember(member.id)} className="hover:bg-red-500/20 hover:text-red-400 focus:bg-red-500/20 focus:text-red-400 cursor-pointer text-red-400">
+                              <UserX className="w-4 h-4 mr-2" />
+                              Elimină din Echipă
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
                   </div>

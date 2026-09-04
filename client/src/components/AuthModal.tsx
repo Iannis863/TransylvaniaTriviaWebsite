@@ -80,16 +80,20 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
         </DialogHeader>
 
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 bg-purple-950/60 border border-purple-800/40">
-            <TabsTrigger value="login" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 font-heading tracking-wider">
-              Conectare
-            </TabsTrigger>
-            <TabsTrigger value="register" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 font-heading tracking-wider">
-              Cont Nou
-            </TabsTrigger>
+        <Tabs value={user ? "team" : activeTab} onValueChange={user ? undefined : setActiveTab} className="w-full">
+          <TabsList className={`grid ${user ? "grid-cols-1" : "grid-cols-3"} bg-purple-950/60 border border-purple-800/40`}>
+            {!user && (
+              <>
+                <TabsTrigger value="login" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 font-heading tracking-wider">
+                  Conectare
+                </TabsTrigger>
+                <TabsTrigger value="register" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 font-heading tracking-wider">
+                  Cont Nou
+                </TabsTrigger>
+              </>
+            )}
             <TabsTrigger value="team" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 font-heading tracking-wider">
-              Echipă
+              {user ? "Alege o Echipă" : "Echipă"}
             </TabsTrigger>
           </TabsList>
 
