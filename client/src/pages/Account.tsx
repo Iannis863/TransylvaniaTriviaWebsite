@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -103,8 +102,7 @@ export default function Account() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white font-sans selection:bg-amber-500/30">
-      <Navbar activeSection="" onNavigate={() => setLocation("/")} />
-      <main className="max-w-2xl mx-auto px-4 py-24">
+      <main className="max-w-2xl mx-auto px-4 py-16">
         <button 
           onClick={() => setLocation("/")} 
           className="flex items-center gap-2 text-purple-400 hover:text-amber-400 transition-colors text-sm font-medium mb-6"
