@@ -37,7 +37,7 @@ export default function TeamDashboard() {
       const link = `${window.location.origin}/?join=${team.inviteCode}`;
       navigator.clipboard.writeText(link);
       setCopied(true);
-      toast({ title: "Link de invitație copiat!", description: "Trimite linkul prietenilor tăi pe WhatsApp/Telegram." });
+      toast({ title: "Link de invitație copiat!", description: "Trimite linkul prietenilor tăi." });
       setTimeout(() => setCopied(false), 2000);
     }
   };
