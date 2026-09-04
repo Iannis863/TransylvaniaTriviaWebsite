@@ -84,36 +84,6 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
           </DialogDescription>
         </DialogHeader>
 
-        {/* Quick Demo Switchers */}
-        <div className="bg-purple-950/40 p-3 rounded-lg border border-purple-500/20 mb-3 text-xs flex flex-col gap-2">
-          <span className="text-purple-300 font-semibold flex items-center gap-1.5">
-            <KeyRound className="w-3.5 h-3.5 text-amber-400" /> Acces Rapid Demo:
-          </span>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                login("vlad@transilvaniatrivia.ro", "password123");
-                onClose();
-              }}
-              className="px-2.5 py-1.5 rounded bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-left transition-colors"
-            >
-              👑 <strong>Vlad (Team Leader)</strong>
-              <div className="text-[10px] text-muted-foreground">Echipa: Cărturarii Nopții</div>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                login("elena@transilvaniatrivia.ro", "password123");
-                onClose();
-              }}
-              className="px-2.5 py-1.5 rounded bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 text-left transition-colors"
-            >
-              🧙‍♀️ <strong>Elena (Membru)</strong>
-              <div className="text-[10px] text-muted-foreground">Echipa: Cărturarii Nopții</div>
-            </button>
-          </div>
-        </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-3 bg-purple-950/60 border border-purple-800/40">
