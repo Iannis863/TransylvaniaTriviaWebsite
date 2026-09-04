@@ -1,6 +1,9 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "../shared/schema.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 let pool: pg.Pool | null = null;
 let dbInstance: any = null;
@@ -16,20 +19,16 @@ if (process.env.DATABASE_URL) {
   });
   dbInstance = drizzle(pool, { schema });
   
-  // Auto-patch schema: ensure all users columns exist
-  const patchQueries = [
-    `ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT NOT NULL DEFAULT 'Jucător'`,
-    `ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT`,
-    `ALTER TABLE users ADD COLUMN IF NOT EXISTS password TEXT`,
-    `ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR NOT NULL DEFAULT 'MEMBER'`,
-    `ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT DEFAULT '👤'`,
-    `ALTER TABLE users ADD COLUMN IF NOT EXISTS team_id VARCHAR`,
-    `ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL`
-  ];
-  
-  Promise.all(patchQueries.map(q => pool!.query(q)))
-    .then(() => console.log("[DB Patch] Successfully auto-patched users table."))
-    .catch((err) => console.log("[DB Patch] Could not auto-add columns:", err.message));
+  // Auto-init schema from schema.sql
+  try {
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const schemaSql = fs.readFileSync(path.resolve(__dirname, "../schema.sql"), "utf-8");
+    pool.query(schemaSql)
+      .then(() => console.log("[DB Init] Automatically created all app_ tables from schema.sql!"))
+      .catch((err) => console.error("[DB Init Error] Failed to execute schema.sql:", err.message));
+  } catch (err: any) {
+    console.error("[DB Init Error] Failed to read schema.sql:", err.message);
+  }
 } else {
   console.log("[DB] No DATABASE_URL provided. Running in In-Memory Storage Mode for local preview.");
 }

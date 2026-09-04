@@ -3,7 +3,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 1. Users Table
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE IF NOT EXISTS app_users (
     id VARCHAR PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
@@ -15,10 +15,10 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- 2. Teams Table
-CREATE TABLE IF NOT EXISTS teams (
+CREATE TABLE IF NOT EXISTS app_teams (
     id VARCHAR PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     name TEXT NOT NULL UNIQUE,
-    leader_id VARCHAR NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    leader_id VARCHAR NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
     invite_code VARCHAR(12) NOT NULL UNIQUE,
     tagline TEXT,
     score INTEGER NOT NULL DEFAULT 0,
@@ -26,10 +26,17 @@ CREATE TABLE IF NOT EXISTS teams (
 );
 
 -- Add foreign key back to users for team_id
-ALTER TABLE users ADD CONSTRAINT fk_user_team FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE SET NULL;
+-- We must safely handle adding this constraint since IF NOT EXISTS doesn't support adding constraints directly easily in all postgres versions, but Drizzle push handles this better. We'll skip adding this circularly in the raw SQL and let Drizzle or manual steps handle it if needed.
+-- But since it's just schema.sql, we can keep the ALTER TABLE.
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_app_user_team') THEN
+        ALTER TABLE app_users ADD CONSTRAINT fk_app_user_team FOREIGN KEY (team_id) REFERENCES app_teams(id) ON DELETE SET NULL;
+    END IF;
+END $$;
 
 -- 3. Seasons Table
-CREATE TABLE IF NOT EXISTS seasons (
+CREATE TABLE IF NOT EXISTS app_seasons (
     id VARCHAR PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     number INTEGER NOT NULL UNIQUE,
     name TEXT NOT NULL,
@@ -41,9 +48,9 @@ CREATE TABLE IF NOT EXISTS seasons (
 );
 
 -- 4. Editions Table
-CREATE TABLE IF NOT EXISTS editions (
+CREATE TABLE IF NOT EXISTS app_editions (
     id VARCHAR PRIMARY KEY DEFAULT uuid_generate_v4()::text,
-    season_id VARCHAR NOT NULL REFERENCES seasons(id) ON DELETE CASCADE,
+    season_id VARCHAR NOT NULL REFERENCES app_seasons(id) ON DELETE CASCADE,
     edition_number INTEGER NOT NULL,
     event_date TIMESTAMP WITH TIME ZONE NOT NULL,
     theme TEXT,
@@ -51,14 +58,14 @@ CREATE TABLE IF NOT EXISTS editions (
     max_teams INTEGER NOT NULL DEFAULT 25,
     secret_clue TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    CONSTRAINT unique_season_edition UNIQUE (season_id, edition_number)
+    CONSTRAINT app_unique_season_edition UNIQUE (season_id, edition_number)
 );
 
 -- 5. Registrations Table
-CREATE TABLE IF NOT EXISTS registrations (
+CREATE TABLE IF NOT EXISTS app_registrations (
     id VARCHAR PRIMARY KEY DEFAULT uuid_generate_v4()::text,
-    team_id VARCHAR REFERENCES teams(id) ON DELETE SET NULL,
-    edition_id VARCHAR NOT NULL REFERENCES editions(id) ON DELETE CASCADE,
+    team_id VARCHAR REFERENCES app_teams(id) ON DELETE SET NULL,
+    edition_id VARCHAR NOT NULL REFERENCES app_editions(id) ON DELETE CASCADE,
     team_name TEXT NOT NULL,
     captain_name TEXT NOT NULL,
     email TEXT NOT NULL,
@@ -69,24 +76,24 @@ CREATE TABLE IF NOT EXISTS registrations (
 );
 
 -- 6. Weekly Puzzle Progress Table
-CREATE TABLE IF NOT EXISTS weekly_puzzle_progress (
+CREATE TABLE IF NOT EXISTS app_weekly_puzzle_progress (
     id VARCHAR PRIMARY KEY DEFAULT uuid_generate_v4()::text,
-    team_id VARCHAR NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
-    edition_id VARCHAR NOT NULL REFERENCES editions(id) ON DELETE CASCADE,
+    team_id VARCHAR NOT NULL REFERENCES app_teams(id) ON DELETE CASCADE,
+    edition_id VARCHAR NOT NULL REFERENCES app_editions(id) ON DELETE CASCADE,
     game_type VARCHAR NOT NULL,
     is_solved BOOLEAN NOT NULL DEFAULT false,
-    solved_by_user_id VARCHAR REFERENCES users(id) ON DELETE SET NULL,
+    solved_by_user_id VARCHAR REFERENCES app_users(id) ON DELETE SET NULL,
     data JSONB,
     solved_at TIMESTAMP WITH TIME ZONE,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    CONSTRAINT unique_team_edition_game UNIQUE (team_id, edition_id, game_type)
+    CONSTRAINT app_unique_team_edition_game UNIQUE (team_id, edition_id, game_type)
 );
 
 -- 7. Theme Suggestions Table
-CREATE TABLE IF NOT EXISTS theme_suggestions (
+CREATE TABLE IF NOT EXISTS app_theme_suggestions (
     id VARCHAR PRIMARY KEY DEFAULT uuid_generate_v4()::text,
-    team_id VARCHAR REFERENCES teams(id) ON DELETE SET NULL,
-    edition_id VARCHAR REFERENCES editions(id) ON DELETE SET NULL,
+    team_id VARCHAR REFERENCES app_teams(id) ON DELETE SET NULL,
+    edition_id VARCHAR REFERENCES app_editions(id) ON DELETE SET NULL,
     theme_name TEXT NOT NULL,
     description TEXT,
     popularity_score INTEGER NOT NULL DEFAULT 0,
@@ -96,8 +103,8 @@ CREATE TABLE IF NOT EXISTS theme_suggestions (
 );
 
 -- Indexes for performance
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_teams_invite_code ON teams(invite_code);
-CREATE INDEX IF NOT EXISTS idx_editions_event_date ON editions(event_date);
-CREATE INDEX IF NOT EXISTS idx_registrations_edition ON registrations(edition_id);
-CREATE INDEX IF NOT EXISTS idx_puzzle_progress_team ON weekly_puzzle_progress(team_id, edition_id);
+CREATE INDEX IF NOT EXISTS idx_app_users_email ON app_users(email);
+CREATE INDEX IF NOT EXISTS idx_app_teams_invite_code ON app_teams(invite_code);
+CREATE INDEX IF NOT EXISTS idx_app_editions_event_date ON app_editions(event_date);
+CREATE INDEX IF NOT EXISTS idx_app_registrations_edition ON app_registrations(edition_id);
+CREATE INDEX IF NOT EXISTS idx_app_puzzle_progress_team ON app_weekly_puzzle_progress(team_id, edition_id);

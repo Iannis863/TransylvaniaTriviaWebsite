@@ -6,7 +6,7 @@ import { z } from "zod";
 // ==========================================
 // 1. USERS & ROLES
 // ==========================================
-export const users = pgTable("users", {
+export const users = pgTable("app_users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
@@ -34,7 +34,7 @@ export type User = typeof users.$inferSelect;
 // ==========================================
 // 2. TEAMS
 // ==========================================
-export const teams = pgTable("teams", {
+export const teams = pgTable("app_teams", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull().unique(),
   leaderId: varchar("leader_id").notNull(),
@@ -61,7 +61,7 @@ export type Team = typeof teams.$inferSelect;
 // ==========================================
 // 3. SEASONS
 // ==========================================
-export const seasons = pgTable("seasons", {
+export const seasons = pgTable("app_seasons", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   number: integer("number").notNull().unique(), // 1, 2
   name: text("name").notNull(),
@@ -83,7 +83,7 @@ export type Season = typeof seasons.$inferSelect;
 // ==========================================
 // 4. EDITIONS
 // ==========================================
-export const editions = pgTable("editions", {
+export const editions = pgTable("app_editions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   seasonId: varchar("season_id").notNull(),
   editionNumber: integer("edition_number").notNull(), // 1 to 15
@@ -106,7 +106,7 @@ export type Edition = typeof editions.$inferSelect;
 // ==========================================
 // 5. REGISTRATIONS
 // ==========================================
-export const registrations = pgTable("registrations", {
+export const registrations = pgTable("app_registrations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   teamId: varchar("team_id"),
   editionId: varchar("edition_id").notNull(),
@@ -145,7 +145,7 @@ export type InsertTeamRegistration = InsertRegistration;
 // ==========================================
 // 6. WEEKLY PUZZLE PROGRESS
 // ==========================================
-export const weeklyPuzzleProgress = pgTable("weekly_puzzle_progress", {
+export const weeklyPuzzleProgress = pgTable("app_weekly_puzzle_progress", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   teamId: varchar("team_id").notNull(),
   editionId: varchar("edition_id").notNull(),
@@ -168,7 +168,7 @@ export type WeeklyPuzzleProgress = typeof weeklyPuzzleProgress.$inferSelect;
 // ==========================================
 // 7. THEME SUGGESTIONS
 // ==========================================
-export const themeSuggestions = pgTable("theme_suggestions", {
+export const themeSuggestions = pgTable("app_theme_suggestions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   teamId: varchar("team_id"),
   editionId: varchar("edition_id"),
