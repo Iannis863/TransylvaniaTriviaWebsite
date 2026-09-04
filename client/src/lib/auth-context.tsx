@@ -195,6 +195,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Handle ?join= logic
+  useEffect(() => {
+    if (isLoading) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const joinCode = urlParams.get("join");
+
+    if (joinCode) {
+      if (!user) {
+        // User not logged in, save intent
+        sessionStorage.setItem("pending_join_code", joinCode);
+        toast({ title: "Autentificare Necesară", description: "Creează un cont sau loghează-te pentru a intra în echipă." });
+        window.dispatchEvent(new CustomEvent("open-auth-modal"));
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (!user.teamId) {
+        // User logged in and not in a team, join automatically!
+        joinTeam(joinCode).then(() => {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        });
+      } else {
+        // User already in a team
+        toast({ title: "Ești deja într-o echipă", description: "Nu poți folosi link-ul de invitație, ești deja membru al unei echipe." });
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } else if (user && !user.teamId) {
+      // Check for pending join code after login
+      const pendingJoin = sessionStorage.getItem("pending_join_code");
+      if (pendingJoin) {
+        sessionStorage.removeItem("pending_join_code");
+        joinTeam(pendingJoin);
+      }
+    }
+  }, [user, isLoading]);
+
   return (
     <AuthContext.Provider
       value={{

@@ -68,6 +68,7 @@ export default function Navbar({
     const navEl = navRef.current;
     if (!navEl) return;
     const navRect = navEl.getBoundingClientRect();
+
     cachedRects.current = buttonRefs.current.map((btn) => {
       if (!btn) return { left: 0, width: 80 };
       const r = btn.getBoundingClientRect();
@@ -81,6 +82,12 @@ export default function Navbar({
       const el = document.getElementById(id);
       return el ? el.offsetTop : 0;
     });
+  }, []);
+
+  useEffect(() => {
+    const handleOpenAuth = () => setIsAuthOpen(true);
+    window.addEventListener("open-auth-modal", handleOpenAuth);
+    return () => window.removeEventListener("open-auth-modal", handleOpenAuth);
   }, []);
 
   // ─── Per-character clip: update each overlay's clip-path every spring tick ─
