@@ -62,6 +62,50 @@ export async function registerRoutes(
   });
 
   // ==========================================
+  // ─── ADMIN USERS ────────────────────────────────────────────────────────────
+
+  // Get all users
+  app.get("/api/admin/users", checkAuth, async (_req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      res.json(allUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Eroare la încărcarea utilizatorilor" });
+    }
+  });
+
+  // Delete user (admin)
+  app.delete("/api/admin/users/:id", checkAuth, async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "Utilizatorul nu a fost găsit" });
+
+      // Handle team exit logic if they are in a team
+      if (user.teamId) {
+        const members = await storage.getTeamMembers(user.teamId);
+        if (user.role === "TEAM_LEADER") {
+          const otherMembers = members.filter(m => m.id !== userId).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          if (otherMembers.length > 0) {
+            const newLeader = otherMembers[0];
+            await storage.updateUserTeam(newLeader.id, user.teamId, "TEAM_LEADER");
+            await storage.updateTeam(user.teamId, { leaderId: newLeader.id });
+          } else {
+            await storage.deleteTeam(user.teamId);
+          }
+        }
+      }
+
+      await storage.deleteUser(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete admin user error:", error);
+      res.status(500).json({ message: "Eroare la ștergerea utilizatorului" });
+    }
+  });
+
+  // ==========================================
   // 2. REGISTRATION ENDPOINTS
   // ==========================================
 

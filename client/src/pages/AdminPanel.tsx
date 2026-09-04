@@ -162,12 +162,23 @@ export default function AdminPanel() {
     finally { setLoading(false); }
   }, [api]);
 
+  const [users, setUsers] = useState<any[]>([]);
+  const loadUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api("GET", "/api/admin/users");
+      setUsers(data);
+    } catch (e: any) { showToast(e.message, false); }
+    finally { setLoading(false); }
+  }, [api]);
+
   useEffect(() => {
     if (!isAuthed) return;
     if (activeTab === "editions") loadEditions();
     else if (activeTab === "teams") loadTeams();
     else if (activeTab === "themes") loadThemes();
-  }, [isAuthed, activeTab, loadEditions, loadTeams, loadThemes]);
+    else if (activeTab === "users") loadUsers();
+  }, [isAuthed, activeTab, loadEditions, loadTeams, loadThemes, loadUsers]);
 
   // ─── Edition capacity ────────────────────────────────────────────────────────
   const saveCapacity = async (editionId: string) => {
@@ -224,6 +235,15 @@ export default function AdminPanel() {
       await api("DELETE", `/api/admin/teams/${id}`);
       showToast("Echipă ștearsă");
       setTeams(ts => ts.filter(t => t.id !== id));
+    } catch (e: any) { showToast(e.message, false); }
+  };
+
+  const deleteUser = async (id: string) => {
+    if (!confirm("Ștergi acest utilizator și îl elimini din echipa sa?")) return;
+    try {
+      await api("DELETE", `/api/admin/users/${id}`);
+      showToast("Utilizator șters");
+      setUsers(us => us.filter(u => u.id !== id));
     } catch (e: any) { showToast(e.message, false); }
   };
 
@@ -286,7 +306,7 @@ export default function AdminPanel() {
 
       {/* Tabs */}
       <div className="border-b border-purple-800/30 px-6 flex gap-1 pt-4 overflow-x-auto whitespace-nowrap">
-        {(["editions", "teams", "themes", "simulator"] as const).map(tab => (
+        {(["editions", "teams", "themes", "users", "simulator"] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -302,13 +322,15 @@ export default function AdminPanel() {
               <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />Echipe</span>
             ) : tab === "themes" ? (
               <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />Teme Propuse</span>
+            ) : tab === "users" ? (
+              <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" />Utilizatori</span>
             ) : (
               <span className="flex items-center gap-1.5"><Gamepad2 className="w-3.5 h-3.5" />Simulator Jocuri</span>
             )}
           </button>
         ))}
         <button
-          onClick={() => activeTab === "editions" ? loadEditions() : activeTab === "teams" ? loadTeams() : activeTab === "themes" ? loadThemes() : undefined}
+          onClick={() => activeTab === "editions" ? loadEditions() : activeTab === "teams" ? loadTeams() : activeTab === "themes" ? loadThemes() : activeTab === "users" ? loadUsers() : undefined}
           className="ml-auto mb-1 flex items-center gap-1 text-purple-400 hover:text-white text-xs transition-colors"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> Reîncarcă
@@ -530,6 +552,38 @@ export default function AdminPanel() {
             {!loading && themeSuggestions.length === 0 && (
               <p className="text-purple-400/50 text-sm text-center py-8">Nicio temă propusă până acum.</p>
             )}
+          </div>
+        )}
+
+        {/* ── USERS TAB ── */}
+        {activeTab === "users" && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold text-white mb-4">Membri & Conturi</h2>
+            <div className="grid gap-3">
+              {users.map(u => (
+                <div key={u.id} className="rounded-xl border border-purple-800/40 bg-[#120722]/80 px-5 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <h3 className="font-bold text-amber-100 flex items-center gap-2">
+                      {u.name}
+                      {u.role === "TEAM_LEADER" && <Crown className="w-3.5 h-3.5 text-amber-400" />}
+                    </h3>
+                    <div className="text-xs text-purple-300 mt-1">{u.email} {u.phoneNumber ? `• ${u.phoneNumber}` : ""}</div>
+                    <div className="text-[10px] text-purple-400/60 mt-1 font-mono">ID: {u.id} • Echipa ID: {u.teamId || "Niciuna"}</div>
+                  </div>
+                  <div className="flex gap-2 w-full md:w-auto">
+                    <button
+                      onClick={() => deleteUser(u.id)}
+                      className="w-full md:w-auto bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs px-4 py-2 rounded-lg transition-colors border border-red-500/20 flex items-center justify-center gap-1.5"
+                    >
+                      <X className="w-3.5 h-3.5" /> Șterge
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {!loading && users.length === 0 && (
+                <p className="text-purple-400/50 text-sm text-center py-8">Niciun utilizator înregistrat.</p>
+              )}
+            </div>
           </div>
         )}
 

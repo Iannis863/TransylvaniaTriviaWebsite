@@ -20,6 +20,7 @@ export interface IStorage {
   updateUser(id: string, data: Partial<Pick<User, "name" | "email" | "phoneNumber" | "password">>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
   updateUserTeam(userId: string, teamId: string | null, role?: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
 
   // Team Operations
   getTeam(id: string): Promise<Team | undefined>;
@@ -232,6 +233,9 @@ export class MemStorage implements IStorage {
     const updated = { ...user, ...data };
     this.users.set(id, updated);
     return updated;
+  }
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
   }
 
   async deleteUser(id: string): Promise<boolean> {
@@ -465,6 +469,9 @@ export class DatabaseStorage implements IStorage {
   async updateUser(id: string, data: Partial<Pick<User, "name" | "email" | "phoneNumber" | "password">>): Promise<User | undefined> {
     const [result] = await db.update(users).set(data).where(eq(users.id, id)).returning();
     return result;
+  }
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
   }
 
   async deleteUser(id: string): Promise<boolean> {
