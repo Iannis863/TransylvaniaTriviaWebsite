@@ -202,11 +202,12 @@ export async function registerRoutes(
         avatar: user.avatar,
         teamId: user.teamId,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Register Error:", error);
       if (error instanceof ZodError) {
         return res.status(400).json({ message: fromZodError(error).message });
       }
-      res.status(500).json({ message: "Eroare la crearea contului" });
+      res.status(500).json({ message: "Eroare internă: " + (error.message || "Eroare la crearea contului") });
     }
   });
 
@@ -239,8 +240,9 @@ export async function registerRoutes(
         },
         team,
       });
-    } catch (error) {
-      res.status(500).json({ message: "Eroare la autentificare" });
+    } catch (error: any) {
+      console.error("Login Error:", error);
+      res.status(500).json({ message: "Eroare internă: " + (error.message || "Eroare la autentificare") });
     }
   });
 
@@ -547,7 +549,7 @@ export async function registerRoutes(
       
       const hasVowels = /[aeiouăîâ]/.test(lower);
       const hasTooManyConsonants = /[bcdfghjklmnpqrstvwxyz]{5,}/i.test(lower);
-      let isGibberish = !hasVowels || cleanTheme.length < 4 || /^[a-z]\1+$/.test(lower) || hasTooManyConsonants;
+      let isGibberish = !hasVowels || cleanTheme.length < 4 || /^([a-z])\1+$/.test(lower) || hasTooManyConsonants;
 
       let typoMatch = "";
 
