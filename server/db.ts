@@ -16,9 +16,20 @@ if (process.env.DATABASE_URL) {
   });
   dbInstance = drizzle(pool, { schema });
   
-  // Auto-patch schema: ensure 'name' column exists since it was recently added
-  pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT NOT NULL DEFAULT 'Jucător'`)
-    .catch((err) => console.log("[DB Patch] Could not auto-add name column:", err.message));
+  // Auto-patch schema: ensure all users columns exist
+  const patchQueries = [
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT NOT NULL DEFAULT 'Jucător'`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS password TEXT`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR NOT NULL DEFAULT 'MEMBER'`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT DEFAULT '👤'`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS team_id VARCHAR`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL`
+  ];
+  
+  Promise.all(patchQueries.map(q => pool!.query(q)))
+    .then(() => console.log("[DB Patch] Successfully auto-patched users table."))
+    .catch((err) => console.log("[DB Patch] Could not auto-add columns:", err.message));
 } else {
   console.log("[DB] No DATABASE_URL provided. Running in In-Memory Storage Mode for local preview.");
 }
