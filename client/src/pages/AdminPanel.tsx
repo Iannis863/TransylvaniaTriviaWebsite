@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Gamepad2, Shield, LogOut, ChevronDown, ChevronUp, Edit2, Trash2,
-  Save, X, Users, User, Calendar, RefreshCw, CheckCircle, AlertCircle
+  Save, X, Users, User, Calendar, RefreshCw, CheckCircle, AlertCircle, Crown
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────

@@ -125,68 +125,34 @@ export default function Navbar({
   // Drive clip-paths from the spring value on every animation frame
   useMotionValueEvent(pillLeft, "change", applyClipPaths);
 
-  // ─── Mount + resize ────────────────────────────────────────────────────────
-  useEffect(() => {
-    const init = () => {
-      cacheButtonRects();
-      cacheSectionTops();
-
-      // Snap pill to initial section
-      const idx = NAV_LINKS.findIndex((l) => l.id === activeSection);
-      if (idx >= 0 && cachedRects.current[idx]) {
-        rawLeft.jump(cachedRects.current[idx].left);
-        rawWidth.jump(cachedRects.current[idx].width);
-        // Apply initial clip-paths immediately
-        applyClipPaths(cachedRects.current[idx].left);
-      }
-    };
-
-    const t = setTimeout(init, 120);
-    window.addEventListener("resize", cacheButtonRects);
-    window.addEventListener("resize", cacheSectionTops);
-    return () => {
-      clearTimeout(t);
-      window.removeEventListener("resize", cacheButtonRects);
-      window.removeEventListener("resize", cacheSectionTops);
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ─── Drive pill position from scroll ──────────────────────────────────────
-  // The pill stays LOCKED on section i until section i+1 physically enters
-  // the viewport from the bottom. It only slides during the window where
-  // both sections are simultaneously on screen, completing when the next
-  // section's top reaches the navbar level.
-  useMotionValueEvent(scrollY, "change", (y) => {
+  const updatePillPosition = useCallback((y: number) => {
     const tops  = cachedTops.current;
     const rects = cachedRects.current;
     if (!tops.length || !rects.length) return;
 
-    const OFFSET = 100;                  // navbar height + small buffer
+    const OFFSET = 100;
     const vh     = window.innerHeight;
-
-    let navIndex = tops.length - 1;      // default: last section
+    let navIndex = tops.length - 1;
 
     for (let i = 0; i < tops.length - 1; i++) {
       const currentTop = tops[i]     - OFFSET;
       const nextTop    = tops[i + 1] - OFFSET;
-
-      // Transition window: next section enters from bottom (y = nextTop - vh)
-      // until its top reaches the navbar (y = nextTop).
-      // Clamped so the window never starts before the current section begins.
       const transitionStart = Math.max(currentTop, nextTop - vh);
       const transitionEnd   = nextTop;
 
       if (y <= transitionStart) {
-        // Firmly inside section i — pill is stationary
         navIndex = i;
         break;
       } else if (y < transitionEnd) {
-        // Inside the overlap window — interpolate i → i+1
         const t = (y - transitionStart) / (transitionEnd - transitionStart);
         navIndex = i + Math.min(Math.max(t, 0), 1);
         break;
       }
-      // y >= transitionEnd: section i+1 fully at top — continue loop to check i+1 → i+2
+    }
+
+    const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    if (y >= maxScroll - 5) {
+      navIndex = tops.length - 1;
     }
 
     const lower = Math.floor(navIndex);
@@ -198,7 +164,44 @@ export default function Navbar({
 
     rawLeft.set(lo.left  + (hi.left  - lo.left)  * t);
     rawWidth.set(lo.width + (hi.width - lo.width) * t);
-  });
+  }, [rawLeft, rawWidth]);
+
+  // ─── Mount + resize ────────────────────────────────────────────────────────
+  useEffect(() => {
+    const init = () => {
+      cacheButtonRects();
+      cacheSectionTops();
+
+      // Snap pill to initial section
+      const idx = NAV_LINKS.findIndex((l) => l.id === activeSection);
+      if (idx >= 0 && cachedRects.current[idx]) {
+        rawLeft.jump(cachedRects.current[idx].left);
+        rawWidth.jump(cachedRects.current[idx].width);
+        applyClipPaths(cachedRects.current[idx].left);
+      }
+    };
+
+    const t = setTimeout(init, 120);
+
+    const resizeObserver = new ResizeObserver(() => {
+      cacheButtonRects();
+      cacheSectionTops();
+      updatePillPosition(scrollY.get());
+    });
+    resizeObserver.observe(document.body);
+
+    window.addEventListener("resize", cacheButtonRects);
+    window.addEventListener("resize", cacheSectionTops);
+    return () => {
+      clearTimeout(t);
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", cacheButtonRects);
+      window.removeEventListener("resize", cacheSectionTops);
+    };
+  }, [activeSection, cacheButtonRects, cacheSectionTops, applyClipPaths, rawLeft, rawWidth, scrollY, updatePillPosition]);
+
+  // ─── Drive pill position from scroll ──────────────────────────────────────
+  useMotionValueEvent(scrollY, "change", updatePillPosition);
 
   // ─── Invite-code copy ─────────────────────────────────────────────────────
   const copyInviteCode = () => {
