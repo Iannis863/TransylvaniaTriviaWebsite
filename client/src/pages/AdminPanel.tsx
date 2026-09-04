@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Gamepad2, Shield, LogOut, ChevronDown, ChevronUp, Edit2, Trash2,
-  Save, X, Users, Calendar, RefreshCw, CheckCircle, AlertCircle
+  Save, X, Users, User, Calendar, RefreshCw, CheckCircle, AlertCircle
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -73,7 +73,7 @@ export default function AdminPanel() {
   const [inputPw, setInputPw] = useState("");
   const [authError, setAuthError] = useState("");
   const [isAuthed, setIsAuthed] = useState(false);
-  const [activeTab, setActiveTab] = useState<"editions" | "teams" | "themes" | "simulator">("editions");
+  const [activeTab, setActiveTab] = useState<"editions" | "teams" | "themes" | "users" | "simulator">("editions");
   
   // Simulator state
   const [previewWeek, setPreviewWeek] = useState(
