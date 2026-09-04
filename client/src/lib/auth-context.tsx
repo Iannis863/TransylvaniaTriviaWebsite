@@ -25,7 +25,6 @@ interface AuthContextType {
   teamMembers: AuthUser[];
   isLoading: boolean;
   login: (email: string, password?: string, keepLoggedIn?: boolean) => Promise<boolean>;
-  loginGoogle: (name: string, email: string, keepLoggedIn?: boolean) => Promise<boolean>;
   register: (name: string, email: string, password?: string, keepLoggedIn?: boolean) => Promise<boolean>;
   logout: () => void;
   createTeam: (name: string, tagline?: string) => Promise<boolean>;
@@ -110,29 +109,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const loginGoogle = async (name: string, email: string, keepLoggedIn: boolean = false): Promise<boolean> => {
-    try {
-      const res = await fetch("/api/auth/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, avatar: "🦅" }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast({ title: "Eroare Google Auth", description: data.message, variant: "destructive" });
-        return false;
-      }
-      setUser(data.user);
-      setTeam(data.team);
-      setStoredUserId(data.user.id, keepLoggedIn);
-      toast({ title: `Autentificat cu Google!`, description: `Salut, ${data.user.name}!` });
-      await refreshAuth();
-      return true;
-    } catch (err) {
-      toast({ title: "Eroare", description: "Eroare la autentificarea Google", variant: "destructive" });
-      return false;
-    }
-  };
 
   const register = async (name: string, email: string, password?: string, keepLoggedIn: boolean = false): Promise<boolean> => {
     try {
@@ -227,7 +203,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         teamMembers,
         isLoading,
         login,
-        loginGoogle,
         register,
         logout,
         createTeam,

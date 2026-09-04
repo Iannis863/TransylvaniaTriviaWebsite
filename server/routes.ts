@@ -246,44 +246,6 @@ export async function registerRoutes(
     }
   });
 
-  // Mock / Fast Google OAuth Login
-  app.post("/api/auth/google", async (req, res) => {
-    try {
-      const { email, name, avatar } = req.body;
-      if (!email || !name) {
-        return res.status(400).json({ message: "Date OAuth incomplete" });
-      }
-
-      let user = await storage.getUserByEmail(email);
-      if (!user) {
-        user = await storage.createUser({
-          name,
-          email,
-          avatar: avatar || "👤",
-          role: "MEMBER",
-        });
-      }
-
-      let team = null;
-      if (user.teamId) {
-        team = await storage.getTeam(user.teamId);
-      }
-
-      res.json({
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          avatar: user.avatar,
-          teamId: user.teamId,
-        },
-        team,
-      });
-    } catch (error) {
-      res.status(500).json({ message: "Eroare la autentificarea Google" });
-    }
-  });
 
   // Get current user profile & team
   app.get("/api/auth/me", async (req, res) => {
