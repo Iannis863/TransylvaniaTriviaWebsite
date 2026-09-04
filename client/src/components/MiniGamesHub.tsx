@@ -76,13 +76,13 @@ export default function MiniGamesHub({
   const [isLoadingProgress, setIsLoadingProgress] = useState(true);
 
   // Fetch team puzzle progress from server
-  const fetchProgress = async () => {
+  const fetchProgress = async (background = false) => {
     if (!user || !team) {
       setIsLoadingProgress(false);
       return;
     }
     
-    setIsLoadingProgress(true);
+    if (!background) setIsLoadingProgress(true);
     try {
       const res = await fetch(`/api/games/progress/${editionId}?teamId=${team.id}`);
       if (res.ok) {
@@ -102,7 +102,7 @@ export default function MiniGamesHub({
     } catch (err) {
       console.error("Failed to fetch game progress:", err);
     } finally {
-      setIsLoadingProgress(false);
+      if (!background) setIsLoadingProgress(false);
     }
   };
 
@@ -132,7 +132,7 @@ export default function MiniGamesHub({
           data: payloadData,
         }),
       });
-      await fetchProgress();
+      await fetchProgress(true);
     } catch (err) {
       console.error("Error saving puzzle solve:", err);
     }

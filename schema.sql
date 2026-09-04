@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS app_editions (
 CREATE TABLE IF NOT EXISTS app_registrations (
     id VARCHAR PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     team_id VARCHAR REFERENCES app_teams(id) ON DELETE SET NULL,
-    edition_id VARCHAR NOT NULL REFERENCES app_editions(id) ON DELETE CASCADE,
+    edition_id VARCHAR NOT NULL,
     team_name TEXT NOT NULL,
     captain_name TEXT NOT NULL,
     email TEXT NOT NULL,
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS app_registrations (
 CREATE TABLE IF NOT EXISTS app_weekly_puzzle_progress (
     id VARCHAR PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     team_id VARCHAR NOT NULL REFERENCES app_teams(id) ON DELETE CASCADE,
-    edition_id VARCHAR NOT NULL REFERENCES app_editions(id) ON DELETE CASCADE,
+    edition_id VARCHAR NOT NULL,
     game_type VARCHAR NOT NULL,
     is_solved BOOLEAN NOT NULL DEFAULT false,
     solved_by_user_id VARCHAR REFERENCES app_users(id) ON DELETE SET NULL,
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS app_weekly_puzzle_progress (
 CREATE TABLE IF NOT EXISTS app_theme_suggestions (
     id VARCHAR PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     team_id VARCHAR REFERENCES app_teams(id) ON DELETE SET NULL,
-    edition_id VARCHAR REFERENCES app_editions(id) ON DELETE SET NULL,
+    edition_id VARCHAR,
     theme_name TEXT NOT NULL,
     description TEXT,
     popularity_score INTEGER NOT NULL DEFAULT 0,

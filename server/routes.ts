@@ -566,6 +566,7 @@ export async function registerRoutes(
 
       res.json(result);
     } catch (error) {
+      console.error("[POST /api/games/progress] Error:", error);
       res.status(500).json({ message: "Eroare la salvarea progresului jocului" });
     }
   });

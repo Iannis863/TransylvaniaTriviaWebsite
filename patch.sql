@@ -1,0 +1,3 @@
+ALTER TABLE app_weekly_puzzle_progress DROP CONSTRAINT IF EXISTS app_weekly_puzzle_progress_edition_id_fkey;
+ALTER TABLE app_registrations DROP CONSTRAINT IF EXISTS app_registrations_edition_id_fkey;
+ALTER TABLE app_theme_suggestions DROP CONSTRAINT IF EXISTS app_theme_suggestions_edition_id_fkey;
