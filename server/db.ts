@@ -24,7 +24,11 @@ if (process.env.DATABASE_URL) {
     const __dirname = path.dirname(fileURLToPath(import.meta.url));
     const schemaSql = fs.readFileSync(path.resolve(__dirname, "../schema.sql"), "utf-8");
     pool.query(schemaSql)
-      .then(() => console.log("[DB Init] Automatically created all app_ tables from schema.sql!"))
+      .then(() => {
+        console.log("[DB Init] Automatically created all app_ tables from schema.sql!");
+        // Ensure new columns added later are patched
+        return pool!.query(`ALTER TABLE app_users ADD COLUMN IF NOT EXISTS phone_number TEXT`);
+      })
       .catch((err) => console.error("[DB Init Error] Failed to execute schema.sql:", err.message));
   } catch (err: any) {
     console.error("[DB Init Error] Failed to read schema.sql:", err.message);

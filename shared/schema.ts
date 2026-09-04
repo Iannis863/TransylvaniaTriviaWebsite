@@ -14,6 +14,7 @@ export const users = pgTable("app_users", {
   role: text("role").default("MEMBER").notNull(), // 'TEAM_LEADER' | 'MEMBER' | 'ADMIN'
   avatar: text("avatar"),
   teamId: varchar("team_id"),
+  phoneNumber: text("phone_number"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -24,6 +25,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
   name: z.string().min(2, "Numele trebuie să aibă cel puțin 2 caractere"),
   email: z.string().email("Adresă de email invalidă"),
   password: z.string().min(6, "Parola trebuie să aibă cel puțin 6 caractere").optional(),
+  phoneNumber: z.string().optional(),
   role: z.enum(["TEAM_LEADER", "MEMBER", "ADMIN"]).default("MEMBER"),
   teamId: z.string().optional(),
 });

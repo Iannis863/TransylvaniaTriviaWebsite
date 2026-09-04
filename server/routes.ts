@@ -307,6 +307,84 @@ export async function registerRoutes(
 
     res.json({ user, team, members });
   });
+  // Update current user
+  app.put("/api/auth/me", async (req, res) => {
+    try {
+      const userId = req.headers["x-user-id"] as string;
+      if (!userId) return res.status(401).json({ message: "Neautentificat" });
+      const { name, email, phoneNumber } = req.body;
+      const updatedUser = await storage.updateUser(userId, { name, email, phoneNumber });
+      res.json(updatedUser);
+    } catch (error: any) {
+      console.error("Update user error:", error);
+      res.status(500).json({ message: "Eroare la actualizarea contului" });
+    }
+  });
+
+  // Delete current user
+  app.delete("/api/auth/me", async (req, res) => {
+    try {
+      const userId = req.headers["x-user-id"] as string;
+      if (!userId) return res.status(401).json({ message: "Neautentificat" });
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      
+      // Handle team exit logic
+      if (user.teamId) {
+        const members = await storage.getTeamMembers(user.teamId);
+        if (user.role === "TEAM_LEADER") {
+          const otherMembers = members.filter(m => m.id !== userId).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          if (otherMembers.length > 0) {
+            const newLeader = otherMembers[0];
+            // Make the new leader a TEAM_LEADER
+            await storage.updateUserTeam(newLeader.id, user.teamId, "TEAM_LEADER");
+            await storage.updateTeam(user.teamId, { leaderId: newLeader.id });
+            // Delete the old user
+          } else {
+            // Delete team if no other members
+            await storage.deleteTeam(user.teamId);
+          }
+        }
+      }
+
+      await storage.deleteUser(userId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Delete user error:", error);
+      res.status(500).json({ message: "Eroare la ștergerea contului" });
+    }
+  });
+
+  // Leave team
+  app.post("/api/teams/leave", async (req, res) => {
+    try {
+      const userId = req.headers["x-user-id"] as string;
+      if (!userId) return res.status(401).json({ message: "Neautentificat" });
+      const user = await storage.getUser(userId);
+      if (!user || !user.teamId) return res.status(400).json({ message: "Nu ești într-o echipă" });
+
+      const teamId = user.teamId;
+      const members = await storage.getTeamMembers(teamId);
+      
+      if (user.role === "TEAM_LEADER") {
+        const otherMembers = members.filter(m => m.id !== userId).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        if (otherMembers.length > 0) {
+          const newLeader = otherMembers[0];
+          await storage.updateUserTeam(newLeader.id, teamId, "TEAM_LEADER");
+          await storage.updateTeam(teamId, { leaderId: newLeader.id });
+        } else {
+          await storage.deleteTeam(teamId);
+        }
+      }
+
+      const updatedUser = await storage.updateUserTeam(userId, null, "MEMBER");
+      res.json(updatedUser);
+    } catch (error: any) {
+      console.error("Leave team error:", error);
+      res.status(500).json({ message: "Eroare la părăsirea echipei" });
+    }
+  });
+
 
   // ==========================================
   // 4. TEAM MANAGEMENT ENDPOINTS

@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS app_users (
     role VARCHAR NOT NULL DEFAULT 'MEMBER',
     avatar TEXT,
     team_id VARCHAR,
+    phone_number TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
 

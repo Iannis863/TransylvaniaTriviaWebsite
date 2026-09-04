@@ -7,12 +7,14 @@ import { AuthProvider } from "@/lib/auth-context";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import AdminPanel from "@/pages/AdminPanel";
+import Account from "@/pages/Account";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/admin" component={AdminPanel} />
+      <Route path="/cont" component={Account} />
       <Route component={NotFound} />
     </Switch>
   );

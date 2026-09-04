@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useLocation } from "wouter";
 import { motion, useScroll, useMotionValue, useSpring, useMotionValueEvent } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ export default function Navbar({
   editionLabel = "Marți 20:00",
 }: NavbarProps) {
   const { user, team, logout } = useAuth();
+  const [, setLocation]                     = useLocation();
   const [isAuthOpen, setIsAuthOpen]         = useState(false);
   const [copied, setCopied]                 = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -280,8 +282,9 @@ export default function Navbar({
                   </button>
                 )}
                 <div
-                  onClick={() => onNavigate("team")}
+                  onClick={() => setLocation("/cont")}
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 cursor-pointer hover:bg-amber-500/20 transition-all"
+                  title="Contul Meu"
                 >
                   <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-400 to-purple-600 flex items-center justify-center text-xs shadow">
                     {user.avatar || (user.role === "TEAM_LEADER" ? "👑" : "👤")}
@@ -327,7 +330,13 @@ export default function Navbar({
             {user ? (
               <div className="flex flex-col gap-3 p-3 bg-purple-950/40 border border-purple-800/50 rounded-2xl mb-4">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
+                  <div 
+                    onClick={() => {
+                      setLocation("/cont");
+                      setMobileMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                  >
                     <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-purple-600 flex items-center justify-center text-lg shadow-inner ring-1 ring-amber-400/30">
                       {user.avatar || (user.role === "TEAM_LEADER" ? "👑" : "👤")}
                     </div>

@@ -17,6 +17,8 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, data: Partial<Pick<User, "name" | "email" | "phoneNumber" | "password">>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
   updateUserTeam(userId: string, teamId: string | null, role?: string): Promise<User | undefined>;
 
   // Team Operations
@@ -48,7 +50,7 @@ export interface IStorage {
 
   // ── Admin Operations ──────────────────────────────────────────────────────
   updateRegistration(id: string, data: Partial<Pick<Registration, "teamName" | "captainName" | "memberCount" | "email" | "phoneNumber">>): Promise<Registration | undefined>;
-  updateTeam(id: string, data: Partial<Pick<Team, "name" | "tagline" | "score">>): Promise<Team | undefined>;
+  updateTeam(id: string, data: Partial<Pick<Team, "name" | "tagline" | "score" | "leaderId">>): Promise<Team | undefined>;
   deleteTeam(id: string): Promise<boolean>;
   getEditionCapacityOverride(editionId: string): Promise<number | undefined>;
   setEditionCapacityOverride(editionId: string, maxTeams: number): Promise<void>;
@@ -223,6 +225,18 @@ export class MemStorage implements IStorage {
     return user;
   }
 
+  async updateUser(id: string, data: Partial<Pick<User, "name" | "email" | "phoneNumber" | "password">>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updated = { ...user, ...data };
+    this.users.set(id, updated);
+    return updated;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    return this.users.delete(id);
+  }
+
   async updateUserTeam(userId: string, teamId: string | null, role?: string): Promise<User | undefined> {
     const user = this.users.get(userId);
     if (!user) return undefined;
@@ -390,7 +404,7 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  async updateTeam(id: string, data: Partial<Pick<Team, "name" | "tagline" | "score">>): Promise<Team | undefined> {
+  async updateTeam(id: string, data: Partial<Pick<Team, "name" | "tagline" | "score" | "leaderId">>): Promise<Team | undefined> {
     const team = this.teams.get(id);
     if (!team) return undefined;
     const updated = { ...team, ...data };
@@ -437,6 +451,16 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [result] = await db.insert(users).values(insertUser).returning();
     return result;
+  }
+
+  async updateUser(id: string, data: Partial<Pick<User, "name" | "email" | "phoneNumber" | "password">>): Promise<User | undefined> {
+    const [result] = await db.update(users).set(data).where(eq(users.id, id)).returning();
+    return result;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    const [result] = await db.delete(users).where(eq(users.id, id)).returning();
+    return !!result;
   }
 
   async updateUserTeam(userId: string, teamId: string | null, role?: string): Promise<User | undefined> {
@@ -564,7 +588,7 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async updateTeam(id: string, data: Partial<Pick<Team, "name" | "tagline" | "score">>): Promise<Team | undefined> {
+  async updateTeam(id: string, data: Partial<Pick<Team, "name" | "tagline" | "score" | "leaderId">>): Promise<Team | undefined> {
     const [result] = await db.update(teams).set(data).where(eq(teams.id, id)).returning();
     return result;
   }
