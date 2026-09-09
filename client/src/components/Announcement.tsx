@@ -9,10 +9,10 @@ export default function SeasonAnnouncement() {
           className="font-heading text-4xl md:text-5xl text-center mb-4 tracking-wider uppercase"
           data-testid="text-announcement-title"
         >
-          Season Intermission
+          Pauză Între Sezoane
         </h2>
         <p className="text-muted-foreground text-center mb-12 max-w-xl mx-auto">
-          Refining the intelligence. Preparing the next challenge.
+          Rafinăm întrebările. Pregătim următoarea provocare.
         </p>
         
         <Card className="border border-purple-500/30 bg-gradient-to-br from-purple-500/5 to-purple-500/10">
@@ -23,26 +23,26 @@ export default function SeasonAnnouncement() {
               </div>
               
               <div className="font-display text-5xl md:text-6xl text-purple-400 mb-4 uppercase tracking-tighter">
-                Season 2 Incoming
+                Sezonul 2 se apropie
               </div>
               
               <h3 className="font-heading text-2xl tracking-widest mb-6 text-white/90">
-                APRIL 21, 2026
+                21 APRILIE 2026
               </h3>
               
               <div className="max-w-lg space-y-4">
                 <div className="flex items-center gap-3 justify-center text-muted-foreground">
                   <Coffee className="w-5 h-5 text-amber-400 flex-shrink-0" />
-                  <p>We are taking a 2-week hiatus for the Easter holidays.</p>
+                  <p>Luăm o scurtă pauză de 2 săptămâni pentru sărbătorile de Paște.</p>
                 </div>
                 <div className="flex items-center gap-3 justify-center text-muted-foreground">
                   <Sparkles className="w-5 h-5 text-cyan-400 flex-shrink-0" />
-                  <p>Sharpen your wits—Season 2 brings new mechanics and higher stakes.</p>
+                  <p>Ascuțiți-vă mintea—Sezonul 2 aduce mecanici noi și mize mai mari.</p>
                 </div>
               </div>
               
               <div className="mt-10 px-6 py-2 rounded-full border border-purple-500/20 bg-purple-500/10 text-xs uppercase tracking-[0.2em] text-purple-300 font-bold">
-                TransylvaniaTrivia • The Elite Standard
+                Transylvania Trivia • Standardul de Aur
               </div>
             </div>
           </CardContent>
