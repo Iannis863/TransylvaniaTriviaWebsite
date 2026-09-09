@@ -745,7 +745,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/theme-suggestions/:id", checkAuth, async (req, res) => {
+  app.delete("/api/theme-suggestions/:id", async (req, res) => {
     try {
       const deleted = await storage.deleteThemeSuggestion(req.params.id);
       if (!deleted) return res.status(404).json({ message: "Sugestia nu a fost găsită" });
