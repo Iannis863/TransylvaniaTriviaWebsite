@@ -136,11 +136,11 @@ export interface ActiveEditionState {
 export function getCurrentOrNextEdition(now: Date = new Date()): ActiveEditionState {
   const allEditions = getFullSchedule(now.getFullYear());
   
-  // Find all upcoming editions where event time is in the future or within the active 3-hour window
+  // Find all upcoming editions where event time is in the future or within the active 4-hour window
   const editionsWithDates = allEditions.map((ed) => {
     const eventDate = getEditionDateTime(ed, now.getFullYear());
-    // Active window: until 23:30 on the event night
-    const endWindow = new Date(eventDate.getTime() + 3.5 * 60 * 60 * 1000);
+    // Active window: until 24:00 (midnight) on the event night
+    const endWindow = new Date(eventDate.getTime() + 4 * 60 * 60 * 1000);
     return {
       edition: ed,
       eventDate,
@@ -163,7 +163,7 @@ export function getCurrentOrNextEdition(now: Date = new Date()): ActiveEditionSt
     chosen = {
       edition: firstEd,
       eventDate,
-      endWindow: new Date(eventDate.getTime() + 3.5 * 60 * 60 * 1000),
+      endWindow: new Date(eventDate.getTime() + 4 * 60 * 60 * 1000),
       diffMs: eventDate.getTime() - now.getTime(),
     };
   }
