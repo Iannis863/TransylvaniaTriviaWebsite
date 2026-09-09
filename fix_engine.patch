@@ -1,0 +1,29 @@
+--- server/quizzability/engine.ts
++++ server/quizzability/engine.ts
+@@ -342,3 +342,4 @@
+   const bestSignal = signalEntries[0];
+   const worstSignal = signalEntries[signalEntries.length - 1];
++  const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
+ 
+@@ -345,7 +346,7 @@
+       `Tema are un potențial excelent de quizzabilitate.`
+     );
+     if (bestSignal[1] > 0) {
+-      parts.push(`Punctul forte principal: ${bestSignal[0]} (${bestSignal[1]}/100).`);
++      parts.push(`Punctul forte principal: ${bestSignal[0].toLowerCase()} (${bestSignal[1]}/100).`);
+     }
+     if (worstSignal[1] < 100) {
+-      parts.push(`Singura zonă mai slabă: ${worstSignal[0]} (${worstSignal[1]}/100).`);
++      parts.push(`Singura zonă mai slabă: ${worstSignal[0].toLowerCase()} (${worstSignal[1]}/100).`);
+     }
+   } else if (score >= 35) {
+     parts.push(
+-      `Tema este la limită. ${bestSignal[0]} este în regulă (${bestSignal[1]}/100), dar ${worstSignal[0]} este problematic (${worstSignal[1]}/100).`
++      `Tema este la limită. ${capitalize(bestSignal[0])} este în regulă (${bestSignal[1]}/100), dar ${worstSignal[0]} este problematic (${worstSignal[1]}/100).`
+     );
+   } else {
+     parts.push(
+-      `Tema nu are suficient material pentru o rundă completă de trivia. Principala problemă: ${worstSignal[0]} (${worstSignal[1]}/100).`
++      `Tema nu are suficient material pentru o rundă completă de trivia. Principala problemă: ${worstSignal[0].toLowerCase()} (${worstSignal[1]}/100).`
+     );
+   }

@@ -335,8 +335,6 @@ function generateNotes(
   const bestSignal = signalEntries[0];
   const worstSignal = signalEntries[signalEntries.length - 1];
 
-  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
   if (score >= 60) {
     parts.push(
       `Tema are un potențial excelent de quizzabilitate.`
@@ -349,7 +347,7 @@ function generateNotes(
     }
   } else if (score >= 35) {
     parts.push(
-      `Tema este la limită. ${capitalize(bestSignal[0])} este în regulă (${bestSignal[1]}/100), dar ${worstSignal[0]} este problematic (${worstSignal[1]}/100).`
+      `Tema este la limită. ${bestSignal[0]} este în regulă (${bestSignal[1]}/100), dar ${worstSignal[0]} este problematic (${worstSignal[1]}/100).`
     );
   } else {
     parts.push(

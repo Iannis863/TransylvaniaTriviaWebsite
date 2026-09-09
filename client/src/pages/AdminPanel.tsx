@@ -3,6 +3,16 @@ import {
   Gamepad2, Shield, LogOut, ChevronDown, ChevronUp, Edit2, Trash2,
   Save, X, Users, User, Calendar, RefreshCw, CheckCircle, AlertCircle, Crown
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Registration {
@@ -99,6 +109,14 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
+  // Custom Confirm Dialog
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    action: (() => void) | null;
+    title: string;
+    description: string;
+  }>({ isOpen: false, action: null, title: "", description: "" });
+
   const showToast = (msg: string, ok = true) => {
     setToast({ msg, ok });
     setTimeout(() => setToast(null), 3000);
@@ -194,15 +212,20 @@ export default function AdminPanel() {
 
   // ─── Registration actions ────────────────────────────────────────────────────
   const deleteReg = async (id: string, editionId: string) => {
-    if (!confirm("Ștergi această înregistrare?")) return;
-    try {
-      await api("DELETE", `/api/admin/registrations/${id}`);
-      showToast("Înregistrare ștearsă");
-      setEditions(eds => eds.map(ed => ed.id === editionId
-        ? { ...ed, registrations: ed.registrations.filter(r => r.id !== id), registeredCount: ed.registeredCount - 1 }
-        : ed
-      ));
-    } catch (e: any) { showToast(e.message, false); }
+    setConfirmDialog({
+      isOpen: true,
+      title: "Ștergi această înregistrare?",
+      description: "Echipa va fi eliminată din această ediție.",
+      action: async () => {
+        try {
+          await api("DELETE", `/api/admin/registrations/${id}`);
+          showToast("Înregistrare ștearsă");
+          setEditions(eds => eds.map(ed => ed.id === editionId
+            ? { ...ed, registrations: ed.registrations.filter(r => r.id !== id), registeredCount: ed.registeredCount - 1 }
+            : ed));
+        } catch (e: any) { showToast(e.message, false); }
+      }
+    });
   };
 
   const saveReg = async () => {
@@ -230,21 +253,33 @@ export default function AdminPanel() {
   };
 
   const deleteTeam = async (id: string) => {
-    if (!confirm("Ștergi această echipă și toate înregistrările ei?")) return;
-    try {
-      await api("DELETE", `/api/admin/teams/${id}`);
-      showToast("Echipă ștearsă");
-      setTeams(ts => ts.filter(t => t.id !== id));
-    } catch (e: any) { showToast(e.message, false); }
+    setConfirmDialog({
+      isOpen: true,
+      title: "Ștergi această echipă?",
+      description: "Toate datele echipei, membrii (vor fi eliminați din echipă) și înregistrările asociate vor fi afectate. Ești sigur?",
+      action: async () => {
+        try {
+          await api("DELETE", `/api/admin/teams/${id}`);
+          showToast("Echipă ștearsă");
+          setTeams(ts => ts.filter(t => t.id !== id));
+        } catch (e: any) { showToast(e.message, false); }
+      }
+    });
   };
 
   const deleteUser = async (id: string) => {
-    if (!confirm("Ștergi acest utilizator și îl elimini din echipa sa?")) return;
-    try {
-      await api("DELETE", `/api/admin/users/${id}`);
-      showToast("Utilizator șters");
-      setUsers(us => us.filter(u => u.id !== id));
-    } catch (e: any) { showToast(e.message, false); }
+    setConfirmDialog({
+      isOpen: true,
+      title: "Ștergi acest utilizator?",
+      description: "Utilizatorul va fi șters definitiv și va fi eliminat din echipa sa (dacă are una). Ești sigur?",
+      action: async () => {
+        try {
+          await api("DELETE", `/api/admin/users/${id}`);
+          showToast("Utilizator șters");
+          setUsers(us => us.filter(u => u.id !== id));
+        } catch (e: any) { showToast(e.message, false); }
+      }
+    });
   };
 
   // ─── Login screen ─────────────────────────────────────────────────────────────
@@ -510,13 +545,16 @@ export default function AdminPanel() {
               <div key={theme.id} className="relative rounded-xl border border-purple-800/40 bg-purple-950/20 px-6 py-4 flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
                 {theme.status !== "PENDING" && (
                   <button
-                    onClick={async () => {
-                      if (confirm("Ești sigur că vrei să ștergi această temă de pe ecran?")) {
-                        await fetch(`/api/theme-suggestions/${theme.id}`, {
-                          method: "DELETE"
-                        });
-                        loadThemes();
-                      }
+                    onClick={() => {
+                      setConfirmDialog({
+                        isOpen: true,
+                        title: "Ștergi această propunere?",
+                        description: "Ești sigur că vrei să ștergi definitiv această temă de pe ecran?",
+                        action: async () => {
+                          await fetch(`/api/theme-suggestions/${theme.id}`, { method: "DELETE" });
+                          loadThemes();
+                        }
+                      });
                     }}
                     className="absolute top-3 right-3 text-purple-400/50 hover:text-red-400 transition-colors p-1"
                     title="Șterge propunerea"
@@ -748,6 +786,29 @@ export default function AdminPanel() {
           </div>
         </div>
       )}
+
+      {/* Confirm Dialog */}
+      <AlertDialog open={confirmDialog.isOpen} onOpenChange={(open) => !open && setConfirmDialog(d => ({ ...d, isOpen: false }))}>
+        <AlertDialogContent className="bg-purple-950 border-purple-800 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-amber-400">{confirmDialog.title}</AlertDialogTitle>
+            <AlertDialogDescription className="text-purple-200/80">
+              {confirmDialog.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-purple-900 hover:bg-purple-800 border-none text-white">Anulează</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmDialog.action) confirmDialog.action();
+                setConfirmDialog(d => ({ ...d, isOpen: false }));
+              }}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >Confirmă</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }

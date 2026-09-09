@@ -16,7 +16,8 @@ import {
   ArrowRight,
   MoreHorizontal,
   UserX,
-  ArrowUpCircle
+  ArrowUpCircle,
+  UserMinus
 } from "lucide-react";
 import AuthModal from "./AuthModal";
 import {
@@ -25,12 +26,28 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function TeamDashboard() {
   const { user, team, teamMembers } = useAuth();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    action: (() => void) | null;
+    title: string;
+    description: string;
+  }>({ isOpen: false, action: null, title: "", description: "" });
 
   const copyInviteCode = () => {
     if (team?.inviteCode) {
@@ -56,48 +73,54 @@ export default function TeamDashboard() {
 
   const kickMember = async (memberId: string) => {
     if (!team) return;
-    if (!confirm("Ești sigur că vrei să elimini acest membru din echipă?")) return;
-    
-    setIsKicking(true);
-    try {
-      const res = await fetch(`/api/teams/${team.id}/members/${memberId}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Eroare la eliminare");
+    setConfirmDialog({
+      isOpen: true,
+      title: "Elimini membrul?",
+      description: "Ești sigur că vrei să elimini acest membru din echipă?",
+      action: async () => {
+        setIsKicking(true);
+        try {
+          const res = await fetch(`/api/teams/${team.id}/members/${memberId}`, {
+            method: "DELETE",
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message);
+          toast({ title: "Membru eliminat cu succes" });
+          await refreshAuth();
+        } catch (err: any) {
+          toast({ title: "Eroare", description: err.message, variant: "destructive" });
+        } finally {
+          setIsKicking(false);
+        }
       }
-      toast({ title: "Membru eliminat", description: "Utilizatorul a fost scos din echipă." });
-      await refreshAuth();
-    } catch (error: any) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-    } finally {
-      setIsKicking(false);
-    }
+    });
   };
 
   const promoteMember = async (memberId: string) => {
     if (!team) return;
-    if (!confirm("Ești sigur că vrei să transferi titlul de Căpitan către acest membru? Vei deveni un simplu membru.")) return;
-    
-    setIsKicking(true);
-    try {
-      const res = await fetch(`/api/teams/${team.id}/transfer-leadership`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newLeaderId: memberId }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Eroare la transfer");
+    setConfirmDialog({
+      isOpen: true,
+      title: "Transferi rolul de Căpitan?",
+      description: "Ești sigur că vrei să transferi titlul de Căpitan către acest membru? Tu vei deveni un simplu membru.",
+      action: async () => {
+        setIsKicking(true); // Reusing loading state for simplicity
+        try {
+          const res = await fetch(`/api/teams/${team.id}/transfer-leadership`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ newLeaderId: memberId })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message);
+          toast({ title: "Transfer reușit", description: "Ai cedat titlul de Căpitan cu succes." });
+          await refreshAuth();
+        } catch (err: any) {
+          toast({ title: "Eroare", description: err.message, variant: "destructive" });
+        } finally {
+          setIsKicking(false);
+        }
       }
-      toast({ title: "Transfer reușit", description: "Ai cedat titlul de Căpitan cu succes." });
-      await refreshAuth();
-    } catch (error: any) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-    } finally {
-      setIsKicking(false);
-    }
+    });
   };
 
   if (!user) {
@@ -314,6 +337,29 @@ export default function TeamDashboard() {
         </div>
 
       </div>
+
+      {/* Confirm Dialog */}
+      <AlertDialog open={confirmDialog.isOpen} onOpenChange={(open) => !open && setConfirmDialog(d => ({ ...d, isOpen: false }))}>
+        <AlertDialogContent className="bg-purple-950 border-purple-800 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-amber-400">{confirmDialog.title}</AlertDialogTitle>
+            <AlertDialogDescription className="text-purple-200/80">
+              {confirmDialog.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-purple-900 hover:bg-purple-800 border-none text-white">Anulează</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmDialog.action) confirmDialog.action();
+                setConfirmDialog(d => ({ ...d, isOpen: false }));
+              }}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >Confirmă</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </section>
   );
 }

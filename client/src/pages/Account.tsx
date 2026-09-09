@@ -221,20 +221,36 @@ export default function Account() {
                   .map((theme: any) => (
                   <div key={theme.id} className="relative flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-950 rounded-lg border border-gray-800 gap-4">
                     {theme.status !== "PENDING" && (
-                      <button
-                        onClick={async () => {
-                          if (confirm("Ești sigur că vrei să ștergi această temă din istoric?")) {
-                            await fetch(`/api/theme-suggestions/${theme.id}`, {
-                              method: "DELETE"
-                            });
-                            setThemeSuggestions(prev => prev.filter(t => t.id !== theme.id));
-                          }
-                        }}
-                        className="absolute top-2 right-2 text-gray-500 hover:text-red-400 transition-colors"
-                        title="Șterge din istoric"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                      </button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            className="absolute top-2 right-2 text-gray-500 hover:text-red-400 transition-colors"
+                            title="Șterge din istoric"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="bg-gray-900 border-gray-800 text-white">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Ești sigur?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-gray-400">
+                              Acest lucru va șterge tema "{theme.themeName}" din istoricul propunerilor tale.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel className="bg-gray-800 hover:bg-gray-700 text-white border-none">Anulează</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={async () => {
+                                await fetch(`/api/theme-suggestions/${theme.id}`, { method: "DELETE" });
+                                setThemeSuggestions(prev => prev.filter(t => t.id !== theme.id));
+                              }}
+                              className="bg-red-500 hover:bg-red-600 text-white"
+                            >
+                              Șterge
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                     <div className="pr-6">
                       <p className="font-medium">{theme.themeName}</p>
