@@ -23,6 +23,7 @@ import {
   computeBreadthBalance,
   classifyVerifiability,
 } from "./signals.js";
+import { recognizeDomain } from "./domains.js";
 
 /**
  * Score the "quizzability" of a theme.
@@ -39,6 +40,11 @@ export async function scoreQuizzability(
   theme: string,
   weights: QuizzabilityWeights = DEFAULT_WEIGHTS
 ): Promise<QuizzabilityResult> {
+  // ── Step 0: Domain recognition (local, instant, no API calls) ──
+  // This provides a reliable baseline for known academic/knowledge domains
+  // independent of Wikipedia API availability.
+  const domainInfo = recognizeDomain(theme);
+
   // ── Step 1: Fetch raw data from external sources (in parallel) ──
   // Fetch article data AND category data simultaneously
   const [wikiData, categoryData] = await Promise.all([
@@ -47,8 +53,17 @@ export async function scoreQuizzability(
   ]);
 
   // ── Step 2: Topic-type detection (umbrella vs leaf) ──
-  // This runs BEFORE scoring so we can branch the scoring logic.
-  const topicType = classifyTopicType(categoryData);
+  // Use both category data AND domain recognition to classify.
+  // If domain recognition says tier 1 (broad umbrella), force umbrella
+  // even if the category traversal came back sparse (API might have failed).
+  let topicType = classifyTopicType(categoryData);
+  if (domainInfo.tier === 1 && topicType !== "umbrella") {
+    topicType = "umbrella";
+    console.log(
+      `[quizzability/engine] Domain recognition overrode topic type to "umbrella" ` +
+      `for "${theme}" (tier 1 domain: ${domainInfo.domainKey})`
+    );
+  }
 
   // ── Step 3: Fetch trivia data ──
   // For umbrella themes, also pass subtopic names so trivia search
@@ -96,9 +111,6 @@ export async function scoreQuizzability(
       (breadthAnalysis.score >= strongSignalThreshold ? 1 : 0);
 
     if (otherSignalsHigh >= 2) {
-      // At least 2 other signals are strong — fact_density=0 is likely a
-      // scoping bug, not reality. Set a floor based on the weaker of the
-      // strong signals.
       const strongValues = [contentDepth, triviaCoverage, breadthAnalysis.score]
         .filter((v) => v >= strongSignalThreshold);
       const minStrong = Math.min(...strongValues);
@@ -125,23 +137,42 @@ export async function scoreQuizzability(
     breadthAnalysis.score * weights.breadth_balance;
 
   // Apply verifiability modifiers
-  let finalScore = correctedRawScore;
+  let apiScore = correctedRawScore;
   if (verifiabilityFlag === "subjective") {
-    finalScore *= 0.7; // strong penalty for subjective themes
+    apiScore *= 0.7; // strong penalty for subjective themes
   } else if (verifiabilityFlag === "volatile") {
-    finalScore *= 0.85; // moderate penalty for fast-changing themes
-  }
-
-  // Handle edge case: no Wikipedia article at all AND no category tree
-  if (!wikiData.found && !categoryData.found) {
-    finalScore = Math.min(finalScore, 15);
+    apiScore *= 0.85; // moderate penalty for fast-changing themes
   }
 
   // Handle edge case: disambiguation page — theme is ambiguous
   // But only if it's NOT also an umbrella domain (some disambig pages
   // coexist with rich category trees)
-  if (wikiData.isDisambiguation && topicType !== "umbrella") {
-    finalScore = Math.min(finalScore, 30);
+  if (wikiData.isDisambiguation && topicType !== "umbrella" && !domainInfo.recognized) {
+    apiScore = Math.min(apiScore, 30);
+  }
+
+  // Handle edge case: no Wikipedia article AND no category tree
+  // BUT only cap score for unrecognized domains — recognized domains
+  // get their floor from domain recognition regardless of API results.
+  if (!wikiData.found && !categoryData.found && !domainInfo.recognized) {
+    apiScore = Math.min(apiScore, 15);
+  }
+
+  // ── Step 5c: Apply domain recognition floor + boost ──
+  // For recognized domains, the final score is at least the domain floor,
+  // and gets a small boost on top of the API score.
+  // This is the safety net that ensures "matematică", "istorie", etc.
+  // score correctly even when Wikipedia APIs fail or return sparse data.
+  const boostedApiScore = apiScore + domainInfo.boostScore;
+  const finalScore = Math.max(domainInfo.floorScore, boostedApiScore);
+
+  if (domainInfo.recognized && domainInfo.floorScore > boostedApiScore) {
+    console.log(
+      `[quizzability/engine] Domain floor applied for "${theme}": ` +
+      `apiScore=${Math.round(apiScore)} + boost=${domainInfo.boostScore} = ${Math.round(boostedApiScore)}, ` +
+      `floor=${domainInfo.floorScore} → using floor. ` +
+      `(tier ${domainInfo.tier}, domain: ${domainInfo.domainKey})`
+    );
   }
 
   const quizzabilityScore = Math.max(0, Math.min(100, Math.round(finalScore)));
@@ -158,7 +189,8 @@ export async function scoreQuizzability(
     triviaResults,
     breadthAnalysis,
     topicType,
-    categoryData
+    categoryData,
+    domainInfo
   );
 
   // ── Step 8: Generate suggested reframe if applicable ──
@@ -235,28 +267,49 @@ function generateNotes(
   triviaResults: Array<{ questionCount: number; isRomanianSource: boolean }>,
   breadthAnalysis: { isTooNarrow: boolean; isTooBroad: boolean },
   topicType: TopicType,
-  categoryData: WikipediaCategoryData
+  categoryData: WikipediaCategoryData,
+  domainInfo: { recognized: boolean; tier: number; domainKey: string; floorScore: number }
 ): string {
   const parts: string[] = [];
 
+  // ── Recognized domain identification ──
+  if (domainInfo.recognized && domainInfo.tier <= 2) {
+    if (domainInfo.tier === 1) {
+      parts.push(
+        `„${theme}" este recunoscut ca un domeniu academic/cultural larg — excelent pentru trivia, cu o bază vastă de material verificabil.`
+      );
+    } else if (domainInfo.tier === 2) {
+      parts.push(
+        `„${theme}" este un sub-domeniu bine cunoscut — foarte bun pentru trivia, cu material suficient pentru o rundă completă.`
+      );
+    }
+  }
+
   // ── No Wikipedia article AND no category tree ──
   if (!wikiData.found && !categoryData.found) {
-    parts.push(
-      `Nu a fost găsit niciun articol sau categorie Wikipedia pentru „${theme}". Fără o sursă de conținut verificabilă, tema nu poate susține o rundă de trivia.`
-    );
-    return parts.join(" ");
+    if (domainInfo.recognized) {
+      // Domain is recognized but Wikipedia data is missing — not fatal
+      parts.push(
+        `Nu a fost găsit un articol Wikipedia dedicat, dar tema aparține unui domeniu bine documentat.`
+      );
+    } else {
+      parts.push(
+        `Nu a fost găsit niciun articol sau categorie Wikipedia pentru „${theme}". Fără o sursă de conținut verificabilă, tema nu poate susține o rundă de trivia.`
+      );
+      return parts.join(" ");
+    }
   }
 
   // ── Disambiguation page (only flag for leaf topics) ──
-  if (wikiData.isDisambiguation && topicType !== "umbrella") {
+  if (wikiData.isDisambiguation && topicType !== "umbrella" && !domainInfo.recognized) {
     parts.push(
       `„${theme}" corespunde unei pagini de dezambiguizare pe Wikipedia — termenul are mai multe sensuri posibile. Recomandăm reformularea temei pentru a viza un subiect specific.`
     );
     return parts.join(" ");
   }
 
-  // ── Umbrella domain identification ──
-  if (topicType === "umbrella") {
+  // ── Umbrella domain identification (from category data) ──
+  if (topicType === "umbrella" && categoryData.found) {
     parts.push(
       `„${theme}" este un domeniu-umbrelă cu ${categoryData.totalArticles.toLocaleString()} articole și ${categoryData.totalSubcategories} subcategorii pe Wikipedia — sursă extrem de bogată de material pentru trivia.`
     );
@@ -277,22 +330,24 @@ function generateNotes(
     ["echilibrul lărgimii temei", signals.breadth_balance],
   ];
 
-  const sorted = [...signalEntries].sort((a, b) => b[1] - a[1]);
-  const best = sorted[0];
-  const worst = sorted[sorted.length - 1];
+  signalEntries.sort((a, b) => b[1] - a[1]);
+
+  const bestSignal = signalEntries[0];
+  const worstSignal = signalEntries[signalEntries.length - 1];
 
   if (score >= 60) {
     parts.push(
-      `Tema are un potențial excelent de quizzabilitate. Punctul forte principal: ${best[0]} (${best[1]}/100).`
+      `Tema are un potențial excelent de quizzabilitate.`
     );
-    if (worst[1] < 40) {
-      parts.push(
-        `Singura zonă mai slabă: ${worst[0]} (${worst[1]}/100).`
-      );
+    if (bestSignal[1] > 0) {
+      parts.push(`Punctul forte principal: ${bestSignal[0]} (${bestSignal[1]}/100).`);
+    }
+    if (worstSignal[1] < 100) {
+      parts.push(`Singura zonă mai slabă: ${worstSignal[0]} (${worstSignal[1]}/100).`);
     }
   } else if (score >= 35) {
     parts.push(
-      `Tema este la limită. ${best[0]} este în regulă (${best[1]}/100), dar ${worst[0]} este problematic (${worst[1]}/100).`
+      `Tema este la limită. ${bestSignal[0]} este în regulă (${bestSignal[1]}/100), dar ${worstSignal[0]} este problematic (${worstSignal[1]}/100).`
     );
   } else {
     parts.push(

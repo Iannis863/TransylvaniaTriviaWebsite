@@ -123,9 +123,14 @@ export const CATEGORY_PARAMS = {
   /** Maximum recursion depth when traversing the category tree. */
   maxTraversalDepth: 3,
   /** Max subcategories to follow per level (prevents runaway on huge trees). */
-  maxSubcategoriesPerLevel: 20,
-  /** Number of random articles to sample from the subtree for richness scoring. */
-  richnessSampleSize: 8,
+  maxSubcategoriesPerLevel: 30,
+
+  /**
+   * For umbrella domains, how many sub-articles should we randomly sample
+   * to compute average branch richness and extract facts?
+   * Higher = more accurate but slower.
+   */
+  richnessSampleSize: 12,
   /** Minimum average word count per sampled article to count as "rich" content. */
   richBranchMinWordCount: 500,
 } as const;

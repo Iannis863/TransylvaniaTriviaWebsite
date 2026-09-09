@@ -131,7 +131,7 @@ async function queryCategoryTree(
     if (!pages) return empty;
 
     const pageId = Object.keys(pages)[0];
-    let categoryTitle: string;
+    let categoryTitle: string = "";
 
     if (pageId !== "-1") {
       // Direct category exists
@@ -154,15 +154,72 @@ async function queryCategoryTree(
       if (!searchRes.ok) return empty;
 
       const searchJson = await searchRes.json();
-      const searchResults = searchJson?.query?.search;
-      if (!searchResults || searchResults.length === 0) return empty;
+      let searchResults = searchJson?.query?.search;
 
-      // Pick the best match (first result in category namespace)
-      categoryTitle = searchResults[0].title;
+      // Fallback: try with diacritics stripped
+      if ((!searchResults || searchResults.length === 0)) {
+        const stripped = theme
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+        if (stripped !== theme) {
+          // Also try direct title with stripped diacritics
+          const strippedCandidateTitle = `${categoryPrefix}:${stripped}`;
+          const strippedCheckUrl =
+            `https://${lang}.wikipedia.org/w/api.php?` +
+            new URLSearchParams({
+              action: "query",
+              titles: strippedCandidateTitle,
+              format: "json",
+              origin: "*",
+            }).toString();
+          try {
+            const strippedCheckRes = await fetchWithTimeout(strippedCheckUrl);
+            if (strippedCheckRes.ok) {
+              const strippedCheckJson = await strippedCheckRes.json();
+              const strippedPages = strippedCheckJson?.query?.pages;
+              if (strippedPages) {
+                const strippedPageId = Object.keys(strippedPages)[0];
+                if (strippedPageId !== "-1") {
+                  categoryTitle = strippedCandidateTitle;
+                  // Skip the rest, we found it
+                } else {
+                  // Also try namespace search with stripped text
+                  const strippedSearchUrl =
+                    `https://${lang}.wikipedia.org/w/api.php?` +
+                    new URLSearchParams({
+                      action: "query",
+                      list: "search",
+                      srsearch: stripped,
+                      srnamespace: "14",
+                      srlimit: "5",
+                      format: "json",
+                      origin: "*",
+                    }).toString();
+                  const strippedSearchRes = await fetchWithTimeout(strippedSearchUrl);
+                  if (strippedSearchRes.ok) {
+                    const strippedSearchJson = await strippedSearchRes.json();
+                    searchResults = strippedSearchJson?.query?.search;
+                  }
+                }
+              }
+            }
+          } catch (_stripErr) {
+            // Silently continue — we'll check searchResults below
+          }
+        }
+      }
 
-      // Make sure it starts with the category prefix
-      if (!categoryTitle.startsWith(categoryPrefix + ":")) {
-        categoryTitle = `${categoryPrefix}:${searchResults[0].title}`;
+      // If we still don't have a categoryTitle from the stripped direct check
+      if (!categoryTitle) {
+        if (!searchResults || searchResults.length === 0) return empty;
+
+        // Pick the best match (first result in category namespace)
+        categoryTitle = searchResults[0].title;
+
+        // Make sure it starts with the category prefix
+        if (!categoryTitle.startsWith(categoryPrefix + ":")) {
+          categoryTitle = `${categoryPrefix}:${searchResults[0].title}`;
+        }
       }
     }
 
@@ -438,34 +495,97 @@ async function queryWikipedia(
   };
 
   try {
-    // ── Step 1: Search for the article title ──
-    const searchUrl =
+    // ── Step 1: Find the article ──
+    // Strategy: try direct title lookup first, then fall back to search.
+    // This fixes cases like "Istoria Europei" where the article exists
+    // with the exact theme name but search might not return it.
+    let pageTitle: string | null = null;
+
+    // 1a. Try direct title lookup
+    const directUrl =
       `https://${lang}.wikipedia.org/w/api.php?` +
       new URLSearchParams({
         action: "query",
-        list: "search",
-        srsearch: theme,
-        srlimit: "5",
+        titles: theme,
+        prop: "info",
         format: "json",
         origin: "*",
       }).toString();
 
-    const searchRes = await fetchWithTimeout(searchUrl);
-    if (!searchRes.ok) return empty;
+    try {
+      const directRes = await fetchWithTimeout(directUrl);
+      if (directRes.ok) {
+        const directJson = await directRes.json();
+        const directPages = directJson?.query?.pages;
+        if (directPages) {
+          const directPageId = Object.keys(directPages)[0];
+          if (directPageId !== "-1" && directPages[directPageId]?.title) {
+            pageTitle = directPages[directPageId].title;
+          }
+        }
+      }
+    } catch (_directErr) {
+      // Silently fall through to search
+    }
 
-    const searchJson = await searchRes.json();
-    const searchResults = searchJson?.query?.search;
-    if (!searchResults || searchResults.length === 0) return empty;
+    // 1b. If direct lookup failed, try search API
+    if (!pageTitle) {
+      const searchUrl =
+        `https://${lang}.wikipedia.org/w/api.php?` +
+        new URLSearchParams({
+          action: "query",
+          list: "search",
+          srsearch: theme,
+          srlimit: "5",
+          format: "json",
+          origin: "*",
+        }).toString();
 
-    // Pick the first result as our best match
-    const pageTitle: string = searchResults[0].title;
+      const searchRes = await fetchWithTimeout(searchUrl);
+      if (!searchRes.ok) return empty;
+
+      const searchJson = await searchRes.json();
+      const searchResults = searchJson?.query?.search;
+      if (!searchResults || searchResults.length === 0) {
+        // 1c. Last resort: try with diacritics stripped
+        const stripped = theme
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+        if (stripped !== theme) {
+          const strippedUrl =
+            `https://${lang}.wikipedia.org/w/api.php?` +
+            new URLSearchParams({
+              action: "query",
+              list: "search",
+              srsearch: stripped,
+              srlimit: "5",
+              format: "json",
+              origin: "*",
+            }).toString();
+          const strippedRes = await fetchWithTimeout(strippedUrl);
+          if (strippedRes.ok) {
+            const strippedJson = await strippedRes.json();
+            const strippedResults = strippedJson?.query?.search;
+            if (strippedResults && strippedResults.length > 0) {
+              pageTitle = strippedResults[0].title;
+            }
+          }
+        }
+        if (!pageTitle) return empty;
+      } else {
+        pageTitle = searchResults[0].title;
+      }
+    }
+
+    if (!pageTitle) return empty;
+    const finalPageTitle: string = pageTitle;
 
     // ── Step 2: Fetch full article parse data ──
     const parseUrl =
       `https://${lang}.wikipedia.org/w/api.php?` +
       new URLSearchParams({
         action: "parse",
-        page: pageTitle,
+        page: finalPageTitle,
         prop: "sections|categories|links|wikitext",
         format: "json",
         origin: "*",
@@ -483,11 +603,12 @@ async function queryWikipedia(
     // IMPORTANT: Do NOT include `exintro` — that MediaWiki flag is a boolean
     // whose mere presence (even as "false") restricts output to the intro
     // paragraph only. Omitting it returns the full article body.
+    // Also set exchars high to avoid any server-side truncation.
     const extractUrl =
       `https://${lang}.wikipedia.org/w/api.php?` +
       new URLSearchParams({
         action: "query",
-        titles: pageTitle,
+        titles: finalPageTitle,
         prop: "extracts|categories",
         explaintext: "true",
         exlimit: "1",
@@ -566,7 +687,7 @@ async function queryWikipedia(
 
     const result: WikipediaArticleData = {
       found: true,
-      title: pageTitle,
+      title: finalPageTitle,
       language: lang,
       wordCount,
       sectionCount: sections.length,
@@ -609,7 +730,7 @@ async function queryWikipedia(
  */
 async function fetchWithTimeout(
   url: string,
-  timeoutMs: number = 8000
+  timeoutMs: number = 12000
 ): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
