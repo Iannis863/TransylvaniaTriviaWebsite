@@ -92,3 +92,42 @@ export interface QuizzabilityWeights {
   existing_trivia_coverage: number;
   breadth_balance: number;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Topic type classification
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Whether a theme is a broad "umbrella" domain (e.g. "matematică", "istorie")
+ * whose content is spread across a large category subtree, or a specific
+ * "leaf" topic whose content lives in a single article.
+ */
+export type TopicType = "umbrella" | "leaf";
+
+// ─────────────────────────────────────────────────────────────
+// Wikipedia category subtree data
+// ─────────────────────────────────────────────────────────────
+
+/** Result of traversing a Wikipedia category tree. */
+export interface WikipediaCategoryData {
+  /** Whether a matching category was found at all. */
+  found: boolean;
+  /** The canonical category title (e.g. "Categorie:Istorie"). */
+  categoryTitle: string;
+  /** Which Wikipedia language edition this came from. */
+  language: "ro" | "en";
+  /** Total number of member articles found in the subtree. */
+  totalArticles: number;
+  /** Total number of subcategories found in the subtree. */
+  totalSubcategories: number;
+  /** Names of direct subcategories (useful for reframe suggestions). */
+  directSubcategoryNames: string[];
+  /**
+   * Average "richness" of sampled branches: mean word count of a
+   * sample of articles from the subtree (0 if not sampled).
+   */
+  avgBranchRichness: number;
+  /** Whether we fell back from Romanian to English Wikipedia. */
+  isFallback: boolean;
+}
+

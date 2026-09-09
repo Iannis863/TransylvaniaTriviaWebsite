@@ -73,9 +73,18 @@ const OPENTDB_CATEGORY_MAP: Record<string, number> = {
 /**
  * Search for existing trivia questions related to a theme.
  * Queries OpenTDB and other available public trivia sources.
+ *
+ * For umbrella themes, also aggregates hits across known subtopics
+ * (since a domain like "istorie" will rarely have trivia tagged with
+ * the umbrella label itself — it'll be tagged with its subtopics).
+ *
+ * @param theme The primary theme string.
+ * @param subtopics Optional list of subtopic names to also query
+ *   (e.g. subcategory names from the Wikipedia category tree).
  */
 export async function searchTriviaQuestions(
-  theme: string
+  theme: string,
+  subtopics: string[] = []
 ): Promise<TriviaSearchResult[]> {
   const cached = triviaCache.get(theme);
   if (cached) return cached;
@@ -83,9 +92,61 @@ export async function searchTriviaQuestions(
   const results: TriviaSearchResult[] = [];
 
   // ── Source 1: OpenTDB (Open Trivia Database) ──
+  // Query the main theme first
   const opentdbResult = await queryOpenTDB(theme);
   if (opentdbResult) {
     results.push(opentdbResult);
+  }
+
+  // For umbrella themes, also query OpenTDB for subtopics and aggregate
+  if (subtopics.length > 0) {
+    const subtopicCategories = new Set<number>();
+    // Collect all unique category IDs that subtopics map to
+    for (const subtopic of subtopics.slice(0, 10)) { // limit to avoid hammering the API
+      const lower = subtopic.toLowerCase().trim();
+      for (const [keyword, id] of Object.entries(OPENTDB_CATEGORY_MAP)) {
+        if (
+          lower.includes(keyword) ||
+          keyword.includes(lower) ||
+          fuzzyMatch(lower, keyword)
+        ) {
+          subtopicCategories.add(id);
+        }
+      }
+    }
+
+    // Remove the category we already queried for the main theme
+    const mainCatId = findCategoryId(theme);
+    if (mainCatId !== null) {
+      subtopicCategories.delete(mainCatId);
+    }
+
+    // Query each additional category and sum up the results
+    let subtopicTotalQ = 0;
+    let subtopicDistinctQ = 0;
+    for (const catId of Array.from(subtopicCategories)) {
+      try {
+        const countUrl = `https://opentdb.com/api_count.php?category=${catId}`;
+        const countRes = await fetchWithTimeout(countUrl);
+        if (countRes.ok) {
+          const countJson = await countRes.json();
+          const total = countJson?.category_question_count?.total_question_count || 0;
+          subtopicTotalQ += total;
+          subtopicDistinctQ += Math.round(total * 0.8);
+        }
+      } catch {
+        // Silently skip — these are best-effort subtopic lookups
+      }
+    }
+
+    if (subtopicTotalQ > 0) {
+      results.push({
+        questionCount: subtopicTotalQ,
+        distinctQuestionCount: subtopicDistinctQ,
+        source: "OpenTDB (subtopics)",
+        isRomanianSource: false,
+      });
+    }
   }
 
   // ── Source 2: jService (Jeopardy! questions) ──
@@ -99,6 +160,40 @@ export async function searchTriviaQuestions(
 }
 
 /**
+ * Find the OpenTDB category ID for a theme string, or null if none.
+ */
+function findCategoryId(theme: string): number | null {
+  const lower = theme.toLowerCase().trim();
+  for (const [keyword, id] of Object.entries(OPENTDB_CATEGORY_MAP)) {
+    if (lower.includes(keyword) || keyword.includes(lower)) {
+      return id;
+    }
+  }
+  for (const [keyword, id] of Object.entries(OPENTDB_CATEGORY_MAP)) {
+    if (fuzzyMatch(lower, keyword)) {
+      return id;
+    }
+  }
+  return null;
+}
+
+/**
+ * Fuzzy match: check if any word in theme starts with (or is started by)
+ * any word in keyword, both >= 4 chars.
+ */
+function fuzzyMatch(theme: string, keyword: string): boolean {
+  const themeWords = theme.split(/\s+/);
+  const keywordWords = keyword.split(/\s+/);
+  return themeWords.some((tw) =>
+    keywordWords.some(
+      (kw) =>
+        (tw.length >= 4 && kw.startsWith(tw)) ||
+        (kw.length >= 4 && tw.startsWith(kw))
+    )
+  );
+}
+
+/**
  * Query Open Trivia Database (opentdb.com).
  * First tries to match theme to a known category, then fetches questions.
  */
@@ -106,36 +201,7 @@ async function queryOpenTDB(
   theme: string
 ): Promise<TriviaSearchResult | null> {
   try {
-    const lower = theme.toLowerCase().trim();
-
-    // Try to find a matching category
-    let categoryId: number | null = null;
-    for (const [keyword, id] of Object.entries(OPENTDB_CATEGORY_MAP)) {
-      if (lower.includes(keyword) || keyword.includes(lower)) {
-        categoryId = id;
-        break;
-      }
-    }
-
-    if (categoryId === null) {
-      // No direct category match — try fuzzy: check if any keyword is a substring
-      for (const [keyword, id] of Object.entries(OPENTDB_CATEGORY_MAP)) {
-        const themeWords = lower.split(/\s+/);
-        const keywordWords = keyword.split(/\s+/);
-        if (
-          themeWords.some((tw) =>
-            keywordWords.some(
-              (kw) =>
-                (tw.length >= 4 && kw.startsWith(tw)) ||
-                (kw.length >= 4 && tw.startsWith(kw))
-            )
-          )
-        ) {
-          categoryId = id;
-          break;
-        }
-      }
-    }
+    const categoryId = findCategoryId(theme);
 
     if (categoryId === null) {
       // Theme doesn't map to any OpenTDB category

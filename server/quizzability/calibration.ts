@@ -181,6 +181,42 @@ export const CALIBRATION_SET: CalibrationEntry[] = [
     expectedVerdict: "de verificat manual",
     rationale: "Could mean the ancient kingdom or the car brand — ambiguity needs handling.",
   },
+
+  // ═══════════════ UMBRELLA DOMAINS (expected: "acceptat") ═══════════════
+  // These are broad academic/knowledge domains with massive category subtrees.
+  // They should score very HIGH because they have the deepest, richest
+  // material of any possible theme — the bug was that they scored low
+  // because the engine only looked at the short overview article.
+  {
+    theme: "Matematică",
+    expectedVerdict: "acceptat",
+    rationale: "Huge domain — algebra, geometry, calculus, number theory, etc. Thousands of articles in the category tree.",
+  },
+  {
+    theme: "Istorie",
+    expectedVerdict: "acceptat",
+    rationale: "One of the largest knowledge domains — ancient, medieval, modern history across all civilizations.",
+  },
+  {
+    theme: "Biologie",
+    expectedVerdict: "acceptat",
+    rationale: "Massive domain — taxonomy, ecology, genetics, anatomy, evolution. Thousands of subtopics.",
+  },
+  {
+    theme: "Fizică",
+    expectedVerdict: "acceptat",
+    rationale: "Deep domain — mechanics, thermodynamics, optics, quantum physics, relativity. Endless quiz material.",
+  },
+  {
+    theme: "Chimie",
+    expectedVerdict: "acceptat",
+    rationale: "Rich domain — elements, compounds, reactions, organic chemistry. Hundreds of quizzable facts.",
+  },
+  {
+    theme: "Astronomie",
+    expectedVerdict: "acceptat",
+    rationale: "Stars, planets, galaxies, cosmology — broad and deep, with many verifiable facts.",
+  },
 ];
 
 /**

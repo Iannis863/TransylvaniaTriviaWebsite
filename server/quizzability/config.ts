@@ -113,3 +113,40 @@ export const VERIFIABILITY_PATTERNS = {
     /\b(nba|nfl|premier\s+league|liga\s+1)\s+(standings|clasament|rezultate)/i,
   ],
 } as const;
+
+/**
+ * Category subtree traversal parameters (for umbrella theme detection).
+ */
+export const CATEGORY_PARAMS = {
+  /** Minimum descendant articles within the subtree to classify as "umbrella". */
+  umbrellaThreshold: 50,
+  /** Maximum recursion depth when traversing the category tree. */
+  maxTraversalDepth: 3,
+  /** Max subcategories to follow per level (prevents runaway on huge trees). */
+  maxSubcategoriesPerLevel: 20,
+  /** Number of random articles to sample from the subtree for richness scoring. */
+  richnessSampleSize: 8,
+  /** Minimum average word count per sampled article to count as "rich" content. */
+  richBranchMinWordCount: 500,
+} as const;
+
+/**
+ * Umbrella-specific content depth scoring parameters.
+ * Used instead of the article-level CONTENT_DEPTH_PARAMS when the theme
+ * is classified as an umbrella domain.
+ */
+export const UMBRELLA_DEPTH_PARAMS = {
+  /** Subtree article count that maps to a 100 score. */
+  maxArticleCount: 2000,
+  /** Subtree subcategory count that maps to a 100 score. */
+  maxSubcategoryCount: 100,
+  /** Average branch richness (word count) that maps to a 100 score. */
+  maxBranchRichness: 3000,
+  /** Weight of subtree-article-count within umbrella content_depth (0–1). */
+  articleCountWeight: 0.45,
+  /** Weight of subcategory-count within umbrella content_depth (0–1). */
+  subcategoryCountWeight: 0.25,
+  /** Weight of branch-richness within umbrella content_depth (0–1). */
+  branchRichnessWeight: 0.30,
+} as const;
+
