@@ -159,17 +159,13 @@ export default function ThemeValidator() {
             
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-5 border-b border-purple-800/50">
               <div className="text-left">
-                {result.popularityScore >= 60 ? (
+                {result.popularityScore >= 50 ? (
                   <Badge className="bg-emerald-500 text-purple-950 font-bold mb-1">
-                    TEMĂ ESTE ELIGIBILĂ
-                  </Badge>
-                ) : result.popularityScore >= 40 ? (
-                  <Badge className="bg-amber-500 text-purple-950 font-bold mb-1">
-                    TEMĂ ESTE LA LIMITĂ
+                    Tema este eligibilă
                   </Badge>
                 ) : (
                   <Badge className="bg-red-500 text-white font-bold mb-1">
-                    TEMĂ NU ESTE ELIGIBILĂ
+                    Tema nu este eligibilă
                   </Badge>
                 )}
                 <h4 className="text-2xl font-heading text-gold-gradient tracking-wide">
@@ -205,19 +201,23 @@ export default function ThemeValidator() {
                 <Sparkles className="w-3.5 h-3.5" />
                 Ce înseamnă scorul?
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 mb-4">
                 <div className="p-2.5 rounded-lg bg-[#140626] border border-red-500/30 text-xs text-purple-100 flex items-start gap-2">
-                  <span className="text-red-400 font-bold font-mono shrink-0 w-8">&lt; 40</span>
-                  <span>Tema este foarte probabil <strong>neeligibilă</strong> (prea obscură, prea tehnică sau nevalidă).</span>
-                </div>
-                <div className="p-2.5 rounded-lg bg-[#140626] border border-amber-500/30 text-xs text-purple-100 flex items-start gap-2">
-                  <span className="text-amber-400 font-bold font-mono shrink-0 w-8">40-60</span>
-                  <span>Tema este <strong>la limită</strong> și trebuie validată manual de către Quizmaster.</span>
+                  <span className="text-red-400 font-bold font-mono shrink-0 w-8">&lt; 50</span>
+                  <span>Tema este foarte probabil <strong>neeligibilă</strong> (prea nișată, prea dificilă sau invalidă).</span>
                 </div>
                 <div className="p-2.5 rounded-lg bg-[#140626] border border-emerald-500/30 text-xs text-purple-100 flex items-start gap-2">
-                  <span className="text-emerald-400 font-bold font-mono shrink-0 w-8">&gt; 60</span>
-                  <span>Tema este foarte probabil <strong>eligibilă</strong> și pregătită pentru concurs!</span>
+                  <span className="text-emerald-400 font-bold font-mono shrink-0 w-8">&ge; 50</span>
+                  <span>Tema este foarte probabil <strong>eligibilă</strong> și pregătită pentru quiz!</span>
                 </div>
+              </div>
+              
+              {/* Disclaimer */}
+              <div className="p-3 rounded-lg bg-blue-900/20 border border-blue-500/30 text-[11px] text-blue-200 leading-relaxed flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-blue-400" />
+                <p>
+                  <strong>Mențiune importantă:</strong> Acest scor este doar o estimare. Decizia finală este luată întotdeauna de către Quizmaster. Pentru a avea o confirmare oficială, trimiteți propunerea mai jos. Răspunsul final va apărea în secțiunea „Contul Meu” sub rubrica „Propuneri Teme (Echipă)”.
+                </p>
               </div>
             </div>
 
