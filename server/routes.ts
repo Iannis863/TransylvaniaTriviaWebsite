@@ -12,6 +12,7 @@ import { getCurrentOrNextEdition, getFullSchedule } from "../shared/schedule.js"
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { sendRegistrationConfirmation } from "./email.js";
+import { scoreQuizzability } from "./quizzability/index.js";
 
 // Helper function to check the password header securely
 function checkAuth(req: Request, res: Response, next: () => void) {
@@ -621,144 +622,71 @@ export async function registerRoutes(
 
   app.post("/api/theme-validator", async (req, res) => {
     try {
-      const { theme, proposedBy, teamId, editionId } = req.body;
+      const { theme } = req.body;
       if (!theme || typeof theme !== "string" || theme.trim().length < 3) {
         return res.status(400).json({ message: "Te rugăm să introduci o temă de cel puțin 3 caractere" });
       }
 
       const cleanTheme = theme.trim();
-      const lower = cleanTheme.toLowerCase();
 
-      // Algorithm to simulate Google search volume / popularity
-      let score = 50;
-      let status: "APPROVED" | "BORDERLINE" | "REJECTED" = "APPROVED";
-      let feedback = "";
-      let category = "Cultură Generală";
-      let sampleQuestions: string[] = [];
+      // ── Run the quizzability scoring engine ──
+      const quizzability = await scoreQuizzability(cleanTheme);
 
-      // Keyword dictionaries
-      const highPopularityKWs = [
-        "istorie", "geografie", "cultura generala", "film", "muzica", "cinema", 
-        "sport", "fotbal", "animale", "literatura", "romania", "stiinta", 
-        "mitologie", "arta", "capitale", "univers"
-      ];
-      const mediumPopularityKWs = [
-        "harry potter", "star wars", "lord of the rings", "marvel", "disney",
-        "anii 90", "anii 80", "anii 2000", "tehnologie", "jocuri video", 
-        "mitologia nordica", "mitologia greaca", "rock", "pop"
-      ];
-      const lowPopularityKWs = [
-        "teologie", "fizica cuantica", "biologie moleculara", "chimie organica", 
-        "matematica avansata", "filosofie", "anatomie", "fizica nucleara"
-      ];
+      // ── Map quizzability result to the existing frontend contract ──
+      const score = quizzability.quizzability_score;
 
-      // Helper for fuzzy matching
-      const levenshtein = (a: string, b: string): number => {
-        const matrix = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
-        for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
-        for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
-        for (let i = 1; i <= a.length; i++) {
-          for (let j = 1; j <= b.length; j++) {
-            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-            matrix[i][j] = Math.min(
-              matrix[i - 1][j] + 1,
-              matrix[i][j - 1] + 1,
-              matrix[i - 1][j - 1] + cost
-            );
-          }
-        }
-        return matrix[a.length][b.length];
-      };
-
-      // A deterministic hash function to generate a consistent base score (0-100) for unknown terms
-      let hash = 0;
-      for (let i = 0; i < lower.length; i++) {
-        hash = (hash * 31 + lower.charCodeAt(i)) % 100;
-      }
-      
-      let isHigh = highPopularityKWs.some(kw => lower.includes(kw));
-      let isMedium = mediumPopularityKWs.some(kw => lower.includes(kw));
-      let isLow = lowPopularityKWs.some(kw => lower.includes(kw));
-      
-      const hasVowels = /[aeiouăîâ]/.test(lower);
-      const hasTooManyConsonants = /[bcdfghjklmnpqrstvwxyz]{5,}/i.test(lower);
-      let isGibberish = !hasVowels || cleanTheme.length < 4 || /^([a-z])\1+$/.test(lower) || hasTooManyConsonants;
-
-      let typoMatch = "";
-
-      if (!isHigh && !isMedium && !isLow) {
-        // Check if it's a typo of a high popularity keyword
-        for (const kw of highPopularityKWs) {
-          if (levenshtein(lower, kw) <= 2 && lower.length >= 5) {
-            typoMatch = kw;
-            isHigh = true;
-            isGibberish = false;
-            break;
-          }
-        }
-        
-        // If it looks randomly mashed like 'wfdsfaffas' but passes the above checks, we can do a ratio check
-        if (!isGibberish && !typoMatch && lower.length > 6) {
-          const vowelMatch = lower.match(/[aeiouăîâ]/g);
-          const vowelCount = vowelMatch ? vowelMatch.length : 0;
-          if (vowelCount / lower.length < 0.25) {
-            isGibberish = true; // e.g. wfdsfaffas (2 vowels / 10 chars = 0.2 < 0.25)
-          }
-        }
-      }
-
-      if (isGibberish) {
-        score = 5 + (hash % 10); // 5-14
-        feedback = `Eroare: "${cleanTheme}" nu pare a fi un cuvânt sau o expresie validă. Te rugăm să introduci o temă reală.`;
-      } else if (isLow) {
-        score = 20 + (hash % 20); // 20-39
-        feedback = `Tema propusă ("${cleanTheme}") este mult prea nișată, specifică sau tehnică. Subiectul are un volum redus de interes general și ar putea fi prea dificil pentru majoritatea echipelor.`;
-      } else if (isHigh) {
-        score = 85 + (hash % 16); // 85-100
-        feedback = typoMatch 
-          ? `Ai vrut să spui "${typoMatch}"? Este un subiect de interes general excelent, cu o popularitate masivă!`
-          : `Tema "${cleanTheme}" are o popularitate masivă! Este un subiect de interes general, ideal pentru competiție.`;
-      } else if (isMedium) {
-        score = 65 + (hash % 20); // 65-84
-        feedback = `Tema "${cleanTheme}" este bine cunoscută în cultura pop și suficient de populară pentru a asigura o rundă distractivă.`;
-      } else {
-        // Fallback for unknown terms (e.g. biology of animals)
-        score = 45 + (hash % 15); // 45-59
-        if (score >= 50) {
-          feedback = `Tema "${cleanTheme}" este la limită. A înregistrat un volum de căutare moderat spre bun. Poate fi interesantă!`;
-        } else {
-          feedback = `Tema "${cleanTheme}" are un volum de căutare destul de scăzut, riscând să fie ușor prea obscură pentru publicul larg.`;
-        }
-      }
-
-      if (isGibberish || isLow) {
-        status = "REJECTED";
-      } else if (isHigh || isMedium) {
+      let status: "APPROVED" | "BORDERLINE" | "REJECTED";
+      if (quizzability.verdict === "acceptat") {
         status = "APPROVED";
+      } else if (quizzability.verdict === "de verificat manual") {
+        status = "BORDERLINE";
       } else {
-        status = score >= 50 ? "BORDERLINE" : "REJECTED";
+        status = "REJECTED";
       }
-      
-      const isEligible = score >= 50; 
 
-      // Generate dynamic sample questions for preview
-      sampleQuestions = [
+      const isEligible = score >= 50;
+
+      // Determine difficulty rating from score
+      const difficultyRating = score >= 80
+        ? "Ușoară (Accesibilă Tuturor)"
+        : score >= 60
+          ? "Medie (Rezonabilă)"
+          : "Grea (Nișată)";
+
+      // Determine category from verifiability flag
+      let category = "Cultură Generală";
+      if (quizzability.signals.verifiability_flag === "volatile") {
+        category = "Actualitate (Volatilă)";
+      } else if (quizzability.signals.verifiability_flag === "subjective") {
+        category = "Opinie / Subiectiv";
+      }
+
+      // Generate sample questions
+      const sampleQuestions = [
         `1. Care este cel mai reprezentativ moment istoric / figură asociată cu "${cleanTheme}"?`,
         `2. În ce an sau decadă a atins "${cleanTheme}" apogeul popularității globale?`,
-        `3. Care este recordul mondial sau curiozitatea cea mai bizară din sfera "${cleanTheme}"?`
+        `3. Care este recordul mondial sau curiozitatea cea mai bizară din sfera "${cleanTheme}"?`,
       ];
 
-      // Suggestion creation is handled by the dedicated /api/theme-suggestions endpoint
-
       res.json({
+        // ── Legacy fields (backward compat with ThemeValidator.tsx) ──
         themeName: cleanTheme,
         popularityScore: score,
-        isEligible: isEligible,
-        status: status,
+        isEligible,
+        status,
         category,
-        feedback,
-        difficultyRating: score >= 80 ? "Ușoară (Accesibilă Tuturor)" : score >= 60 ? "Medie (Rezonabilă)" : "Grea (Nișată)",
+        feedback: quizzability.notes,
+        difficultyRating,
         suggestedQuestions: sampleQuestions,
+
+        // ── New quizzability breakdown ──
+        quizzability: {
+          quizzability_score: quizzability.quizzability_score,
+          verdict: quizzability.verdict,
+          signals: quizzability.signals,
+          notes: quizzability.notes,
+          suggested_reframe: quizzability.suggested_reframe,
+        },
       });
     } catch (error) {
       console.error("Theme validator error:", error);
