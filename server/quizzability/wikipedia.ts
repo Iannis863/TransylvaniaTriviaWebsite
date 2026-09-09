@@ -119,6 +119,7 @@ async function queryCategoryTree(
       new URLSearchParams({
         action: "query",
         titles: candidateTitle,
+        redirects: "1",
         format: "json",
         origin: "*",
       }).toString();
@@ -427,6 +428,7 @@ async function sampleArticleRichness(
         prop: "extracts",
         explaintext: "true",
         exlimit: titles.length.toString(),
+        redirects: "1",
         format: "json",
         origin: "*",
       }).toString();
@@ -508,6 +510,7 @@ async function queryWikipedia(
         action: "query",
         titles: theme,
         prop: "info",
+        redirects: "1",
         format: "json",
         origin: "*",
       }).toString();
@@ -571,13 +574,19 @@ async function queryWikipedia(
             }
           }
         }
-        if (!pageTitle) return empty;
+        if (!pageTitle) {
+          console.warn(`[quizzability/wikipedia] All search fallbacks failed for ${theme}`);
+          return empty;
+        }
       } else {
         pageTitle = searchResults[0].title;
       }
     }
 
-    if (!pageTitle) return empty;
+    if (!pageTitle) {
+      console.warn(`[quizzability/wikipedia] pageTitle is null after search for ${theme}`);
+      return empty;
+    }
     const finalPageTitle: string = pageTitle;
 
     // ── Step 2: Fetch full article parse data ──
@@ -587,15 +596,22 @@ async function queryWikipedia(
         action: "parse",
         page: finalPageTitle,
         prop: "sections|categories|links|wikitext",
+        redirects: "1",
         format: "json",
         origin: "*",
       }).toString();
 
     const parseRes = await fetchWithTimeout(parseUrl);
-    if (!parseRes.ok) return empty;
+    if (!parseRes.ok) {
+      console.warn(`[quizzability/wikipedia] parseRes not ok for ${finalPageTitle}`);
+      return empty;
+    }
 
     const parseJson = await parseRes.json();
-    if (parseJson.error) return empty;
+    if (parseJson.error) {
+      console.warn(`[quizzability/wikipedia] parseJson has error for ${finalPageTitle}:`, parseJson.error);
+      return empty;
+    }
 
     const parseData = parseJson.parse;
 
@@ -613,19 +629,29 @@ async function queryWikipedia(
         explaintext: "true",
         exlimit: "1",
         cllimit: "500",
+        redirects: "1",
         format: "json",
         origin: "*",
       }).toString();
 
     const extractRes = await fetchWithTimeout(extractUrl);
-    if (!extractRes.ok) return empty;
+    if (!extractRes.ok) {
+      console.warn(`[quizzability/wikipedia] extractRes not ok for ${finalPageTitle}`);
+      return empty;
+    }
 
     const extractJson = await extractRes.json();
     const pages = extractJson?.query?.pages;
-    if (!pages) return empty;
+    if (!pages) {
+      console.warn(`[quizzability/wikipedia] no pages in extractJson for ${finalPageTitle}`);
+      return empty;
+    }
 
     const pageId = Object.keys(pages)[0];
-    if (pageId === "-1") return empty;
+    if (pageId === "-1") {
+      console.warn(`[quizzability/wikipedia] pageId is -1 for ${finalPageTitle}`);
+      return empty;
+    }
 
     const page = pages[pageId];
     const extractText: string = page?.extract || "";
@@ -680,6 +706,8 @@ async function queryWikipedia(
     const wordCount = extractText
       .split(/\s+/)
       .filter((w: string) => w.length > 0).length;
+
+    console.log(`[quizzability/wikipedia] "${theme}" -> mapped to "${finalPageTitle}" (lang: ${lang}). Extract length: ${extractText.length}, Words: ${wordCount}, Sections: ${sections.length}`);
 
     // ── Link count ──
     const allLinks: Array<{ ns: number }> = parseData?.links || [];

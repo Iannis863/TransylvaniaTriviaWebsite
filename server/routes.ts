@@ -623,8 +623,10 @@ export async function registerRoutes(
   app.post("/api/theme-validator", async (req, res) => {
     try {
       const { theme } = req.body;
-      if (!theme || typeof theme !== "string" || theme.trim().length < 3) {
-        return res.status(400).json({ message: "Te rugăm să introduci o temă de cel puțin 3 caractere" });
+      if (!theme || typeof theme !== "string" || theme.trim().length < 2) {
+        return res
+          .status(400)
+          .json({ message: "Te rugăm să introduci o temă de cel puțin 2 caractere" });
       }
 
       const cleanTheme = theme.trim();

@@ -351,7 +351,7 @@ function generateNotes(
     );
   } else {
     parts.push(
-      `Tema nu are suficient material pentru o rundă completă de trivia. Principala problemă: ${worst[0]} (${worst[1]}/100).`
+      `Tema nu are suficient material pentru o rundă completă de trivia. Principala problemă: ${worstSignal[0]} (${worstSignal[1]}/100).`
     );
   }
 
