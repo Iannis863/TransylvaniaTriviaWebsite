@@ -159,9 +159,19 @@ export default function ThemeValidator() {
             
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-5 border-b border-purple-800/50">
               <div className="text-left">
-                <Badge className={result.isEligible ? "bg-emerald-500 text-purple-950 font-bold mb-1" : "bg-red-500 text-white font-bold mb-1"}>
-                  {result.isEligible ? "TEMĂ ELIGIBILĂ PENTRU CONCURS" : "TEMĂ LIMITATĂ"}
-                </Badge>
+                {result.popularityScore >= 60 ? (
+                  <Badge className="bg-emerald-500 text-purple-950 font-bold mb-1">
+                    TEMĂ ESTE ELIGIBILĂ
+                  </Badge>
+                ) : result.popularityScore >= 40 ? (
+                  <Badge className="bg-amber-500 text-purple-950 font-bold mb-1">
+                    TEMĂ ESTE LA LIMITĂ
+                  </Badge>
+                ) : (
+                  <Badge className="bg-red-500 text-white font-bold mb-1">
+                    TEMĂ NU ESTE ELIGIBILĂ
+                  </Badge>
+                )}
                 <h4 className="text-2xl font-heading text-gold-gradient tracking-wide">
                   {result.themeName}
                 </h4>
@@ -212,7 +222,7 @@ export default function ThemeValidator() {
             </div>
 
             {/* Submit Proposal CTA */}
-            {(result.status === "BORDERLINE" || result.status === "APPROVED") && team ? (
+            {team ? (
               <Button
                 onClick={handleProposeTheme}
                 disabled={isSubmitting}
@@ -221,11 +231,11 @@ export default function ThemeValidator() {
                 <Send className="w-4 h-4" />
                 <span>{isSubmitting ? "SE TRANSMITE..." : "TRIMITE PROPUNEREA CĂTRE QUIZMASTER"}</span>
               </Button>
-            ) : (result.status === "BORDERLINE" || result.status === "APPROVED") && !team ? (
+            ) : (
               <div className="mt-4 text-xs text-amber-400 text-center font-bold">
                 * Doar echipele logate pot trimite propuneri către Quizmaster.
               </div>
-            ) : null}
+            )}
 
           </div>
         )}

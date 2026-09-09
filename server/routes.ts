@@ -745,6 +745,17 @@ export async function registerRoutes(
     }
   });
 
+  app.delete("/api/theme-suggestions/:id", checkAuth, async (req, res) => {
+    try {
+      const deleted = await storage.deleteThemeSuggestion(req.params.id);
+      if (!deleted) return res.status(404).json({ message: "Sugestia nu a fost găsită" });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting suggestion:", error);
+      res.status(500).json({ message: "Eroare la ștergerea sugestiei" });
+    }
+  });
+
   // List all editions with live registration counts + capacity overrides
   app.get("/api/admin/editions", checkAuth, async (_req, res) => {
     try {

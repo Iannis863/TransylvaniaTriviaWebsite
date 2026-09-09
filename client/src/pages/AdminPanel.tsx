@@ -498,9 +498,33 @@ export default function AdminPanel() {
         {/* ── THEMES TAB ── */}
         {activeTab === "themes" && (
           <div className="space-y-4">
-            {themeSuggestions.map(theme => (
-              <div key={theme.id} className="rounded-xl border border-purple-800/40 bg-purple-950/20 px-6 py-4 flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
-                <div>
+            {[...themeSuggestions]
+              .sort((a, b) => {
+                if (a.status === "PENDING" && b.status !== "PENDING") return -1;
+                if (a.status !== "PENDING" && b.status === "PENDING") return 1;
+                const dA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const dB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return dA - dB;
+              })
+              .map(theme => (
+              <div key={theme.id} className="relative rounded-xl border border-purple-800/40 bg-purple-950/20 px-6 py-4 flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
+                {theme.status !== "PENDING" && (
+                  <button
+                    onClick={async () => {
+                      if (confirm("Ești sigur că vrei să ștergi această temă de pe ecran?")) {
+                        await fetch(`/api/theme-suggestions/${theme.id}`, {
+                          method: "DELETE"
+                        });
+                        loadThemes();
+                      }
+                    }}
+                    className="absolute top-3 right-3 text-purple-400/50 hover:text-red-400 transition-colors p-1"
+                    title="Șterge propunerea"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+                <div className="pr-8">
                   <h3 className="font-bold text-white text-lg">{theme.themeName}</h3>
                   <div className="text-xs text-purple-400 mt-1">Propus de: <span className="text-amber-300">{theme.proposedBy}</span> {theme.createdAt ? `la ${new Date(theme.createdAt).toLocaleDateString("ro-RO")}` : ""}</div>
                   <div className="mt-2 text-sm text-purple-200 bg-purple-950/40 p-3 rounded-lg max-w-xl">
@@ -521,7 +545,7 @@ export default function AdminPanel() {
                             headers: { "Content-Type": "application/json", "x-admin-password": password },
                             body: JSON.stringify({ status: "APPROVED" })
                           });
-                          fetchData();
+                          loadThemes();
                         }}
                         className="flex-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 text-xs font-bold py-1.5 rounded border border-emerald-500/30 transition-colors"
                       >
@@ -534,7 +558,7 @@ export default function AdminPanel() {
                             headers: { "Content-Type": "application/json", "x-admin-password": password },
                             body: JSON.stringify({ status: "REJECTED" })
                           });
-                          fetchData();
+                          loadThemes();
                         }}
                         className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-bold py-1.5 rounded border border-red-500/30 transition-colors"
                       >

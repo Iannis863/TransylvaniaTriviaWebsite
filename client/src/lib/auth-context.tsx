@@ -7,6 +7,7 @@ export interface AuthUser {
   email: string;
   role: "TEAM_LEADER" | "MEMBER" | "ADMIN";
   avatar?: string;
+  phoneNumber?: string | null;
   teamId?: string | null;
 }
 

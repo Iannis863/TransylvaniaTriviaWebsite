@@ -49,6 +49,7 @@ export interface IStorage {
   getThemeSuggestions(editionId?: string): Promise<ThemeSuggestion[]>;
   createThemeSuggestion(suggestion: InsertThemeSuggestion): Promise<ThemeSuggestion>;
   updateThemeSuggestionStatus(id: string, status: "APPROVED" | "REJECTED"): Promise<ThemeSuggestion | undefined>;
+  deleteThemeSuggestion(id: string): Promise<boolean>;
 
   // ── Admin Operations ──────────────────────────────────────────────────────
   updateRegistration(id: string, data: Partial<Pick<Registration, "teamName" | "captainName" | "memberCount" | "email" | "phoneNumber">>): Promise<Registration | undefined>;
@@ -79,6 +80,7 @@ export class MemStorage implements IStorage {
       id: "usr_vlad_leader",
       name: "Vlad Dracul (Captain)",
       email: "vlad@transilvaniatrivia.ro",
+      phoneNumber: null,
       password: "password123",
       role: "TEAM_LEADER",
       avatar: "🧛",
@@ -89,14 +91,27 @@ export class MemStorage implements IStorage {
       id: "usr_elena_member",
       name: "Elena Carpatina",
       email: "elena@transilvaniatrivia.ro",
+      phoneNumber: null,
       password: "password123",
       role: "MEMBER",
       avatar: "🧙‍♀️",
       teamId: "team_night_scholars",
       createdAt: new Date(),
     };
+    const adminUser: User = {
+      id: "usr_admin",
+      name: "Quizmaster Admin",
+      email: "admin@transilvaniatrivia.ro",
+      phoneNumber: null,
+      password: "password123",
+      role: "ADMIN",
+      avatar: "👑",
+      teamId: null,
+      createdAt: new Date(),
+    };
     this.users.set(leaderUser.id, leaderUser);
     this.users.set(memberUser.id, memberUser);
+    this.users.set(adminUser.id, adminUser);
 
     // Seed Demo Team
     const demoTeam: Team = {
@@ -217,6 +232,7 @@ export class MemStorage implements IStorage {
       id,
       name: insertUser.name,
       email: insertUser.email,
+      phoneNumber: insertUser.phoneNumber || null,
       password: insertUser.password || null,
       role: insertUser.role || "MEMBER",
       avatar: insertUser.avatar || "👤",
@@ -400,11 +416,16 @@ export class MemStorage implements IStorage {
   }
 
   async updateThemeSuggestionStatus(id: string, status: "APPROVED" | "REJECTED"): Promise<ThemeSuggestion | undefined> {
-    const sug = this.themeSuggestions.get(id);
-    if (!sug) return undefined;
-    const updated = { ...sug, status };
+    const suggestion = this.themeSuggestions.get(id);
+    if (!suggestion) return undefined;
+    
+    const updated = { ...suggestion, status };
     this.themeSuggestions.set(id, updated);
     return updated;
+  }
+
+  async deleteThemeSuggestion(id: string): Promise<boolean> {
+    return this.themeSuggestions.delete(id);
   }
 
   // ── Admin Operations ───────────────────────────────────────────────────────
@@ -600,6 +621,10 @@ export class DatabaseStorage implements IStorage {
   async updateThemeSuggestionStatus(id: string, status: "APPROVED" | "REJECTED"): Promise<ThemeSuggestion | undefined> {
     const [result] = await db.update(themeSuggestions).set({ status }).where(eq(themeSuggestions.id, id)).returning();
     return result;
+  }
+  async deleteThemeSuggestion(id: string): Promise<boolean> {
+    const [result] = await db.delete(themeSuggestions).where(eq(themeSuggestions.id, id)).returning();
+    return !!result;
   }
 
   // ── Admin Operations ───────────────────────────────────────────────────────
