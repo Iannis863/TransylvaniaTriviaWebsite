@@ -127,6 +127,12 @@ export interface WikipediaCategoryData {
    * sample of articles from the subtree (0 if not sampled).
    */
   avgBranchRichness: number;
+  /**
+   * Raw extract texts from sampled subtree articles.
+   * Used by fact_density to extract real facts (dates, entities, numbers)
+   * from across the subtree rather than just the overview article.
+   */
+  sampleExtractTexts: string[];
   /** Whether we fell back from Romanian to English Wikipedia. */
   isFallback: boolean;
 }

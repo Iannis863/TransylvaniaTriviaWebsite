@@ -103,6 +103,7 @@ async function queryCategoryTree(
     totalSubcategories: 0,
     directSubcategoryNames: [],
     avgBranchRichness: 0,
+    sampleExtractTexts: [],
     isFallback: false,
   };
 
@@ -172,13 +173,16 @@ async function queryCategoryTree(
       CATEGORY_PARAMS.maxTraversalDepth
     );
 
-    // ── Step 3: Sample articles for branch richness ──
+    // ── Step 3: Sample articles for branch richness + fact extraction texts ──
     let avgBranchRichness = 0;
+    let sampleExtractTexts: string[] = [];
     if (traversalResult.sampleArticleTitles.length > 0) {
-      avgBranchRichness = await sampleArticleRichness(
+      const sampling = await sampleArticleRichness(
         traversalResult.sampleArticleTitles,
         lang
       );
+      avgBranchRichness = sampling.avgWords;
+      sampleExtractTexts = sampling.extractTexts;
     }
 
     const result: WikipediaCategoryData = {
@@ -189,6 +193,7 @@ async function queryCategoryTree(
       totalSubcategories: traversalResult.totalSubcategories,
       directSubcategoryNames: traversalResult.directSubcategoryNames,
       avgBranchRichness,
+      sampleExtractTexts,
       isFallback: false,
     };
 
@@ -344,14 +349,15 @@ async function traverseCategory(
 }
 
 /**
- * Sample a set of articles from the subtree and measure their average
- * word count as a proxy for "branch richness."
+ * Sample a set of articles from the subtree and return:
+ * - Average word count (proxy for "branch richness")
+ * - Raw extract texts (for fact-density extraction across the subtree)
  */
 async function sampleArticleRichness(
   titles: string[],
   lang: "ro" | "en"
-): Promise<number> {
-  if (titles.length === 0) return 0;
+): Promise<{ avgWords: number; extractTexts: string[] }> {
+  if (titles.length === 0) return { avgWords: 0, extractTexts: [] };
 
   try {
     // Batch-query extracts for all sample articles at once
@@ -369,14 +375,15 @@ async function sampleArticleRichness(
       }).toString();
 
     const res = await fetchWithTimeout(url, 10000);
-    if (!res.ok) return 0;
+    if (!res.ok) return { avgWords: 0, extractTexts: [] };
 
     const json = await res.json();
     const pages = json?.query?.pages;
-    if (!pages) return 0;
+    if (!pages) return { avgWords: 0, extractTexts: [] };
 
     let totalWords = 0;
     let count = 0;
+    const extractTexts: string[] = [];
 
     for (const pageId of Object.keys(pages)) {
       if (pageId === "-1") continue;
@@ -384,15 +391,22 @@ async function sampleArticleRichness(
       const words = extract.split(/\s+/).filter((w: string) => w.length > 0).length;
       totalWords += words;
       count++;
+      // Keep a capped version of each extract for fact extraction
+      if (extract.length > 0) {
+        extractTexts.push(extract.slice(0, 5000));
+      }
     }
 
-    return count > 0 ? Math.round(totalWords / count) : 0;
+    return {
+      avgWords: count > 0 ? Math.round(totalWords / count) : 0,
+      extractTexts,
+    };
   } catch (err) {
     console.error(
       `[quizzability/wikipedia] Richness sampling error:`,
       err
     );
-    return 0;
+    return { avgWords: 0, extractTexts: [] };
   }
 }
 

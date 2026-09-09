@@ -133,30 +133,110 @@ export function computeFactDensity(
 
 /**
  * Fact density for umbrella themes.
- * A domain with 2,000 descendant articles clearly has massive fact
- * density — we don't need to parse the overview article's text.
- * Score is derived from subtree size × branch richness.
+ * Extracts real facts (dates, named entities, numbers) from the sampled
+ * subtree articles' text. This is the FIX for the bug where umbrella
+ * themes got fact_density=0 because only the overview article was analyzed.
+ *
+ * Strategy:
+ * 1. Concatenate extract texts from sampled subtree articles.
+ * 2. Run the same fact-extraction logic used for leaf articles.
+ * 3. Scale up: the sample represents a small fraction of the full subtree,
+ *    so a good fact density in the sample implies excellent density overall.
+ * 4. Add a structural bonus from the subtree size itself (a tree with
+ *    2000 articles inherently has more distinct facts than one with 50).
  */
 function computeUmbrellaFactDensity(
   cat: WikipediaCategoryData,
   wiki: WikipediaArticleData
 ): number {
-  // If the subtree is large and branches are rich, fact density is high.
-  // A tree of 2000 articles with average 2000-word articles = enormous fact pool.
-  const subtreeFactProxy =
-    Math.min(cat.totalArticles, 2000) * Math.min(cat.avgBranchRichness, 3000);
+  const p = FACT_DENSITY_PARAMS;
 
-  // Normalize: 2000 articles × 1500 avg words = 3,000,000 → maps to 100
-  const normalizedScore = lerp(subtreeFactProxy, 0, 3_000_000);
+  // ── Extract facts from sampled subtree articles ──
+  let sampleFactCount = 0;
+  let sampleSentenceCount = 0;
+  let sampleFactfulSentences = 0;
 
-  // Still add a small contribution from the overview article's own facts
-  // (umbrella articles often have useful fact-dense sections like timelines)
-  let articleContribution = 0;
+  const textsToAnalyze = cat.sampleExtractTexts.length > 0
+    ? cat.sampleExtractTexts
+    : [];
+
+  // Also include the overview article's text if available
   if (wiki.found && wiki.extractText.length > 0) {
-    articleContribution = computeLeafFactDensity(wiki) * 0.15; // 15% weight
+    textsToAnalyze.push(wiki.extractText);
   }
 
-  return clamp(normalizedScore * 0.85 + articleContribution);
+  for (const text of textsToAnalyze) {
+    // Count discrete factual claims
+    const dateMatches = text.match(p.datePattern) || [];
+    p.datePattern.lastIndex = 0;
+    const numberMatches = text.match(p.numberPattern) || [];
+    p.numberPattern.lastIndex = 0;
+
+    const namedEntityPattern =
+      /(?:[A-ZĂÂÎȘȚ][a-zăâîșțéèêëàùûüôöïîçñ]+(?:\s+(?:de|din|al|la|și|a|în|cu))?\s+){1,}[A-ZĂÂÎȘȚ][a-zăâîșțéèêëàùûüôöïîçñ]+/g;
+    const entityMatches = text.match(namedEntityPattern) || [];
+
+    const uniqueDates = new Set(dateMatches);
+    const uniqueEntities = new Set(entityMatches.map((e) => e.trim()));
+
+    sampleFactCount +=
+      uniqueDates.size + uniqueEntities.size + Math.min(numberMatches.length, 30);
+
+    // Track sentence-level fact coverage
+    const sentences = text
+      .split(/[.!?]+/)
+      .filter((s) => s.trim().length > 10);
+    sampleSentenceCount += sentences.length;
+
+    for (const sentence of sentences) {
+      const hasDate = p.datePattern.test(sentence);
+      p.datePattern.lastIndex = 0;
+      const hasNumber = /\b\d+\b/.test(sentence);
+      const hasEntity = /[A-ZĂÂÎȘȚ][a-zăâîșț]+/.test(sentence);
+      if (hasDate || hasNumber || hasEntity) {
+        sampleFactfulSentences++;
+      }
+    }
+  }
+
+  // ── Compute base score from extracted facts ──
+  // Scale the maxFactCount up for umbrella themes (multiple articles pooled)
+  const umbrellaMaxFacts = p.maxFactCount * Math.max(textsToAnalyze.length, 1);
+  let factScore = lerp(sampleFactCount, 0, umbrellaMaxFacts);
+
+  // ── Apply narrative penalty if most sentences lack facts ──
+  if (sampleSentenceCount > 0) {
+    const factfulRatio = sampleFactfulSentences / sampleSentenceCount;
+    if (factfulRatio < p.narrativePenaltyThreshold) {
+      factScore *= p.narrativePenaltyFactor;
+    }
+  }
+
+  // ── Structural bonus from subtree size ──
+  // A domain with 2000 articles inherently has far more distinct facts
+  // than our 8-article sample can show. Give a bonus proportional to
+  // the subtree size, but only if the sample actually found real facts.
+  if (sampleFactCount > 0 && cat.totalArticles > 0) {
+    // Extrapolation factor: subtree is N× bigger than the sample
+    const sampleSize = textsToAnalyze.length;
+    const extrapolationFactor = Math.min(
+      cat.totalArticles / Math.max(sampleSize, 1),
+      50 // cap to avoid runaway extrapolation
+    );
+    // Boost: if sample found 40 facts and subtree is 100× bigger,
+    // the domain clearly has massive fact density
+    const structuralBonus = lerp(extrapolationFactor, 0, 50) * 0.3;
+    factScore = Math.min(100, factScore + structuralBonus);
+  }
+
+  // ── Fallback: if no texts were sampled at all, use subtree size as proxy ──
+  if (textsToAnalyze.length === 0 && cat.totalArticles > 0) {
+    // Proxy: large subtrees with many articles inherently have facts
+    const proxyScore = lerp(cat.totalArticles, 0, 500) * 0.6;
+    return clamp(proxyScore);
+  }
+
+  return clamp(factScore);
 }
 
 /** Fact density for leaf/specific themes (text analysis of single article). */

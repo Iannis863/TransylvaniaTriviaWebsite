@@ -80,8 +80,52 @@ export async function scoreQuizzability(
     triviaCoverage * weights.existing_trivia_coverage +
     breadthAnalysis.score * weights.breadth_balance;
 
+  // ── Step 5b: Consistency guard between signals ──
+  // If content_depth or existing_trivia_coverage is high but fact_density
+  // is near 0, this signals a fact-extraction scoping bug, not a genuinely
+  // fact-free theme. Correct by boosting fact_density to at least the
+  // minimum of the other strong signals.
+  let correctedFactDensity = factDensity;
+  const strongSignalThreshold = 40;
+  const factDensityFloor = 10;
+
+  if (factDensity < factDensityFloor) {
+    const otherSignalsHigh =
+      (contentDepth >= strongSignalThreshold ? 1 : 0) +
+      (triviaCoverage >= strongSignalThreshold ? 1 : 0) +
+      (breadthAnalysis.score >= strongSignalThreshold ? 1 : 0);
+
+    if (otherSignalsHigh >= 2) {
+      // At least 2 other signals are strong — fact_density=0 is likely a
+      // scoping bug, not reality. Set a floor based on the weaker of the
+      // strong signals.
+      const strongValues = [contentDepth, triviaCoverage, breadthAnalysis.score]
+        .filter((v) => v >= strongSignalThreshold);
+      const minStrong = Math.min(...strongValues);
+      correctedFactDensity = Math.max(factDensity, Math.round(minStrong * 0.5));
+
+      console.warn(
+        `[quizzability/engine] Consistency guard triggered for "${theme}": ` +
+        `fact_density=${factDensity} corrected to ${correctedFactDensity} ` +
+        `(content_depth=${contentDepth}, trivia=${triviaCoverage}, breadth=${breadthAnalysis.score})`
+      );
+    }
+  }
+
+  // Update signals with corrected value
+  if (correctedFactDensity !== factDensity) {
+    signals.fact_density = correctedFactDensity;
+  }
+
+  // Recompute raw score with corrected fact_density
+  const correctedRawScore =
+    contentDepth * weights.content_depth +
+    correctedFactDensity * weights.fact_density +
+    triviaCoverage * weights.existing_trivia_coverage +
+    breadthAnalysis.score * weights.breadth_balance;
+
   // Apply verifiability modifiers
-  let finalScore = rawScore;
+  let finalScore = correctedRawScore;
   if (verifiabilityFlag === "subjective") {
     finalScore *= 0.7; // strong penalty for subjective themes
   } else if (verifiabilityFlag === "volatile") {
@@ -136,6 +180,35 @@ export async function scoreQuizzability(
 
   if (suggestedReframe) {
     result.suggested_reframe = suggestedReframe;
+  }
+
+  // ── Step 9: Sanity check — score vs explanation consistency ──
+  // If the notes describe the theme as rich/excellent but the numeric
+  // verdict is "respins", or if notes describe it as poor but verdict
+  // is "acceptat", flag the mismatch as a likely scoring bug.
+  const notesDescribePositive =
+    notes.includes("potențial excelent") ||
+    notes.includes("sursă extrem de bogată") ||
+    notes.includes("semn pozitiv");
+  const notesDescribeNegative =
+    notes.includes("nu are suficient material") ||
+    notes.includes("prea îngustă");
+
+  if (notesDescribePositive && verdict === "respins") {
+    console.warn(
+      `[quizzability/engine] SANITY CHECK FAILED for "${theme}": ` +
+      `Notes describe theme positively but verdict="${verdict}" (score=${quizzabilityScore}). ` +
+      `Signals: depth=${signals.content_depth}, facts=${signals.fact_density}, ` +
+      `trivia=${signals.existing_trivia_coverage}, breadth=${signals.breadth_balance}. ` +
+      `This mismatch suggests the scoring formula is miscalibrated for this theme type.`
+    );
+  }
+  if (notesDescribeNegative && verdict === "acceptat") {
+    console.warn(
+      `[quizzability/engine] SANITY CHECK FAILED for "${theme}": ` +
+      `Notes describe theme negatively but verdict="${verdict}" (score=${quizzabilityScore}). ` +
+      `This mismatch suggests the explanation generator is reading stale signals.`
+    );
   }
 
   return result;
