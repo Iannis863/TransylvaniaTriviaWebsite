@@ -360,14 +360,14 @@ async function sampleArticleRichness(
   if (titles.length === 0) return { avgWords: 0, extractTexts: [] };
 
   try {
-    // Batch-query extracts for all sample articles at once
+    // Batch-query FULL extracts for all sample articles at once.
+    // Do NOT include `exintro` — its presence truncates to intro only.
     const url =
       `https://${lang}.wikipedia.org/w/api.php?` +
       new URLSearchParams({
         action: "query",
         titles: titles.join("|"),
         prop: "extracts",
-        exintro: "false",
         explaintext: "true",
         exlimit: titles.length.toString(),
         format: "json",
@@ -393,7 +393,7 @@ async function sampleArticleRichness(
       count++;
       // Keep a capped version of each extract for fact extraction
       if (extract.length > 0) {
-        extractTexts.push(extract.slice(0, 5000));
+        extractTexts.push(extract.slice(0, 15_000));
       }
     }
 
@@ -479,14 +479,16 @@ async function queryWikipedia(
 
     const parseData = parseJson.parse;
 
-    // ── Step 3: Fetch plain-text extract for word count & fact analysis ──
+    // ── Step 3: Fetch FULL plain-text extract for word count & fact analysis ──
+    // IMPORTANT: Do NOT include `exintro` — that MediaWiki flag is a boolean
+    // whose mere presence (even as "false") restricts output to the intro
+    // paragraph only. Omitting it returns the full article body.
     const extractUrl =
       `https://${lang}.wikipedia.org/w/api.php?` +
       new URLSearchParams({
         action: "query",
         titles: pageTitle,
         prop: "extracts|categories",
-        exintro: "false",
         explaintext: "true",
         exlimit: "1",
         cllimit: "500",
@@ -574,9 +576,23 @@ async function queryWikipedia(
       linkCount,
       isDisambiguation,
       disambiguationEntries,
-      extractText: extractText.slice(0, 8000), // cap for memory
+      extractText: extractText.slice(0, 50_000), // cap for memory — full articles can be large
       isFallback: false,
     };
+
+    // ── Sanity check: word count vs section count ──
+    // A real article with N sections should have at least ~50 words per section.
+    // If this ratio is implausibly low, the extract fetch likely failed or
+    // returned only a summary.
+    if (sections.length > 3 && wordCount < sections.length * 50) {
+      console.warn(
+        `[quizzability/wikipedia] SANITY CHECK: "${pageTitle}" (${lang}) has ` +
+        `${sections.length} sections but only ${wordCount} words ` +
+        `(${Math.round(wordCount / Math.max(sections.length, 1))} words/section). ` +
+        `Expected at least ~${sections.length * 50}. ` +
+        `The extract endpoint may be returning only the intro paragraph.`
+      );
+    }
 
     return result;
   } catch (err) {
