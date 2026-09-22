@@ -220,40 +220,59 @@ export default function RulebookSection() {
                 <div className="border-b border-purple-800/50 pb-6">
                   <h3 className="text-2xl font-heading text-white tracking-wide flex items-center gap-3">
                     <CheckCircle2 className="text-amber-400 w-6 h-6" /> 
-                    1. Reguli Generale
+                    1. Desfășurarea Rundelor & Punctajul
                   </h3>
                   <ul className="mt-5 space-y-3 text-purple-200/80 text-sm sm:text-base list-disc list-inside">
-                    <li><strong className="text-purple-100">Zero ecrane:</strong> Vrem să vă testăm cunoștințele, nu viteza la Google. Pe durata rundelor, lăsați deoparte telefoanele, smartwatch-urile sau Shazam-ul.</li>
-                    <li>Dacă sunteți prinși „inspirându-vă” din alte surse, echipa riscă să piardă puncte prețioase sau chiar descalificarea. Jucăm corect și ne distrăm!</li>
-                    <li>Toate răspunsurile se notează exclusiv pe foile pe care le primiți de la noi. Punctajul se calculează strict pe baza a ceea ce ați scris acolo.</li>
+                    <li><strong className="text-purple-100">Runda 1 - Cultură Generală:</strong> Începem cu 10 întrebări diverse de încălzire.</li>
+                    <li><strong className="text-purple-100">Runda 2 - Ghicește Legătura:</strong> Veți primi 3 imagini pe ecran, iar voi trebuie să ghiciți legătura dintre ele. Uneori o serie de imagini poate avea mai multe legături valide. Dacă echipa ta găsește o variantă inedită care s-ar putea potrivi, vom recurge la un vot democratic. Dacă cel puțin jumătate din echipe sunt de acord, veți primi punctul.</li>
+                    <li><strong className="text-purple-100">Runda 3 - Ghicește Melodia:</strong> Se acordă 0.5 puncte pentru numele piesei și 0.5 puncte pentru artist. Dacă melodia are mai mulți artiști asociați, este suficient să menționezi doar unul dintre ei pentru punctajul maxim.</li>
+                    <li><strong className="text-purple-100">Runda 4 - Surpriza:</strong> Dacă dorești să afli categoria din avans, rezolvă toate cele 5 jocuri de pe platformă.</li>
+                    <li><strong className="text-purple-100">Runda 5 - Runda Aleasă:</strong> Tema este mereu aleasă de echipa care s-a clasat pe ultimul loc la ediția precedentă.</li>
+                    <li><strong className="text-purple-100">Evaluare & Răspunsuri Parțiale:</strong> De regulă se acordă 1 punct pentru răspuns corect și 0 pentru greșit. Totuși, se pot acorda și fracțiuni de punct pentru răspunsurile parțial corecte!</li>
+                    <li><strong className="text-purple-100">Verificarea Răspunsurilor:</strong> La finalul fiecărei runde, echipele fac schimb de foi în sensul acelor de ceasornic. Colegii de la masa alăturată vor verifica răspunsurile și vor calcula punctajul rundei, după care foile se returnează la echipa inițială.</li>
+                  </ul>
+                </div>
+
+                <div className="border-b border-purple-800/50 pb-6">
+                  <h3 className="text-2xl font-heading text-white tracking-wide flex items-center gap-3">
+                    <Layers className="text-amber-400 w-6 h-6" />
+                    2. Runda Aleasă & Validatorul
+                  </h3>
+                  <ul className="mt-5 space-y-3 text-purple-200/80 text-sm sm:text-base list-disc list-inside">
+                    <li><strong className="text-purple-100">Avantajul Ultimului Loc:</strong> Tema pentru Runda 5 este mereu decisă de echipa care s-a clasat pe ultimul loc la ediția precedentă.</li>
+                    <li><strong className="text-purple-100">Regula Validatorului:</strong> Nu ești obligat să o treci prin <strong>Validatorul de Teme</strong> de pe platformă, dar te ajută să-ți dai seama dacă ar fi eligibilă sau nu. Un scor de ≥50 înseamnă că tema este fezabilă; un scor sub 50 înseamnă că e probabil prea dificilă, prea de nișă sau necunoscută.</li>
+                    <li><strong className="text-purple-100">Aprobarea Finală:</strong> Indiferent de scorul Validatorului, Quizmaster-ul are întotdeauna ultimul cuvânt. Trebuie să fii logat în contul tău pentru a trimite tema la validare, de unde îi vei putea urmări statusul: <em>În Așteptare (Pending)</em>, <em>Aprobată</em> sau <em>Respinsă</em>.</li>
                   </ul>
                 </div>
                 
                 <div className="border-b border-purple-800/50 pb-6">
                   <h3 className="text-2xl font-heading text-white tracking-wide flex items-center gap-3">
-                    <Layers className="text-amber-400 w-6 h-6" />
-                    2. Structura Quizului & Pauze
+                    <Trophy className="text-amber-400 w-6 h-6" />
+                    3. Pauze, Departajare & Premii
                   </h3>
                   <ul className="mt-5 space-y-3 text-purple-200/80 text-sm sm:text-base list-disc list-inside">
-                    <li>Seara este împărțită în <strong>5 runde principale</strong>, plus provocarea supremă de la final: <strong>Pariul</strong>.</li>
-                    <li>Pentru că neuronii mai au nevoie de oxigen (și voi de o pauză de bar), avem două pauze strategice:</li>
-                    <ul className="pl-6 mt-2 space-y-2 list-[circle]">
-                      <li>O pauză de <strong>15 minute</strong> imediat după primele 3 runde.</li>
-                      <li>Încă o scurtă pauză de respiro fix înainte de tensiunea Pariului.</li>
-                    </ul>
+                    <li><strong className="text-purple-100">Pauzele:</strong> Avem două pauze de realimentare. Prima este de 15 minute, imediat după Runda 3. A doua pauză este de 10 minute, fix înaintea Pariului. La revenirea din pauze vom afișa mereu clasamentul parțial la zi, astfel încât să știți exact cum stați (și cât puteți paria).</li>
+                    <li><strong className="text-purple-100">Egalitate:</strong> În caz de egalitate pentru podium sau pentru stabilirea ultimului loc, vom avea o întrebare numerică de departajare (ex: „În ce an a fost construit Turnul Eiffel?”). Echipa cu răspunsul cel mai apropiat câștigă!</li>
+                    <li><strong className="text-amber-400">Locul 3:</strong> Shot-uri. Opțiunea non-alcoolică: Shot-uri fără alcool sau pahare de suc.</li>
+                    <li><strong className="text-amber-400">Locul 2:</strong> O găleată de beri. Opțiunea non-alcoolică: Beri fără alcool.</li>
+                    <li><strong className="text-amber-400">Locul 1:</strong> O sticlă de vin. Opțiunea non-alcoolică: Limonade. <em>Atenție!</em> Dacă unii membri optează pentru limonadă, restul membrilor (care preferă varianta cu alcool) vor primi câte un pahar de vin în loc de sticla întreagă.</li>
+                    <li><strong className="text-purple-100">Detalii Premii:</strong> Echipele mai bine clasate au libertatea de a revendica premiile non-alcoolice specifice locurilor inferioare (ex: Locul 1 poate lua sucul de la Locul 3). Echipele pot oricând să schimbe premiile între ele de comun acord!</li>
                   </ul>
                 </div>
 
                 <div>
-                  <h3 className="text-2xl font-heading text-white tracking-wide flex items-center gap-3">
-                    <Scale className="text-amber-400 w-6 h-6" />
-                    3. Validatorul & Runda Aleasă
+                  <h3 className="text-2xl font-heading text-red-400 tracking-wide flex items-center gap-3">
+                    <Zap className="text-red-500 w-6 h-6" />
+                    4. Fără Telefoane!
                   </h3>
-                  <ul className="mt-5 space-y-3 text-purple-200/80 text-sm sm:text-base list-disc list-inside">
-                    <li><strong>Alegerea Temei:</strong> Cine iese pe ultimul loc nu pleacă supărat! Echipa respectivă primește onoarea de a alege tema pentru <strong>Runda a 5-a</strong> de la ediția viitoare.</li>
-                    <li>Ai o idee mișto de temă? Folosește <strong>Validatorul de Teme</strong> de pe site. AI-ul nostru îți va da un scor estimativ ca să vezi dacă e prea banală sau imposibilă.</li>
-                    <li>Totuși, AI-ul propune, Quizmaster-ul dispune. El are mereu ultimul cuvânt și decide dacă tema se aprobă.</li>
-                    <li><strong>Trimite propunerea:</strong> Ca să trimiți o temă oficial spre Quizmaster, <strong>ai nevoie de un cont pe site</strong>. După ce e analizată, răspunsul va apărea direct în setările contului tău.</li>
+                  <p className="mt-3 text-purple-200/80 text-sm sm:text-base">
+                    Ne place fair-play-ul. Utilizarea telefoanelor, ceasurilor smart, Shazam-ului sau a oricărui dispozitiv de inspirație externă în timpul rundelor este <strong>strict interzisă</strong>. Regulamentul funcționează astfel:
+                  </p>
+                  <ul className="mt-4 space-y-3 text-purple-200/80 text-sm sm:text-base list-disc list-inside">
+                    <li><strong className="text-purple-100">Prima abatere:</strong> Echipa primește un avertisment clar.</li>
+                    <li><strong className="text-purple-100">A doua abatere:</strong> Echipa este penalizată cu pierderea <span className="text-red-400 font-bold">tuturor punctelor</span> din runda curentă.</li>
+                    <li><strong className="text-purple-100">A treia abatere:</strong> Pierderea <span className="text-red-400 font-bold">tuturor punctelor adunate în acel quiz</span> (descalificare de facto).</li>
+                    <li><strong className="text-red-300">Cheating la Pariu:</strong> Dacă sunteți prinși trișând la Pariu, pierdeți toate punctele din acea ediție. Deși veți avea 0 puncte și ați fi teoretic pe ultimul loc, NU veți primi dreptul de a alege tema pentru ediția viitoare; în schimb, penultima echipă o va alege!</li>
                   </ul>
                 </div>
 
