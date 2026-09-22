@@ -190,3 +190,17 @@ export const insertThemeSuggestionSchema = createInsertSchema(themeSuggestions).
 export type InsertThemeSuggestion = z.infer<typeof insertThemeSuggestionSchema>;
 export type ThemeSuggestion = typeof themeSuggestions.$inferSelect;
 
+// ==========================================
+// 8. PASSWORD RESET CODES
+// ==========================================
+export const passwordResetCodes = pgTable("app_password_reset_codes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").notNull(),
+  code: varchar("code", { length: 6 }).notNull(),
+  attempts: integer("attempts").default(0).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type PasswordResetCode = typeof passwordResetCodes.$inferSelect;
+

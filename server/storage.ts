@@ -4,12 +4,13 @@ import {
   type Registration, type InsertRegistration, 
   type WeeklyPuzzleProgress, type InsertPuzzleProgress,
   type ThemeSuggestion, type InsertThemeSuggestion,
-  users, teams, registrations, weeklyPuzzleProgress, themeSuggestions
+  type PasswordResetCode,
+  users, teams, registrations, weeklyPuzzleProgress, themeSuggestions, passwordResetCodes
 } from "../shared/schema.js";
 import { getCurrentOrNextEdition } from "../shared/schedule.js";
 import { db } from "./db.js";
 import { randomUUID } from "crypto";
-import { eq, and } from "drizzle-orm";
+import { eq, and, gt } from "drizzle-orm";
 
 export interface IStorage {
   // User Operations
@@ -57,6 +58,12 @@ export interface IStorage {
   deleteTeam(id: string): Promise<boolean>;
   getEditionCapacityOverride(editionId: string): Promise<number | undefined>;
   setEditionCapacityOverride(editionId: string, maxTeams: number): Promise<void>;
+
+  // ── Password Reset Codes ──────────────────────────────────────────────────
+  createResetCode(email: string, code: string, expiresAt: Date): Promise<void>;
+  getValidResetCode(email: string): Promise<PasswordResetCode | undefined>;
+  incrementResetCodeAttempts(id: string): Promise<void>;
+  deleteResetCodes(email: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -465,6 +472,43 @@ export class MemStorage implements IStorage {
   async setEditionCapacityOverride(editionId: string, maxTeams: number): Promise<void> {
     this.editionCapacityOverrides.set(editionId, maxTeams);
   }
+
+  // ── Password Reset Codes (in-memory for dev) ─────────────────────────────
+  private resetCodes: Map<string, PasswordResetCode> = new Map();
+
+  async createResetCode(email: string, code: string, expiresAt: Date): Promise<void> {
+    const id = randomUUID();
+    this.resetCodes.set(email.toLowerCase(), {
+      id,
+      email: email.toLowerCase(),
+      code,
+      attempts: 0,
+      expiresAt,
+      createdAt: new Date(),
+    });
+  }
+
+  async getValidResetCode(email: string): Promise<PasswordResetCode | undefined> {
+    const entry = this.resetCodes.get(email.toLowerCase());
+    if (!entry) return undefined;
+    if (entry.expiresAt < new Date()) {
+      this.resetCodes.delete(email.toLowerCase());
+      return undefined;
+    }
+    return entry;
+  }
+
+  async incrementResetCodeAttempts(id: string): Promise<void> {
+    this.resetCodes.forEach((entry, key) => {
+      if (entry.id === id) {
+        this.resetCodes.set(key, { ...entry, attempts: entry.attempts + 1 });
+      }
+    });
+  }
+
+  async deleteResetCodes(email: string): Promise<void> {
+    this.resetCodes.delete(email.toLowerCase());
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -655,6 +699,40 @@ export class DatabaseStorage implements IStorage {
 
   async setEditionCapacityOverride(editionId: string, maxTeams: number): Promise<void> {
     DatabaseStorage.capacityOverrides.set(editionId, maxTeams);
+  }
+
+  // ── Password Reset Codes ─────────────────────────────────────────────────
+  async createResetCode(email: string, code: string, expiresAt: Date): Promise<void> {
+    // Remove any existing codes for this email first
+    await db.delete(passwordResetCodes).where(eq(passwordResetCodes.email, email.toLowerCase()));
+    await db.insert(passwordResetCodes).values({
+      email: email.toLowerCase(),
+      code,
+      expiresAt,
+    });
+  }
+
+  async getValidResetCode(email: string): Promise<PasswordResetCode | undefined> {
+    const [result] = await db.select()
+      .from(passwordResetCodes)
+      .where(and(
+        eq(passwordResetCodes.email, email.toLowerCase()),
+        gt(passwordResetCodes.expiresAt, new Date())
+      ));
+    return result;
+  }
+
+  async incrementResetCodeAttempts(id: string): Promise<void> {
+    const entry = await db.select().from(passwordResetCodes).where(eq(passwordResetCodes.id, id));
+    if (entry.length > 0) {
+      await db.update(passwordResetCodes)
+        .set({ attempts: entry[0].attempts + 1 })
+        .where(eq(passwordResetCodes.id, id));
+    }
+  }
+
+  async deleteResetCodes(email: string): Promise<void> {
+    await db.delete(passwordResetCodes).where(eq(passwordResetCodes.email, email.toLowerCase()));
   }
 }
 

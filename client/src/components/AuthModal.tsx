@@ -29,6 +29,15 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [keepLoggedIn, setKeepLoggedIn] = useState(false);
 
+  // Password reset states
+  const [resetStep, setResetStep] = useState<"idle" | "email" | "code" | "newPassword">("idle");
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [resetNewPassword, setResetNewPassword] = useState("");
+  const [resetConfirmPassword, setResetConfirmPassword] = useState("");
+  const [resetMessage, setResetMessage] = useState("");
+  const [resetError, setResetError] = useState("");
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -60,6 +69,79 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
     const success = await joinTeam(inviteCodeInput);
     setIsSubmitting(false);
     if (success) onClose();
+  };
+
+  // ── Password Reset Handlers ────────────────────────────────────────────────
+  const handleForgotSendCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setResetError("");
+    setResetMessage("");
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setResetError(data.message || "Eroare la trimiterea codului");
+      } else {
+        setResetMessage(data.message);
+        setResetStep("code");
+      }
+    } catch {
+      setResetError("Eroare de conexiune");
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleForgotVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError("");
+    setResetMessage("");
+    if (resetNewPassword !== resetConfirmPassword) {
+      setResetError("Parolele nu se potrivesc.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: resetEmail,
+          code: resetCode,
+          newPassword: resetNewPassword,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setResetError(data.message || "Eroare la resetarea parolei");
+      } else {
+        setResetMessage(data.message);
+        setResetStep("idle");
+        // Pre-fill the login email so the user can log in immediately
+        setLoginEmail(resetEmail);
+        setResetEmail("");
+        setResetCode("");
+        setResetNewPassword("");
+        setResetConfirmPassword("");
+      }
+    } catch {
+      setResetError("Eroare de conexiune");
+    }
+    setIsSubmitting(false);
+  };
+
+  const exitResetFlow = () => {
+    setResetStep("idle");
+    setResetEmail("");
+    setResetCode("");
+    setResetNewPassword("");
+    setResetConfirmPassword("");
+    setResetError("");
+    setResetMessage("");
   };
 
   return (
@@ -99,47 +181,159 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
 
           {/* TAB 1: LOGIN */}
           <TabsContent value="login" className="space-y-4 pt-3">
-            <form onSubmit={handleLogin} className="space-y-3">
-              <div>
-                <Label className="text-xs text-muted-foreground">Email</Label>
-                <Input
-                  type="email"
-                  placeholder="vlad@transilvaniatrivia.ro"
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
-                  required
-                />
+            {resetStep === "idle" ? (
+              <>
+                <form onSubmit={handleLogin} className="space-y-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Email</Label>
+                    <Input
+                      type="email"
+                      placeholder="vlad@transilvaniatrivia.ro"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Parolă</Label>
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
+                      required
+                    />
+                  </div>
+                  <div className="flex items-center justify-between pb-1 pt-1">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="keepLoggedInLogin"
+                        checked={keepLoggedIn}
+                        onChange={(e) => setKeepLoggedIn(e.target.checked)}
+                        className="w-3.5 h-3.5 rounded border-purple-700/50 bg-purple-950/30 text-amber-500"
+                      />
+                      <Label htmlFor="keepLoggedInLogin" className="text-xs text-muted-foreground cursor-pointer">
+                        Ține-mă conectat
+                      </Label>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setResetStep("email"); setResetMessage(""); setResetError(""); }}
+                      className="text-xs text-amber-400/80 hover:text-amber-300 hover:underline transition-colors cursor-pointer"
+                    >
+                      Ai uitat parola?
+                    </button>
+                  </div>
+                  <Button type="submit" disabled={isSubmitting} className="w-full gold-btn font-heading tracking-widest text-base">
+                    {isSubmitting ? "CONECTARE..." : "INTRĂ ÎN CONT"}
+                  </Button>
+                </form>
+                {resetMessage && (
+                  <p className="text-xs text-green-400 text-center bg-green-400/10 rounded p-2 border border-green-400/20">{resetMessage}</p>
+                )}
+              </>
+            ) : resetStep === "email" ? (
+              /* ── Step 1: Enter email ─────────────────────────────── */
+              <div className="space-y-3">
+                <div className="text-center space-y-1">
+                  <KeyRound className="w-8 h-8 text-amber-400 mx-auto" />
+                  <p className="text-sm text-muted-foreground">
+                    Introdu adresa de email asociată contului tău și îți vom trimite un cod de resetare.
+                  </p>
+                </div>
+                <form onSubmit={handleForgotSendCode} className="space-y-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Email</Label>
+                    <Input
+                      type="email"
+                      placeholder="vlad@transilvaniatrivia.ro"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                  {resetError && (
+                    <p className="text-xs text-red-400 text-center bg-red-400/10 rounded p-2 border border-red-400/20">{resetError}</p>
+                  )}
+                  <Button type="submit" disabled={isSubmitting} className="w-full gold-btn font-heading tracking-widest text-sm">
+                    {isSubmitting ? "SE TRIMITE..." : "TRIMITE CODUL"}
+                  </Button>
+                </form>
+                <button
+                  type="button"
+                  onClick={exitResetFlow}
+                  className="w-full text-xs text-muted-foreground hover:text-amber-300 transition-colors cursor-pointer"
+                >
+                  ← Înapoi la conectare
+                </button>
               </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Parolă</Label>
-                <Input
-                  type="password"
-                  placeholder="••••••••"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
-                  required
-                />
+            ) : resetStep === "code" ? (
+              /* ── Step 2: Enter code + new password ──────────────── */
+              <div className="space-y-3">
+                <div className="text-center space-y-1">
+                  <Shield className="w-8 h-8 text-amber-400 mx-auto" />
+                  <p className="text-sm text-muted-foreground">
+                    Am trimis un cod de 6 cifre la <span className="text-amber-300 font-medium">{resetEmail}</span>. Introdu codul și noua parolă.
+                  </p>
+                </div>
+                <form onSubmit={handleForgotVerifyCode} className="space-y-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Cod de verificare</Label>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="000000"
+                      value={resetCode}
+                      onChange={(e) => setResetCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm font-mono text-center tracking-[0.5em] text-lg"
+                      maxLength={6}
+                      required
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Parola nouă</Label>
+                    <Input
+                      type="password"
+                      placeholder="Cel puțin 6 caractere"
+                      value={resetNewPassword}
+                      onChange={(e) => setResetNewPassword(e.target.value)}
+                      className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Confirmă parola nouă</Label>
+                    <Input
+                      type="password"
+                      placeholder="Repetă parola"
+                      value={resetConfirmPassword}
+                      onChange={(e) => setResetConfirmPassword(e.target.value)}
+                      className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
+                      required
+                    />
+                  </div>
+                  {resetError && (
+                    <p className="text-xs text-red-400 text-center bg-red-400/10 rounded p-2 border border-red-400/20">{resetError}</p>
+                  )}
+                  <Button type="submit" disabled={isSubmitting || resetCode.length !== 6} className="w-full gold-btn font-heading tracking-widest text-sm">
+                    {isSubmitting ? "SE PROCESEAZĂ..." : "SCHIMBĂ PAROLA"}
+                  </Button>
+                </form>
+                <button
+                  type="button"
+                  onClick={exitResetFlow}
+                  className="w-full text-xs text-muted-foreground hover:text-amber-300 transition-colors cursor-pointer"
+                >
+                  ← Înapoi la conectare
+                </button>
               </div>
-              <div className="flex items-center gap-2 pb-1 pt-1">
-                <input
-                  type="checkbox"
-                  id="keepLoggedInLogin"
-                  checked={keepLoggedIn}
-                  onChange={(e) => setKeepLoggedIn(e.target.checked)}
-                  className="w-3.5 h-3.5 rounded border-purple-700/50 bg-purple-950/30 text-amber-500"
-                />
-                <Label htmlFor="keepLoggedInLogin" className="text-xs text-muted-foreground cursor-pointer">
-                  Ține-mă conectat
-                </Label>
-              </div>
-              <Button type="submit" disabled={isSubmitting} className="w-full gold-btn font-heading tracking-widest text-base">
-                {isSubmitting ? "CONECTARE..." : "INTRĂ ÎN CONT"}
-              </Button>
-            </form>
-
-
+            ) : null}
           </TabsContent>
 
           {/* TAB 2: REGISTER */}

@@ -99,7 +99,7 @@ export default function RulebookSection() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           
           <div className="flex justify-center mb-8">
-            <TabsList className="bg-purple-950/80 border border-purple-700/50 p-1.5 rounded-full">
+            <TabsList className="bg-purple-950/80 border border-purple-700/50 p-0 overflow-hidden rounded-full">
               <TabsTrigger
                 value="rounds"
                 className="data-[state=active]:bg-amber-400 data-[state=active]:text-purple-950 font-heading text-xs sm:text-sm tracking-wider px-6 py-2.5 rounded-full transition-all"
@@ -212,35 +212,51 @@ export default function RulebookSection() {
             </div>
           </TabsContent>
 
-          {/* TAB 2: REGULAMENT SKELETON */}
+          {/* TAB 2: REGULAMENT */}
           <TabsContent value="mechanics" className="space-y-6">
             <div className="p-8 sm:p-12 rounded-[2.5rem] bg-purple-950/20 ring-1 ring-purple-800/40 shadow-xl">
               <div className="max-w-3xl mx-auto space-y-10">
+                
                 <div className="border-b border-purple-800/50 pb-6">
-                  <h3 className="text-2xl font-heading text-white tracking-wide">1. Reguli Generale</h3>
-                  <div className="mt-4 space-y-3">
-                    <div className="h-4 w-full bg-purple-900/30 rounded animate-pulse"></div>
-                    <div className="h-4 w-5/6 bg-purple-900/30 rounded animate-pulse"></div>
-                    <div className="h-4 w-4/6 bg-purple-900/30 rounded animate-pulse"></div>
-                  </div>
+                  <h3 className="text-2xl font-heading text-white tracking-wide flex items-center gap-3">
+                    <CheckCircle2 className="text-amber-400 w-6 h-6" /> 
+                    1. Reguli Generale
+                  </h3>
+                  <ul className="mt-5 space-y-3 text-purple-200/80 text-sm sm:text-base list-disc list-inside">
+                    <li><strong className="text-purple-100">Zero ecrane:</strong> Vrem să vă testăm cunoștințele, nu viteza la Google. Pe durata rundelor, lăsați deoparte telefoanele, smartwatch-urile sau Shazam-ul.</li>
+                    <li>Dacă sunteți prinși „inspirându-vă” din alte surse, echipa riscă să piardă puncte prețioase sau chiar descalificarea. Jucăm corect și ne distrăm!</li>
+                    <li>Toate răspunsurile se notează exclusiv pe foile pe care le primiți de la noi. Punctajul se calculează strict pe baza a ceea ce ați scris acolo.</li>
+                  </ul>
                 </div>
                 
                 <div className="border-b border-purple-800/50 pb-6">
-                  <h3 className="text-2xl font-heading text-white tracking-wide">2. Sistemul de Punctare & Echipe</h3>
-                  <div className="mt-4 space-y-3">
-                    <div className="h-4 w-11/12 bg-purple-900/30 rounded animate-pulse"></div>
-                    <div className="h-4 w-full bg-purple-900/30 rounded animate-pulse"></div>
-                    <div className="h-4 w-3/4 bg-purple-900/30 rounded animate-pulse"></div>
-                  </div>
+                  <h3 className="text-2xl font-heading text-white tracking-wide flex items-center gap-3">
+                    <Layers className="text-amber-400 w-6 h-6" />
+                    2. Structura Quizului & Pauze
+                  </h3>
+                  <ul className="mt-5 space-y-3 text-purple-200/80 text-sm sm:text-base list-disc list-inside">
+                    <li>Seara este împărțită în <strong>5 runde principale</strong>, plus provocarea supremă de la final: <strong>Pariul</strong>.</li>
+                    <li>Pentru că neuronii mai au nevoie de oxigen (și voi de o pauză de bar), avem două pauze strategice:</li>
+                    <ul className="pl-6 mt-2 space-y-2 list-[circle]">
+                      <li>O pauză de <strong>15 minute</strong> imediat după primele 3 runde.</li>
+                      <li>Încă o scurtă pauză de respiro fix înainte de tensiunea Pariului.</li>
+                    </ul>
+                  </ul>
                 </div>
 
                 <div>
-                  <h3 className="text-2xl font-heading text-white tracking-wide">3. Codul de Onoare</h3>
-                  <div className="mt-4 space-y-3">
-                    <div className="h-4 w-full bg-purple-900/30 rounded animate-pulse"></div>
-                    <div className="h-4 w-5/6 bg-purple-900/30 rounded animate-pulse"></div>
-                  </div>
+                  <h3 className="text-2xl font-heading text-white tracking-wide flex items-center gap-3">
+                    <Scale className="text-amber-400 w-6 h-6" />
+                    3. Validatorul & Runda Aleasă
+                  </h3>
+                  <ul className="mt-5 space-y-3 text-purple-200/80 text-sm sm:text-base list-disc list-inside">
+                    <li><strong>Alegerea Temei:</strong> Cine iese pe ultimul loc nu pleacă supărat! Echipa respectivă primește onoarea de a alege tema pentru <strong>Runda a 5-a</strong> de la ediția viitoare.</li>
+                    <li>Ai o idee mișto de temă? Folosește <strong>Validatorul de Teme</strong> de pe site. AI-ul nostru îți va da un scor estimativ ca să vezi dacă e prea banală sau imposibilă.</li>
+                    <li>Totuși, AI-ul propune, Quizmaster-ul dispune. El are mereu ultimul cuvânt și decide dacă tema se aprobă.</li>
+                    <li><strong>Trimite propunerea:</strong> Ca să trimiți o temă oficial spre Quizmaster, <strong>ai nevoie de un cont pe site</strong>. După ce e analizată, răspunsul va apărea direct în setările contului tău.</li>
+                  </ul>
                 </div>
+
               </div>
             </div>
           </TabsContent>

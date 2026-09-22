@@ -11,8 +11,9 @@ import {
 import { getCurrentOrNextEdition, getFullSchedule } from "../shared/schedule.js";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
-import { sendRegistrationConfirmation } from "./email.js";
+import { sendRegistrationConfirmation, sendPasswordResetCode } from "./email.js";
 import { scoreQuizzability } from "./quizzability/index.js";
+import { randomInt } from "crypto";
 
 // Helper function to check the password header securely
 function checkAuth(req: Request, res: Response, next: () => void) {
@@ -291,6 +292,86 @@ export async function registerRoutes(
     }
   });
 
+
+  // ── Password Reset: Step 1 — send code to email ───────────────────────────
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ message: "Adresa de email este obligatorie" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      // Always respond with success to prevent email enumeration
+      if (!user) {
+        return res.json({ message: "Dacă există un cont cu acest email, vei primi un cod de resetare." });
+      }
+
+      // Rate-limit: don't allow a new code if one was sent less than 60 seconds ago
+      const existing = await storage.getValidResetCode(email);
+      if (existing && existing.createdAt.getTime() > Date.now() - 60 * 1000) {
+        return res.json({ message: "Dacă există un cont cu acest email, vei primi un cod de resetare." });
+      }
+
+      const code = String(randomInt(100000, 999999));
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      await storage.createResetCode(email, code, expiresAt);
+
+      await sendPasswordResetCode(email, code);
+      console.log(`[Auth] Password reset code sent for ${email}`);
+
+      res.json({ message: "Dacă există un cont cu acest email, vei primi un cod de resetare." });
+    } catch (error: any) {
+      console.error("Forgot Password Error:", error);
+      res.status(500).json({ message: "Eroare internă" });
+    }
+  });
+
+  // ── Password Reset: Step 2 — verify code & set new password ───────────────
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const schema = z.object({
+        email: z.string().email(),
+        code: z.string().length(6),
+        newPassword: z.string().min(6, "Parola trebuie să aibă cel puțin 6 caractere"),
+      });
+
+      const { email, code, newPassword } = schema.parse(req.body);
+      const entry = await storage.getValidResetCode(email);
+
+      if (!entry) {
+        return res.status(400).json({ message: "Codul a expirat sau nu este valid. Te rugăm să soliciți un cod nou." });
+      }
+
+      if (entry.attempts >= 5) {
+        await storage.deleteResetCodes(email);
+        return res.status(429).json({ message: "Prea multe încercări. Te rugăm să soliciți un cod nou." });
+      }
+
+      if (entry.code !== code) {
+        await storage.incrementResetCodeAttempts(entry.id);
+        return res.status(400).json({ message: "Codul introdus nu este corect." });
+      }
+
+      // Code is valid — update password
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(400).json({ message: "Contul nu a fost găsit." });
+      }
+
+      await storage.updateUser(user.id, { password: newPassword });
+      await storage.deleteResetCodes(email);
+      console.log(`[Auth] Password reset successful for ${email}`);
+
+      res.json({ message: "Parola a fost schimbată cu succes!" });
+    } catch (error: any) {
+      console.error("Reset Password Error:", error);
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: fromZodError(error).message });
+      }
+      res.status(500).json({ message: "Eroare internă" });
+    }
+  });
 
   // Get current user profile & team
   app.get("/api/auth/me", async (req, res) => {
