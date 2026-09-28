@@ -1,12 +1,14 @@
+import { t } from "@/lib/i18n";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Heart, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { getCurrentWeeklyGameData } from "../../lib/weeklyGames";
+import type { WeeklyGameData } from "../../lib/weeklyGames";
 
 interface TimelineGameProps {
+  weeklyData: WeeklyGameData;
   onSolve: (data: any) => void;
   isAlreadySolved?: boolean;
 }
@@ -18,17 +20,17 @@ interface TimelineEvent {
   description: string;
 }
 
-const weeklyData = getCurrentWeeklyGameData();
-const ALL_EVENTS: TimelineEvent[] = weeklyData.timelineEvents.map(e => ({
-  id: e.id,
-  title: e.content,
-  year: e.year,
-  description: e.content,
-}));
 
-export default function TimelineGame({ onSolve, isAlreadySolved = false }: TimelineGameProps) {
+export default function TimelineGame({ weeklyData, onSolve, isAlreadySolved = false }: TimelineGameProps) {
+  const ALL_EVENTS: TimelineEvent[] = useMemo(() => weeklyData.timelineEvents.map(e => ({
+    id: e.id,
+    title: e.content,
+    year: e.year,
+    description: e.content,
+  })), [weeklyData.timelineEvents]);
+
   const { toast } = useToast();
-  
+
   // Timdle State - Dynamic Initialization
   const initialEvent = ALL_EVENTS.length > 0 ? ALL_EVENTS[Math.floor(ALL_EVENTS.length / 2)] : null;
   const remainingEvents = ALL_EVENTS.filter(e => e.id !== initialEvent?.id).sort(() => Math.random() - 0.5);
@@ -36,11 +38,11 @@ export default function TimelineGame({ onSolve, isAlreadySolved = false }: Timel
   const [placedEvents, setPlacedEvents] = useState<TimelineEvent[]>(
     isAlreadySolved ? [...ALL_EVENTS].sort((a,b) => a.year - b.year) : (initialEvent ? [initialEvent] : [])
   );
-  
+
   const [upcomingEvents, setUpcomingEvents] = useState<TimelineEvent[]>(
     isAlreadySolved ? [] : remainingEvents
   );
-  
+
   const [lives, setLives] = useState(3);
   const [isWon, setIsWon] = useState(isAlreadySolved);
   const [isLost, setIsLost] = useState(false);
@@ -56,17 +58,17 @@ export default function TimelineGame({ onSolve, isAlreadySolved = false }: Timel
 
     if (insertIndex === correctIndex) {
       // Correct guess!
-      toast({ title: "Corect!", description: `Ai plasat evenimentul corect la anul ${activeEvent.year}.` });
+      toast({ title: t("Corect!"), description: t("Ai plasat evenimentul corect la anul {0}.", [activeEvent.year]) });
       setPlacedEvents(sortedWithNew);
     } else {
       // Wrong guess
       const newLives = lives - 1;
       setLives(newLives);
-      toast({ title: "Incorect!", description: `Evenimentul era din anul ${activeEvent.year}.`, variant: "destructive" });
-      
+      toast({ title: t("Incorect!"), description: t("Evenimentul era din anul {0}.", [activeEvent.year]), variant: "destructive" });
+
       if (newLives <= 0) {
         setIsLost(true);
-        toast({ title: "Joc Pierdut", description: "Ai rămas fără vieți! Încearcă din nou echipa ta.", variant: "destructive" });
+        toast({ title: t("Joc Pierdut"), description: t("Ai rămas fără vieți! Încearcă din nou echipa ta."), variant: "destructive" });
         return;
       } else {
         // Still have lives, place it correctly anyway (like Timdle)
@@ -79,7 +81,7 @@ export default function TimelineGame({ onSolve, isAlreadySolved = false }: Timel
 
     if (nextUpcoming.length === 0 && lives > 0) {
       setIsWon(true);
-      toast({ title: "🎉 Cronologie Completă!", description: "Ai reconstruit linia temporală istorică!" });
+      toast({ title: t("🎉 Cronologie Completă!"), description: t("Ai reconstruit linia temporală istorică!") });
       onSolve({ completed: true, livesLeft: lives });
     }
   };
@@ -97,13 +99,12 @@ export default function TimelineGame({ onSolve, isAlreadySolved = false }: Timel
     <div className="flex flex-col items-center max-w-lg mx-auto w-full">
       <div className="text-center mb-4 flex flex-col items-center">
         <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/40 text-xs mb-2">
-          Cronologia evenimentelor istorice
-        </Badge>
+           {t("Cronologia evenimentelor istorice")} </Badge>
         <div className="flex items-center gap-1">
           {[1, 2, 3].map((life) => (
-            <Heart 
-              key={life} 
-              className={`w-5 h-5 transition-colors duration-500 ${life <= lives ? "text-red-500 fill-red-500" : "text-zinc-700 fill-zinc-800"}`} 
+            <Heart
+              key={life}
+              className={`w-5 h-5 transition-colors duration-500 ${life <= lives ? "text-red-500 fill-red-500" : "text-zinc-700 fill-zinc-800"}`}
             />
           ))}
         </div>
@@ -112,8 +113,8 @@ export default function TimelineGame({ onSolve, isAlreadySolved = false }: Timel
       {/* Active Event Card (The one to place) */}
       {!isWon && !isLost && activeEvent && (
         <div className="w-full mb-8 relative">
-          <div className="text-xs font-bold text-amber-400 uppercase tracking-widest text-center mb-2">Eveniment Curent</div>
-          <motion.div 
+          <div className="text-xs font-bold text-amber-400 uppercase tracking-widest text-center mb-2">{t("Eveniment Curent")}</div>
+          <motion.div
             initial={{ scale: 0.9, opacity: 0, y: -20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             key={activeEvent.id}
@@ -133,12 +134,11 @@ export default function TimelineGame({ onSolve, isAlreadySolved = false }: Timel
               {/* Insert Gap Above */}
               {!isWon && !isLost && (
                 <div className="w-full flex justify-center my-2 opacity-0 hover:opacity-100 transition-opacity">
-                  <button 
+                  <button
                     onClick={() => handlePlaceEvent(idx)}
                     className="flex items-center justify-center w-full max-w-[200px] h-8 rounded-full bg-amber-500 text-purple-950 font-bold hover:scale-105 transition-transform"
                   >
-                    <Plus className="w-4 h-4 mr-1" /> Plasează Aici
-                  </button>
+                    <Plus className="w-4 h-4 mr-1" />  {t("Plasează Aici")} </button>
                 </div>
               )}
               {!isWon && !isLost && (
@@ -161,7 +161,7 @@ export default function TimelineGame({ onSolve, isAlreadySolved = false }: Timel
                   {item.year}
                 </div>
               </motion.div>
-              
+
               {!isWon && !isLost && idx === placedEvents.length - 1 && (
                 <div className="h-4 w-full flex justify-center pointer-events-none">
                   <div className="w-0.5 h-full bg-purple-700/50" />
@@ -171,12 +171,11 @@ export default function TimelineGame({ onSolve, isAlreadySolved = false }: Timel
               {/* Insert Gap Below Last Element */}
               {!isWon && !isLost && idx === placedEvents.length - 1 && (
                 <div className="w-full flex justify-center my-2 opacity-0 hover:opacity-100 transition-opacity">
-                  <button 
+                  <button
                     onClick={() => handlePlaceEvent(idx + 1)}
                     className="flex items-center justify-center w-full max-w-[200px] h-8 rounded-full bg-amber-500 text-purple-950 font-bold hover:scale-105 transition-transform"
                   >
-                    <Plus className="w-4 h-4 mr-1" /> Plasează Aici
-                  </button>
+                    <Plus className="w-4 h-4 mr-1" />  {t("Plasează Aici")} </button>
                 </div>
               )}
             </div>
@@ -188,18 +187,15 @@ export default function TimelineGame({ onSolve, isAlreadySolved = false }: Timel
       {isWon && (
         <div className="w-full mt-4 p-4 rounded-lg bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-center text-sm font-semibold flex items-center justify-center gap-2">
           <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-          Cronologie Rezolvată!
-        </div>
+           {t("Cronologie Rezolvată!")} </div>
       )}
 
       {isLost && (
         <div className="w-full mt-4">
           <div className="p-4 rounded-lg bg-red-500/20 border border-red-500 text-red-300 text-center text-sm font-semibold mb-4">
-            Ai rămas fără vieți!
-          </div>
+             {t("Ai rămas fără vieți!")} </div>
           <Button onClick={handleRestart} className="w-full bg-purple-800 hover:bg-purple-700 text-white font-bold">
-            Încearcă Din Nou
-          </Button>
+             {t("Încearcă Din Nou")} </Button>
         </div>
       )}
     </div>

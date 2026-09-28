@@ -1,45 +1,26 @@
-import { getFullSchedule, getEditionDateTime, ScheduleEdition } from "@shared/schedule";
+import { getFullSchedule, getEditionDateTime, type ScheduleEdition } from "../../../shared/schedule.js";
+import { bucharestParts } from "../../../shared/event-time.js";
+import { getRealCurrentWeekIndex, getWeekDateRange } from "../../../shared/puzzle-week.js";
+export { EPOCH_START, getRealCurrentWeekIndex, getWeekDateRange, getPuzzleWeekId } from "../../../shared/puzzle-week.js";
 
-// Season 2 starts around Oct 2026. Let's set the Epoch to the first Thursday of September 2026.
-// Weeks start on Thursday 00:00 and end on Wednesday 23:59:59.
-export const EPOCH_START = new Date("2026-09-03T00:00:00+03:00");
-
-export function getRealCurrentWeekIndex(): number {
-  const now = new Date();
-  const diffTime = now.getTime() - EPOCH_START.getTime();
-  const weeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
-  return Math.max(0, weeks);
+export function getPreviewWeekIndex(): number | null {
+  try {
+    const value = localStorage.getItem("admin_preview_week");
+    if (value === null || !/^\d+$/.test(value)) return null;
+    const index = Number(value);
+    return Number.isSafeInteger(index) && index <= 10000 ? index : null;
+  } catch { return null; }
 }
 
-export function getCurrentWeekIndex(): number {
-  // Check for admin preview override
-  const previewStr = localStorage.getItem("admin_preview_week");
-  if (previewStr !== null) {
-    const previewNum = parseInt(previewStr, 10);
-    if (!isNaN(previewNum)) return previewNum;
-  }
-  return getRealCurrentWeekIndex();
-}
-
-export function getWeekDateRange(weekIndex: number) {
-  const startDate = new Date(EPOCH_START.getTime() + weekIndex * 7 * 24 * 60 * 60 * 1000);
-  const endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000 - 1);
-  return { startDate, endDate };
+export function getCurrentWeekIndex(now = new Date()): number {
+  return getPreviewWeekIndex() ?? getRealCurrentWeekIndex(now);
 }
 
 export function getEditionForWeek(weekIndex: number): ScheduleEdition | null {
   const { startDate, endDate } = getWeekDateRange(weekIndex);
-  
-  // We check the schedule for the current academic year (2026-2027)
-  const allEditions = getFullSchedule(2026);
-  
-  for (const ed of allEditions) {
-    const eventDate = getEditionDateTime(ed, 2026);
-    // If the event falls within this week's Thursday-Wednesday window
-    if (eventDate.getTime() >= startDate.getTime() && eventDate.getTime() <= endDate.getTime()) {
-      return ed;
-    }
-  }
-  
-  return null;
+  const allEditions = getFullSchedule(bucharestParts(startDate).year, startDate);
+  return allEditions.find(edition => {
+    const eventDate = getEditionDateTime(edition);
+    return eventDate >= startDate && eventDate <= endDate;
+  }) ?? null;
 }

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, jsonb, json, uniqueIndex, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -23,11 +23,11 @@ export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
 }).extend({
   name: z.string().min(2, "Numele trebuie să aibă cel puțin 2 caractere"),
-  email: z.string().email("Adresă de email invalidă"),
+  email: z.string().trim().toLowerCase().max(254).email("Adresă de email invalidă"),
   password: z.string().min(6, "Parola trebuie să aibă cel puțin 6 caractere").optional(),
-  phoneNumber: z.string().optional(),
+  phoneNumber: z.string().trim().max(30).optional(),
   role: z.enum(["TEAM_LEADER", "MEMBER", "ADMIN"]).default("MEMBER"),
-  teamId: z.string().optional(),
+  teamId: z.string().min(1).max(100).optional(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -117,6 +117,11 @@ export const registrations = pgTable("app_registrations", {
   email: text("email").notNull(),
   phoneNumber: text("phone_number"),
   memberCount: integer("member_count").notNull(),
+  language: text("language").$type<"ro" | "en">().default("ro").notNull(),
+  confirmationQueued: boolean("confirmation_queued").default(false).notNull(),
+  waitlistQueued: boolean("waitlist_queued").default(false).notNull(),
+  status: text("status").$type<"CONFIRMED" | "WAITLISTED">().default("CONFIRMED").notNull(),
+  eventDate: timestamp("event_date", { withTimezone: true }),
   reminderSent: boolean("reminder_sent").default(false).notNull(),
   registeredAt: timestamp("registered_at").defaultNow().notNull(),
 });
@@ -125,17 +130,22 @@ export const insertRegistrationSchema = createInsertSchema(registrations).omit({
   id: true,
   registeredAt: true,
   reminderSent: true,
+  eventDate: true,
+  confirmationQueued: true,
+  waitlistQueued: true,
+  status: true,
 }).extend({
-  teamName: z.string().min(2, "Numele echipei trebuie să aibă cel puțin 2 caractere"),
-  captainName: z.string().min(2, "Numele căpitanului trebuie să aibă cel puțin 2 caractere"),
-  email: z.string().email("Te rugăm să introduci o adresă de email validă"),
-  phoneNumber: z.string().optional(),
-  memberCount: z.number().min(1, "Este necesar cel puțin 1 membru").max(6, "Sunt permiși maximum 6 membri"),
-  editionId: z.string(),
-  teamId: z.string().optional(),
+  teamName: z.string().trim().max(100).min(2, "Numele echipei trebuie să aibă cel puțin 2 caractere"),
+  captainName: z.string().trim().max(100).min(2, "Numele căpitanului trebuie să aibă cel puțin 2 caractere"),
+  email: z.string().trim().toLowerCase().max(254).email("Te rugăm să introduci o adresă de email validă"),
+  phoneNumber: z.string().trim().max(30).optional(),
+  memberCount: z.number().int().min(1, "Este necesar cel puțin 1 membru").max(6, "Sunt permiși maximum 6 membri"),
+  language: z.enum(["ro", "en"]).default("ro"),
+  editionId: z.string().min(1).max(100),
+  teamId: z.string().min(1).max(100).optional(),
 });
 
-export type InsertRegistration = z.infer<typeof insertRegistrationSchema>;
+export type InsertRegistration = Omit<z.infer<typeof insertRegistrationSchema>, "language"> & { language?: "ro" | "en" } & { eventDate?: Date; status?: "CONFIRMED" | "WAITLISTED" };
 export type Registration = typeof registrations.$inferSelect;
 
 // Legacy alias for backwards compatibility
@@ -147,11 +157,13 @@ export type InsertTeamRegistration = InsertRegistration;
 // ==========================================
 // 6. WEEKLY PUZZLE PROGRESS
 // ==========================================
+// Puzzle progress uses week-YYYY-MM-DD keys in the legacy edition_id column.
+// This keeps weekly resets independent of event dates without deleting historical progress.
 export const weeklyPuzzleProgress = pgTable("app_weekly_puzzle_progress", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   teamId: varchar("team_id").notNull(),
   editionId: varchar("edition_id").notNull(),
-  gameType: text("game_type").notNull(), // 'WORDLE' | 'SUDOKU' | 'REBUS' | 'TIMELINE' | 'CONNECTIONS' | 'GLOBLE'
+  gameType: text("game_type").notNull(), // 'WORDLE' | 'TARGET' | 'TIMELINE' | 'CONNECTIONS' | 'GLOBLE'; legacy types remain in history
   isSolved: boolean("is_solved").default(false).notNull(),
   solvedByUserId: varchar("solved_by_user_id"),
   data: jsonb("data"), // stores state, guesses, board status
@@ -204,3 +216,31 @@ export const passwordResetCodes = pgTable("app_password_reset_codes", {
 
 export type PasswordResetCode = typeof passwordResetCodes.$inferSelect;
 
+
+// Operational tables are also declared here so drizzle-kit does not treat them as unmanaged.
+export const editionCapacity = pgTable("app_edition_capacity", {
+  editionId: varchar("edition_id").primaryKey(),
+  maxTeams: integer("max_teams").notNull(),
+});
+export const editionClues = pgTable("app_edition_clues", {
+  editionId: varchar("edition_id").primaryKey(),
+  clue: text("clue").notNull(),
+});
+export const emailDeliveries = pgTable("app_email_deliveries", {
+  id: varchar("id").primaryKey(),
+  registrationId: varchar("registration_id").notNull().references(() => registrations.id, { onDelete: "cascade" }),
+  kind: text("kind").notNull(),
+  email: text("email").notNull(),
+  payload: jsonb("payload").notNull(),
+  eventDate: timestamp("event_date", { withTimezone: true }).notNull(),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
+  cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+  lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+  lastError: text("last_error"),
+}, table => [uniqueIndex("app_email_deliveries_registration_id_kind_email_key").on(table.registrationId, table.kind, table.email)]);
+export const appSessions = pgTable("app_sessions", {
+  sid: varchar("sid").primaryKey(),
+  sess: json("sess").notNull(),
+  expire: timestamp("expire", { precision: 6 }).notNull(),
+}, table => [index("IDX_app_sessions_expire").on(table.expire)]);

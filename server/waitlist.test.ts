@@ -1,0 +1,146 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import express from "express";
+import { createServer } from "node:http";
+import { MemStorage, storage } from "./storage.js";
+import { NotificationService, notifications } from "./notifications.js";
+import { buildEventEmail, buildPasswordResetEmail, type EmailPayload } from "./email.js";
+import { reminderIsDue, runNotifications } from "./scheduler.js";
+import { setupSecurity } from "./security.js";
+import { registerRoutes } from "./routes.js";
+
+const eventDate = new Date("2026-10-06T17:00:00Z");
+const booking = (name: string) => ({ language: "en" as const, editionId: "s1-e1", teamName: name, captainName: "Ana", email: "ana@example.com", memberCount: 4, eventDate });
+
+test("capacity expands at 9 and 11, stops automatic acceptance at 15, and approvals are atomic", async t => {
+  t.mock.timers.enable({ apis: ["Date"], now: new Date("2026-09-28T10:00:00Z") });
+  const source = new MemStorage();
+  for (let count = 1; count <= 15; count++) {
+    const result = await source.createRegistrationWithinCapacity(booking(`Team ${count}`), 10);
+    assert.equal(result.status, "CONFIRMED");
+    assert.equal(await source.getEditionCapacityOverride("s1-e1"), count >= 11 ? 15 : count >= 9 ? 12 : 10);
+  }
+  const waiting = await Promise.all(Array.from({ length: 8 }, (_, i) => source.createRegistrationWithinCapacity(booking(`Wait ${i}`), 10)));
+  assert.ok(waiting.every(reg => reg.status === "WAITLISTED"));
+  await Promise.all([source.approveRegistration(waiting[0].id), source.approveRegistration(waiting[0].id), source.approveRegistration(waiting[1].id)]);
+  assert.equal((await source.getRegistrations()).filter(r => r.status === "CONFIRMED").length, 17);
+  assert.equal(await source.getEditionCapacityOverride("s1-e1"), 17);
+  assert.equal((await source.createRegistrationWithinCapacity(booking("Late team"), 10)).status, "WAITLISTED");
+  await source.setEditionCapacityOverride("s1-e1", 40);
+  assert.equal((await source.createRegistrationWithinCapacity(booking("Still waiting"), 10)).status, "WAITLISTED", "Raising displayed capacity cannot bypass approval beyond 15");
+  for (const reg of (await source.getRegistrations()).filter(r => r.status === "CONFIRMED").slice(0, 4)) await source.deleteRegistration(reg.id);
+  assert.equal((await source.createRegistrationWithinCapacity(booking("No queue jumping"), 10)).status, "WAITLISTED");
+  assert.equal((await source.approveRegistration(waiting[2].id))?.status, "CONFIRMED");
+  t.mock.timers.setTime(eventDate.getTime());
+  await assert.rejects(source.approveRegistration(waiting[3].id), /EVENT_CLOSED/);
+});
+
+test("waiting teams get personalized waiting mail, then confirmations and reminders only after approval", async t => {
+  t.mock.timers.enable({ apis: ["Date"], now: new Date("2026-09-28T10:00:00Z") });
+  const source = new MemStorage();
+  const captain = await source.createUser({ name: "Ana", email: "ana@example.com", role: "MEMBER" });
+  const member = await source.createUser({ name: "Dan", email: "dan@example.com", role: "MEMBER" });
+  const team = await source.createTeam({ name: "Waiting Team", leaderId: captain.id, inviteCode: "WAIT-123" });
+  await source.updateUserTeam(member.id, team.id);
+  const waiting = await source.createRegistration({ ...booking(team.name), teamId: team.id, status: "WAITLISTED" });
+  const sent: EmailPayload[] = [];
+  const service = new NotificationService(source, async payload => { sent.push(payload); return { success: true }; }, null);
+  await service.queue(waiting, "confirmation"); await service.queue(waiting, "reminder");
+  assert.equal((await service.listDeliveries()).length, 0);
+  await service.queue(waiting, "waitlist");
+  await service.deliver(waiting.id);
+  assert.equal(sent.length, 2);
+  assert.match(sent[0].text, /Hello Ana, you added your team/);
+  assert.match(sent[1].text, /Hello Dan, your captain added your team/);
+  assert.ok(sent.every(email => email.text.includes("Your place is not confirmed")));
+  assert.equal(reminderIsDue(waiting, new Date("2026-10-06T10:00:00Z")), false);
+  const confirmed = (await source.approveRegistration(waiting.id))!;
+  await service.queue(confirmed, "confirmation"); await service.queue(confirmed, "confirmation");
+  await service.deliver(confirmed.id); await service.deliver(confirmed.id);
+  assert.equal(sent.length, 4);
+  assert.ok(sent.slice(2).every(email => email.subject.startsWith("Registration confirmed")));
+  assert.equal(reminderIsDue(confirmed, new Date("2026-10-06T10:00:00Z")), true);
+  assert.ok((await service.listDeliveries()).every(item => item.sentAt && item.lastAttemptAt && !item.lastError));
+});
+
+test("unsent waitlist mail is cancelled after acceptance; deleted registrations are never emailed", async t => {
+  t.mock.timers.enable({ apis: ["Date"], now: new Date("2026-09-28T10:00:00Z") });
+  const source = new MemStorage();
+  const waiting = await source.createRegistration({ ...booking("Fast approval"), status: "WAITLISTED" });
+  const sent: EmailPayload[] = [];
+  let fail = true;
+  const service = new NotificationService(source, async payload => { if (fail) return { success: false, error: "Resend HTTP 403" }; sent.push(payload); return { success: true }; }, null);
+  await service.queue(waiting, "waitlist"); await service.deliver(waiting.id);
+  assert.equal((await service.listDeliveries())[0].lastError, "Resend HTTP 403");
+  const confirmed = (await source.approveRegistration(waiting.id))!;
+  await service.queue(confirmed, "confirmation");
+  fail = false;
+  await service.deliver(waiting.id, new Date(Date.now() + 60001));
+  assert.equal(sent.length, 1); assert.match(sent[0].subject, /Registration confirmed/);
+  assert.ok((await service.listDeliveries()).find(item => item.kind === "waitlist")?.cancelledAt);
+  const deleted = await source.createRegistration(booking("Deleted team"));
+  await service.queue(deleted, "confirmation"); await source.deleteRegistration(deleted.id); await service.deliver(deleted.id);
+  assert.equal(sent.length, 1);
+});
+
+test("API keeps waitlist private, protects approvals, previews real templates, and persists edited clues", async t => {
+  t.mock.timers.enable({ apis: ["Date"], now: new Date("2026-09-28T10:00:00Z") });
+  process.env.ADMIN_PASSWORD = "test-admin-password";
+  t.after(() => { delete process.env.ADMIN_PASSWORD; });
+  const app = express(); setupSecurity(app); app.use(express.json());
+  const server = createServer(app); await registerRoutes(server, app);
+  await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => { server.closeAllConnections(); server.close(); });
+  const base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+  const request = async (path: string, method = "GET", body?: unknown, headers: Record<string, string> = {}) => {
+    const response = await fetch(base + path, { method, headers: { "Content-Type": "application/json", ...headers }, body: body === undefined ? undefined : JSON.stringify(body) });
+    return { status: response.status, body: await response.json(), cookie: response.headers.get("set-cookie")?.split(";")[0] ?? "" };
+  };
+  const admin = { "x-admin-password": process.env.ADMIN_PASSWORD! };
+  for (let i = 0; i < 15; i++) await storage.createRegistrationWithinCapacity(booking(`Confirmed ${i}`), 10);
+  const guest = await request("/api/registrations", "POST", { ...booking("Guest waiting"), status: "CONFIRMED", confirmationQueued: true });
+  assert.equal(guest.status, 201); assert.equal(guest.body.status, "WAITLISTED"); assert.equal(guest.body.emailStatus, "pending");
+  const captain = await request("/api/auth/register", "POST", { name: "Leader", email: "leader@wait.example", password: "secret123" });
+  const session = { cookie: captain.cookie };
+  const team = await request("/api/teams", "POST", { name: "Account waiting" }, session);
+  const linked = await request("/api/registrations", "POST", { ...booking(team.body.name), teamId: team.body.id }, session);
+  assert.equal(linked.status, 201); assert.equal(linked.body.status, "WAITLISTED");
+  const publicTeams = await request("/api/registrations/active");
+  assert.equal(publicTeams.body.count, 15);
+  assert.ok(publicTeams.body.teams.every((r: any) => r.id !== guest.body.id && r.id !== linked.body.id && !r.email));
+  assert.equal((await request("/api/teams/me/registrations")).status, 401);
+  const mine = await request("/api/teams/me/registrations", "GET", undefined, session);
+  assert.equal(mine.status, 200); assert.equal(mine.body.length, 1); assert.equal(mine.body[0].status, "WAITLISTED");
+  assert.equal((await request(`/api/admin/registrations/${linked.body.id}/approve`, "POST", {}, session)).status, 401);
+  const accepted = await request(`/api/admin/registrations/${linked.body.id}/approve`, "POST", {}, admin);
+  assert.equal(accepted.status, 200); assert.equal(accepted.body.status, "CONFIRMED");
+  assert.equal((await request(`/api/admin/registrations/${linked.body.id}/approve`, "POST", {}, admin)).status, 200);
+  const schedule = await request("/api/schedule/current");
+  assert.equal(schedule.body.registeredCount, 16); assert.equal(schedule.body.maxTeams, 16); assert.equal(schedule.body.isFull, true);
+  assert.equal((await request("/api/teams/me/registrations", "GET", undefined, session)).body[0].status, "CONFIRMED");
+  const late = await request("/api/registrations", "POST", booking("Still waiting after approval"));
+  assert.equal(late.body.status, "WAITLISTED");
+  assert.equal((await request("/api/admin/emails")).status, 401);
+  const emails = await request("/api/admin/emails", "GET", undefined, admin);
+  assert.equal(emails.body.configured, false); assert.equal(emails.body.templates.length, 7);
+  assert.deepEqual(emails.body.templates[0].payload, buildEventEmail("confirmation", { name: "Ana", email: "ana@example.com", teamName: "Echipa Exemplu", memberCount: 4, eventDate, isCaptain: true }));
+  assert.deepEqual(emails.body.templates[6].payload, buildPasswordResetEmail("ana@example.com", "123456"));
+  assert.equal(emails.body.deliveries.filter((d: any) => d.registrationId === linked.body.id && d.kind === "confirmation").length, 1);
+  assert.ok(emails.body.deliveries.every((d: any) => !d.sentAt));
+  const clue = "O călătorie printre stele & <planete>";
+  assert.equal((await request("/api/admin/editions/s1-e1/clue", "PATCH", { clue })).status, 401);
+  assert.equal((await request("/api/admin/editions/s1-e1/clue", "PATCH", { clue }, admin)).status, 200);
+  assert.equal(await storage.getEditionClue("s1-e1"), clue);
+  assert.equal((await request("/api/editions/s1-e1/clue")).body.clue, clue);
+  assert.notEqual((await request("/api/editions/s1-e2/clue")).body.clue, clue);
+  assert.equal((await request("/api/admin/editions/s1-e1/clue", "PATCH", { clue: " " }, admin)).status, 400);
+  assert.equal((await request("/api/admin/editions/unknown/clue", "PATCH", { clue }, admin)).status, 400);
+  assert.equal((await request("/api/admin/editions", "GET", undefined, admin)).body[0].secretClue, clue);
+  assert.ok(!JSON.stringify((await request("/api/schedule/current")).body).includes(clue), "Edited clue is not exposed as the public event heading");
+  // Simulate a request interrupted before it could queue a waitlist email.
+  const recovered = await storage.createRegistration({ ...booking("Recovered waiting"), status: "WAITLISTED" });
+  await runNotifications();
+  const queued = (await notifications.listDeliveries()).filter((item: any) => item.registrationId === recovered.id);
+  assert.equal(queued.length, 1); assert.equal(queued[0].kind, "waitlist");
+  assert.equal((await storage.getRegistration(recovered.id))?.waitlistQueued, true);
+});

@@ -1,3 +1,4 @@
+import { t, locale } from "@/lib/i18n";
 import { useState, useEffect, useRef } from "react";
 import { getCurrentOrNextEdition, type ActiveEditionState } from "@shared/schedule";
 import Navbar from "@/components/Navbar";
@@ -16,6 +17,7 @@ const SECTION_IDS = ["hero", "registration", "games", "rulebook", "team", "prize
 export default function Home() {
   const [activeSection, setActiveSection] = useState("hero");
   const [scheduleState, setScheduleState] = useState<ActiveEditionState>(getCurrentOrNextEdition());
+  const [isWaitlistOnly, setIsWaitlistOnly] = useState(false);
   const [registeredTeams, setRegisteredTeams] = useState<RegisteredTeamItem[]>([]);
   const [isLoadingTeams, setIsLoadingTeams] = useState(false);
   // Suppress the observer briefly after a nav click so scroll animation doesn't fight it
@@ -26,7 +28,14 @@ export default function Home() {
     setIsLoadingTeams(true);
     try {
       const editionId = scheduleState.currentEdition.id;
-      const res = await fetch(`/api/registrations/active?editionId=${editionId}`);
+      const [res, scheduleResponse] = await Promise.all([
+        fetch(`/api/registrations/active?editionId=${editionId}`), fetch("/api/schedule/current"),
+      ]);
+      if (scheduleResponse.ok) {
+        const state = await scheduleResponse.json();
+        setIsWaitlistOnly(state.isFull);
+        setScheduleState({ ...state, eventDate: new Date(state.eventDate) });
+      }
       if (res.ok) {
         const data = await res.json();
         setRegisteredTeams(data.teams || []);
@@ -40,6 +49,8 @@ export default function Home() {
 
   useEffect(() => {
     fetchRegistrations();
+    const timer = setInterval(fetchRegistrations, 60000);
+    return () => clearInterval(timer);
   }, [scheduleState.currentEdition.id]);
 
   // IntersectionObserver — highlights whichever section occupies the most viewport area
@@ -94,21 +105,22 @@ export default function Home() {
     }
   };
 
-  const editionLabel = `${scheduleState.formattedDate}, ora 20:00`;
+  const displayDate = scheduleState.eventDate.toLocaleDateString(locale(), { timeZone: "Europe/Bucharest", weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const editionLabel = t("{0}, ora 20:00", [displayDate]);
 
   return (
     <div className="min-h-screen bg-[#07020d] text-foreground flex flex-col selection:bg-amber-400 selection:text-purple-950">
-      
+
       {/* Top Navbar */}
       <Navbar
         activeSection={activeSection}
         onNavigate={handleNavigate}
-        editionLabel={`Ediția #${scheduleState.editionNumber} • ${scheduleState.formattedDate}`}
+        editionLabel={t("Ediția #{0} • {1}", [scheduleState.editionNumber, displayDate])}
       />
 
       {/* Main Content Sections */}
       <main className="flex-1 space-y-4">
-        
+
         {/* 1. Hero & Countdown Section */}
         <div id="hero">
           <HeroSection
@@ -122,7 +134,7 @@ export default function Home() {
         <LiveRegistrationSection
           editionId={scheduleState.currentEdition.id}
           editionLabel={editionLabel}
-          isFull={registeredTeams.length >= scheduleState.currentEdition.maxTeams}
+          isFull={isWaitlistOnly}
           onRegistrationSuccess={fetchRegistrations}
         />
 
@@ -130,7 +142,7 @@ export default function Home() {
         <RegisteredTeamsGrid
           teams={registeredTeams}
           maxTeams={scheduleState.currentEdition.maxTeams}
-          editionLabel={`Ediția #${scheduleState.editionNumber} (${scheduleState.formattedDate})`}
+          editionLabel={t("Ediția #{0} ({1})", [scheduleState.editionNumber, displayDate])}
           onRefresh={fetchRegistrations}
           isLoading={isLoadingTeams}
         />

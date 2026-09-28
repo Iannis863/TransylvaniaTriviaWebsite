@@ -1,0 +1,20 @@
+{
+  "„{0}\" este recunoscut ca un domeniu academic/cultural larg — excelent pentru trivia, cu o bază vastă de material verificabil.": "“{0}” is a broad academic or cultural field, excellent for trivia with plenty of verifiable material.",
+  "„{0}\" este un sub-domeniu bine cunoscut — foarte bun pentru trivia, cu material suficient pentru o rundă completă.": "“{0}” is a well-known subject with enough material for a full trivia round.",
+  "Nu a fost găsit un articol Wikipedia dedicat, dar tema aparține unui domeniu bine documentat.": "No dedicated Wikipedia article was found, but the theme belongs to a well-documented field.",
+  "Nu a fost găsit niciun articol sau categorie Wikipedia pentru „{0}\". Fără o sursă de conținut verificabilă, tema nu poate susține o rundă de trivia.": "No Wikipedia article or category was found for “{0}”. Without verifiable source material, the theme cannot support a trivia round.",
+  "„{0}\" corespunde unei pagini de dezambiguizare pe Wikipedia — termenul are mai multe sensuri posibile. Recomandăm reformularea temei pentru a viza un subiect specific.": "“{0}” matches a Wikipedia disambiguation page with several possible meanings. Rephrase the theme to identify a specific topic.",
+  "„{0}\" este un domeniu-umbrelă cu {1} articole și {2} subcategorii pe Wikipedia — sursă extrem de bogată de material pentru trivia.": "“{0}” is a broad field with {1} Wikipedia articles and {2} subcategories, providing abundant trivia material.",
+  "Conținutul a fost preluat de pe Wikipedia în engleză — articolul/categoria în română este inexistent sau foarte scurt.": "Content was retrieved from English Wikipedia because the Romanian article or category is missing or very short.",
+  "Tema are un potențial excelent de quizzabilitate.": "The theme has excellent trivia potential.",
+  "Punctul forte principal: {0} ({1}/100).": "Main strength: {0} ({1}/100).",
+  "Singura zonă mai slabă: {0} ({1}/100).": "Weaker area: {0} ({1}/100).",
+  "Tema este la limită. {0} este în regulă ({1}/100), dar {2} este problematic ({3}/100).": "The theme is borderline. {0} is adequate ({1}/100), but {2} needs work ({3}/100).",
+  "Tema nu are suficient material pentru o rundă completă de trivia. Principala problemă: {0} ({1}/100).": "The theme lacks enough material for a full trivia round. Main issue: {0} ({1}/100).",
+  "Tema pare prea îngustă/nișată — există doar {0} secțiuni și {1} de cuvinte pe Wikipedia, insuficient pentru 10+ întrebări non-repetitive.": "The theme seems too narrow: only {0} sections and {1} words on Wikipedia, insufficient for 10 or more distinct questions.",
+  "Tema este foarte largă ({0} secțiuni pe Wikipedia) — risc de a fi prea generică. Recomandăm o delimitare mai precisă.": "The theme is very broad ({0} Wikipedia sections) and risks being too generic. Consider narrowing its scope.",
+  "⚠️ Tema pare subiectivă — întrebările de trivia au nevoie de răspunsuri clar verificabile, nu de opinii.": "⚠️ The theme seems subjective. Trivia questions need clearly verifiable answers rather than opinions.",
+  "⚠️ Tema conține informații care se schimbă rapid — răspunsurile pot deveni învechite. Necesită verificare manuală.": "⚠️ The theme contains rapidly changing information. Answers may become outdated and need manual checking.",
+  "Există deja {0}+ întrebări de trivia existente pe această temă în bazele de date publice — semn pozitiv.": "There are already {0}+ questions on this theme in public trivia databases, which is a positive sign.",
+  "Nu au fost găsite întrebări existente în bazele de trivia publice — tema va necesita creare de conținut de la zero.": "No existing questions were found in public trivia databases. Questions will need to be written from scratch."
+}

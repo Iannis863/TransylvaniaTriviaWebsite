@@ -1,3 +1,4 @@
+import { t, locale } from "@/lib/i18n";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { getCurrentOrNextEdition, getFullSchedule, type ActiveEditionState, type ScheduleEdition } from "@shared/schedule";
@@ -5,15 +6,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  Sparkles, 
-  Users, 
-  Trophy, 
-  Flame, 
-  ChevronRight, 
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  Sparkles,
+  Users,
+  Trophy,
+  Flame,
+  ChevronRight,
   CalendarDays,
   CheckCircle2,
   ArrowRight
@@ -66,9 +67,9 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
   const toRoman = (n: number) => (["", "I", "II", "III", "IV", "V"][n] ?? String(n));
 
   const editionDescription = (() => {
-    if (editionNumber === 1)  return `Marea deschidere a sezonului ${seasonNumber}`;
-    if (editionNumber === 15) return `Marea finală a sezonului ${seasonNumber}`;
-    return `Sezonul ${seasonNumber} continuă`;
+    if (editionNumber === 1)  return t("Marea deschidere a sezonului {0}", [seasonNumber]);
+    if (editionNumber === 15) return t("Marea finală a sezonului {0}", [seasonNumber]);
+    return t("Sezonul {0} continuă", [seasonNumber]);
   })();
 
   const fullSchedule = getFullSchedule();
@@ -77,13 +78,13 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
 
   return (
     <section className="relative overflow-hidden pt-28 sm:pt-36 pb-20 px-4 sm:px-6 lg:px-8 min-h-[92dvh] flex flex-col justify-center">
-      
+
       {/* Background Volumetric Glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-purple-600/15 rounded-full blur-[150px] pointer-events-none" />
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[450px] h-[450px] bg-amber-500/10 rounded-full blur-[130px] pointer-events-none" />
 
       <div className="max-w-5xl mx-auto flex flex-col items-center text-center relative z-10">
-        
+
         {/* Micro-Pill Eyebrow */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/80 border border-amber-400/40 shadow-[0_0_20px_rgba(246,184,40,0.2)] mb-6 backdrop-blur-md">
           <span className="flex h-2 w-2 relative">
@@ -91,13 +92,12 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
             <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
           </span>
           <span className="text-xs font-semibold tracking-wider text-amber-300">
-            S{seasonNumber}E{editionNumber} · QUIZ SĂPTĂMÂNAL LA INSOMNIA
-          </span>
+            S{seasonNumber}E{editionNumber}  {t("· QUIZ SĂPTĂMÂNAL LA INSOMNIA")} </span>
           <button
             onClick={() => setIsCalendarOpen(true)}
             className="text-[11px] text-purple-300 hover:text-white underline ml-1 flex items-center gap-0.5"
           >
-            Calendar <ChevronRight className="w-3 h-3" />
+             {t("Calendar")} <ChevronRight className="w-3 h-3" />
           </button>
         </div>
 
@@ -113,41 +113,40 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
 
         {/* Master Headline */}
         <h1 className="text-3xl sm:text-5xl md:text-6xl font-heading tracking-widest text-gold-gradient mt-6 mb-4 drop-shadow-lg max-w-4xl leading-snug pt-2 pb-2">
-          QUIZ SĂPTĂMÂNAL LA INSOMNIA
-        </h1>
-        
+           {t("QUIZ SĂPTĂMÂNAL LA INSOMNIA")} </h1>
+
         {/* Value Proposition */}
         <p className="text-base sm:text-lg md:text-xl text-purple-200/90 max-w-2xl font-light mb-10 leading-relaxed">
-          5 runde, 10 întrebări pe rundă + <strong className="text-purple-300 font-semibold">Pariul</strong>.
+           {t("5 runde, 10 întrebări pe rundă +")} <strong className="text-purple-300 font-semibold">{t("Pariul")}</strong>.
         </p>
 
         {/* Double-Bezel Countdown Machine */}
         <div className="w-full max-w-2xl mb-10">
           <div className="p-2 rounded-[2rem] bg-gradient-to-b from-amber-500/15 via-purple-900/10 to-amber-500/5 ring-1 ring-amber-400/30 shadow-[0_15px_40px_rgba(0,0,0,0.8)]">
             <div className="p-4 sm:p-6 rounded-[calc(2rem-0.5rem)] bg-[#0d041a] shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)]">
-              
+
               <div className="text-[11px] uppercase tracking-[0.2em] text-purple-300 font-bold mb-4 flex items-center justify-center gap-2">
                 <Clock className="w-4 h-4 text-amber-400" />
                 {isHappeningNow ? (
-                  <span className="text-emerald-400 animate-pulse font-bold">EDIȚIA ARE LOC CHIAR ACUM LA INSOMNIA!</span>
+                  <span className="text-emerald-400 animate-pulse font-bold">{t("EDIȚIA ARE LOC CHIAR ACUM LA INSOMNIA!")}</span>
                 ) : isHappeningToday ? (
-                  <span className="text-amber-400 font-bold">EDIȚIA ARE LOC ASTĂZI LA ORA 20:00!</span>
+                  <span className="text-amber-400 font-bold">{t("EDIȚIA ARE LOC ASTĂZI LA ORA 20:00!")}</span>
                 ) : (
-                  <span>TIMP RĂMAS PÂNĂ LA URMĂTOAREA EDIȚIE</span>
+                  <span>{t("TIMP RĂMAS PÂNĂ LA URMĂTOAREA EDIȚIE")}</span>
                 )}
               </div>
 
               <div className="grid grid-cols-4 gap-2 sm:gap-4">
                 {timeUnits.map((unit) => (
-                  <div 
-                    key={unit.label}
+                  <div
+                    key={t(unit.label)}
                     className="p-3 sm:p-4 rounded-xl bg-purple-950/40 border border-purple-800/60 flex flex-col items-center justify-center shadow-inner"
                   >
                     <div className={`font-heading text-3xl sm:text-5xl md:text-6xl ${unit.color} tracking-tight drop-shadow`}>
                       {unit.value}
                     </div>
                     <div className="text-[10px] sm:text-xs font-semibold text-purple-300/80 tracking-widest mt-1 font-sans">
-                      {unit.label}
+                      {t(unit.label)}
                     </div>
                   </div>
                 ))}
@@ -160,17 +159,17 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
         {/* Double-Bezel Event Metadata Shell */}
         <div className="w-full max-w-3xl p-2 rounded-[2rem] bg-purple-950/20 ring-1 ring-purple-500/30 shadow-2xl mb-10 text-left">
           <div className="p-6 rounded-[calc(2rem-0.5rem)] bg-[#0e041d] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 divide-y md:divide-y-0 md:divide-x divide-purple-800/40">
-              
+
               {/* Detail 1 */}
               <div className="flex items-start gap-3.5">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-center flex-shrink-0">
                   <Calendar className="w-5 h-5 text-amber-400" />
                 </div>
                 <div>
-                  <div className="text-[10px] text-purple-300/70 font-bold uppercase tracking-wider">Când & La ce oră</div>
-                  <div className="text-sm font-bold text-white mt-0.5">{formattedDate}</div>
+                  <div className="text-[10px] text-purple-300/70 font-bold uppercase tracking-wider">{t("Când & La ce oră")}</div>
+                  <div className="text-sm font-bold text-white mt-0.5">{scheduleState.eventDate.toLocaleDateString(locale(), { timeZone: "Europe/Bucharest", weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
                   <div className="text-xs text-amber-300 font-medium">{formattedTime}</div>
                 </div>
               </div>
@@ -181,9 +180,9 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
                   <MapPin className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
-                  <div className="text-[10px] text-purple-300/70 font-bold uppercase tracking-wider">Locație</div>
+                  <div className="text-[10px] text-purple-300/70 font-bold uppercase tracking-wider">{t("Locație")}</div>
                   <div className="text-sm font-bold text-white mt-0.5">Insomnia Cafe & Bistro</div>
-                  <div className="text-xs text-purple-300/80">Str. Universității nr. 2, Cluj</div>
+                  <div className="text-xs text-purple-300/80">{t("Str. Universității nr. 2, Cluj")}</div>
                 </div>
               </div>
 
@@ -193,11 +192,10 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
                   <Users className="w-5 h-5 text-emerald-400" />
                 </div>
                 <div>
-                  <div className="text-[10px] text-purple-300/70 font-bold uppercase tracking-wider">Taxă & Locuri</div>
-                  <div className="text-sm font-bold text-emerald-300 mt-0.5">10 lei / persoană</div>
+                  <div className="text-[10px] text-purple-300/70 font-bold uppercase tracking-wider">{t("Taxă & Locuri")}</div>
+                  <div className="text-sm font-bold text-emerald-300 mt-0.5">{t("10 lei / persoană")}</div>
                   <div className="text-xs text-purple-300/80">
-                    <strong className="text-amber-400">{registeredCount}</strong> / {maxTeams} echipe înscrise
-                  </div>
+                    <strong className="text-amber-400">{registeredCount}</strong> / {maxTeams}  {t("echipe înscrise")} </div>
                 </div>
               </div>
 
@@ -208,8 +206,8 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
               <div className="mt-5 pt-4 border-t border-purple-800/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-purple-950/50 px-4 py-3 rounded-xl overflow-hidden">
                 <div className="flex flex-wrap items-center gap-2 min-w-0">
                   <Flame className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                  <span className="text-sm text-purple-300 font-bold uppercase">Sezonul {toRoman(seasonNumber)}:</span>
-                  <span className="text-sm sm:text-base font-bold text-amber-300">Ediția {editionNumber}</span>
+                  <span className="text-sm text-purple-300 font-bold uppercase">{t("Sezonul")} {toRoman(seasonNumber)}:</span>
+                  <span className="text-sm sm:text-base font-bold text-amber-300">{t("Ediția")} {editionNumber}</span>
                   <span className="text-sm sm:text-base font-bold text-white/60">· Transilvania Trivia</span>
                 </div>
                 <Badge className="bg-purple-900/60 border-purple-600/40 text-purple-200 text-xs flex-shrink-0 px-3 py-1 text-center">
@@ -227,7 +225,7 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
             onClick={onRegisterClick}
             className="gold-btn rounded-full px-8 py-7 text-lg font-heading tracking-widest shadow-[0_0_35px_rgba(246,184,40,0.4)] group flex items-center gap-3 w-full sm:w-auto justify-center"
           >
-            <span>ÎNSCRIE-ȚI ECHIPA ACUM</span>
+            <span>{t("ÎNSCRIE-ȚI ECHIPA ACUM")}</span>
             <span className="w-8 h-8 rounded-full bg-black/15 dark:bg-white/20 flex items-center justify-center group-hover:translate-x-1 group-hover:-translate-y-0.5 transition-transform">
               <ArrowRight className="w-4 h-4 text-purple-950" />
             </span>
@@ -239,8 +237,7 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
             className="rounded-full px-6 py-7 text-sm font-heading tracking-wider border-purple-500/40 hover:bg-purple-900/30 text-purple-200 w-full sm:w-auto"
           >
             <CalendarDays className="w-4 h-4 text-amber-400 mr-2" />
-            CALENDARUL SEZOANELOR (30 EDIȚII)
-          </Button>
+             {t("CALENDARUL SEZOANELOR (30 EDIȚII)")} </Button>
         </div>
 
       </div>
@@ -250,11 +247,9 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-[#0d0319] border-2 border-amber-400/40 text-foreground p-6 sm:p-8 rounded-[2.5rem] shadow-[0_0_80px_rgba(246,184,40,0.3)]">
           <DialogHeader className="text-center pb-2">
             <DialogTitle className="text-2xl sm:text-3xl font-heading tracking-widest text-gold-gradient">
-              CALENDARUL SEZOANELOR 1 & 2
-            </DialogTitle>
+               {t("CALENDARUL SEZOANELOR 1 & 2")} </DialogTitle>
             <DialogDescription className="text-purple-300/70 text-xs">
-              Toate cele 30 de ediții programate în fiecare zi de Marți la ora 20:00 la Insomnia Cafe & Bistro
-            </DialogDescription>
+               {t("Toate cele 30 de ediții programate în fiecare zi de Marți la ora 20:00 la Insomnia Cafe & Bistro")} </DialogDescription>
           </DialogHeader>
 
           {/* Season Switcher Tabs */}
@@ -262,23 +257,21 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
             <button
               onClick={() => setSelectedSeasonTab(1)}
               className={`px-5 py-2.5 rounded-full font-heading text-sm tracking-wider transition-all ${
-                selectedSeasonTab === 1 
-                  ? "gold-btn" 
+                selectedSeasonTab === 1
+                  ? "gold-btn"
                   : "bg-purple-950/60 border border-purple-700/50 text-purple-300 hover:text-white"
               }`}
             >
-              Sezonul 1: Octombrie - Ianuarie (15 Ediții)
-            </button>
+               {t("Sezonul 1: Octombrie - Ianuarie (15 Ediții)")} </button>
             <button
               onClick={() => setSelectedSeasonTab(2)}
               className={`px-5 py-2.5 rounded-full font-heading text-sm tracking-wider transition-all ${
-                selectedSeasonTab === 2 
-                  ? "gold-btn" 
+                selectedSeasonTab === 2
+                  ? "gold-btn"
                   : "bg-purple-950/60 border border-purple-700/50 text-purple-300 hover:text-white"
               }`}
             >
-              Sezonul 2: Februarie - Mai (15 Ediții)
-            </button>
+               {t("Sezonul 2: Februarie - Mai (15 Ediții)")} </button>
           </div>
 
           {/* Editions Grid */}
@@ -303,24 +296,22 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-white text-sm">
-                          Marți, {ed.dayOfMonth} {ed.monthName}
+                           {t("Marți,")} {ed.dayOfMonth} {t(ed.monthName)}
                         </span>
                         {isCurrent && (
                           <Badge className="bg-amber-400 text-purple-950 text-[10px] font-bold">
-                            EDIȚIA ACTIVĂ
-                          </Badge>
+                             {t("EDIȚIA ACTIVĂ")} </Badge>
                         )}
                       </div>
-                      <div className="text-xs text-amber-300/90 mt-0.5">{ed.theme}</div>
-                      <div className="text-[11px] text-purple-300/70">{ed.description}</div>
+                      <div className="text-xs text-amber-300/90 mt-0.5">{t(ed.theme)}</div>
+                      <div className="text-[11px] text-purple-300/70">{t(ed.description)}</div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 self-end sm:self-center">
                     <span className="text-xs text-purple-300/80 font-mono">20:00</span>
                     <Badge variant="outline" className="border-purple-600/40 text-purple-300 text-[11px]">
-                      Max {ed.maxTeams} Echipe
-                    </Badge>
+                      Max {ed.maxTeams}  {t("Echipe")} </Badge>
                   </div>
                 </div>
               );

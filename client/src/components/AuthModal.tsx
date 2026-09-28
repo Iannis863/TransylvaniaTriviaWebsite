@@ -1,3 +1,4 @@
+import { t, getLanguage } from "@/lib/i18n";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -81,17 +82,17 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: resetEmail }),
+        body: JSON.stringify({ email: resetEmail, language: getLanguage() }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setResetError(data.message || "Eroare la trimiterea codului");
+        setResetError(data.message || t("Eroare la trimiterea codului"));
       } else {
         setResetMessage(data.message);
         setResetStep("code");
       }
     } catch {
-      setResetError("Eroare de conexiune");
+      setResetError(t("Eroare de conexiune"));
     }
     setIsSubmitting(false);
   };
@@ -101,7 +102,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
     setResetError("");
     setResetMessage("");
     if (resetNewPassword !== resetConfirmPassword) {
-      setResetError("Parolele nu se potrivesc.");
+      setResetError(t("Parolele nu se potrivesc."));
       return;
     }
     setIsSubmitting(true);
@@ -117,7 +118,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
       });
       const data = await res.json();
       if (!res.ok) {
-        setResetError(data.message || "Eroare la resetarea parolei");
+        setResetError(data.message || t("Eroare la resetarea parolei"));
       } else {
         setResetMessage(data.message);
         setResetStep("idle");
@@ -129,7 +130,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
         setResetConfirmPassword("");
       }
     } catch {
-      setResetError("Eroare de conexiune");
+      setResetError(t("Eroare de conexiune"));
     }
     setIsSubmitting(false);
   };
@@ -154,11 +155,9 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
             </div>
           </div>
           <DialogTitle className="text-2xl font-heading tracking-widest text-gold-gradient">
-            PORTALUL TRANSILVANIA TRIVIA
-          </DialogTitle>
+             {t("PORTALUL TRANSILVANIA TRIVIA")} </DialogTitle>
           <DialogDescription className="text-muted-foreground text-xs">
-            Intră în arenă, formează o echipă sau revendică-ți locul de Căpitan!
-          </DialogDescription>
+             {t("Intră în arenă, formează o echipă sau revendică-ți locul de Căpitan!")} </DialogDescription>
         </DialogHeader>
 
 
@@ -167,15 +166,13 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
             {!user && (
               <>
                 <TabsTrigger value="login" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 font-heading tracking-wider">
-                  Conectare
-                </TabsTrigger>
+                   {t("Conectare")} </TabsTrigger>
                 <TabsTrigger value="register" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 font-heading tracking-wider">
-                  Cont Nou
-                </TabsTrigger>
+                   {t("Cont Nou")} </TabsTrigger>
               </>
             )}
             <TabsTrigger value="team" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 font-heading tracking-wider">
-              {user ? "Alege o Echipă" : "Echipă"}
+              {user ? t("Alege o Echipă") : t("Echipă")}
             </TabsTrigger>
           </TabsList>
 
@@ -196,7 +193,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                     />
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Parolă</Label>
+                    <Label className="text-xs text-muted-foreground">{t("Parolă")}</Label>
                     <Input
                       type="password"
                       placeholder="••••••••"
@@ -216,23 +213,21 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                         className="w-3.5 h-3.5 rounded border-purple-700/50 bg-purple-950/30 text-amber-500"
                       />
                       <Label htmlFor="keepLoggedInLogin" className="text-xs text-muted-foreground cursor-pointer">
-                        Ține-mă conectat
-                      </Label>
+                         {t("Ține-mă conectat")} </Label>
                     </div>
                     <button
                       type="button"
                       onClick={() => { setResetStep("email"); setResetMessage(""); setResetError(""); }}
                       className="text-xs text-amber-400/80 hover:text-amber-300 hover:underline transition-colors cursor-pointer"
                     >
-                      Ai uitat parola?
-                    </button>
+                       {t("Ai uitat parola?")} </button>
                   </div>
                   <Button type="submit" disabled={isSubmitting} className="w-full gold-btn font-heading tracking-widest text-base">
-                    {isSubmitting ? "CONECTARE..." : "INTRĂ ÎN CONT"}
+                    {isSubmitting ? "CONECTARE..." : t("INTRĂ ÎN CONT")}
                   </Button>
                 </form>
                 {resetMessage && (
-                  <p className="text-xs text-green-400 text-center bg-green-400/10 rounded p-2 border border-green-400/20">{resetMessage}</p>
+                  <p className="text-xs text-green-400 text-center bg-green-400/10 rounded p-2 border border-green-400/20">{t(resetMessage)}</p>
                 )}
               </>
             ) : resetStep === "email" ? (
@@ -241,8 +236,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                 <div className="text-center space-y-1">
                   <KeyRound className="w-8 h-8 text-amber-400 mx-auto" />
                   <p className="text-sm text-muted-foreground">
-                    Introdu adresa de email asociată contului tău și îți vom trimite un cod de resetare.
-                  </p>
+                     {t("Introdu adresa de email asociată contului tău și îți vom trimite un cod de resetare.")} </p>
                 </div>
                 <form onSubmit={handleForgotSendCode} className="space-y-3">
                   <div>
@@ -258,10 +252,10 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                     />
                   </div>
                   {resetError && (
-                    <p className="text-xs text-red-400 text-center bg-red-400/10 rounded p-2 border border-red-400/20">{resetError}</p>
+                    <p className="text-xs text-red-400 text-center bg-red-400/10 rounded p-2 border border-red-400/20">{t(resetError)}</p>
                   )}
                   <Button type="submit" disabled={isSubmitting} className="w-full gold-btn font-heading tracking-widest text-sm">
-                    {isSubmitting ? "SE TRIMITE..." : "TRIMITE CODUL"}
+                    {isSubmitting ? t("SE TRIMITE...") : t("TRIMITE CODUL")}
                   </Button>
                 </form>
                 <button
@@ -269,8 +263,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                   onClick={exitResetFlow}
                   className="w-full text-xs text-muted-foreground hover:text-amber-300 transition-colors cursor-pointer"
                 >
-                  ← Înapoi la conectare
-                </button>
+                   {t("← Înapoi la conectare")} </button>
               </div>
             ) : resetStep === "code" ? (
               /* ── Step 2: Enter code + new password ──────────────── */
@@ -278,12 +271,11 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                 <div className="text-center space-y-1">
                   <Shield className="w-8 h-8 text-amber-400 mx-auto" />
                   <p className="text-sm text-muted-foreground">
-                    Am trimis un cod de 6 cifre la <span className="text-amber-300 font-medium">{resetEmail}</span>. Introdu codul și noua parolă.
-                  </p>
+                     {t("Am trimis un cod de 6 cifre la")} <span className="text-amber-300 font-medium">{resetEmail}</span>{t(". Introdu codul și noua parolă.")} </p>
                 </div>
                 <form onSubmit={handleForgotVerifyCode} className="space-y-3">
                   <div>
-                    <Label className="text-xs text-muted-foreground">Cod de verificare</Label>
+                    <Label className="text-xs text-muted-foreground">{t("Cod de verificare")}</Label>
                     <Input
                       type="text"
                       inputMode="numeric"
@@ -297,10 +289,10 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                     />
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Parola nouă</Label>
+                    <Label className="text-xs text-muted-foreground">{t("Parola nouă")}</Label>
                     <Input
                       type="password"
-                      placeholder="Cel puțin 6 caractere"
+                      placeholder={t("Cel puțin 6 caractere")}
                       value={resetNewPassword}
                       onChange={(e) => setResetNewPassword(e.target.value)}
                       className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
@@ -308,10 +300,10 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                     />
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Confirmă parola nouă</Label>
+                    <Label className="text-xs text-muted-foreground">{t("Confirmă parola nouă")}</Label>
                     <Input
                       type="password"
-                      placeholder="Repetă parola"
+                      placeholder={t("Repetă parola")}
                       value={resetConfirmPassword}
                       onChange={(e) => setResetConfirmPassword(e.target.value)}
                       className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
@@ -319,10 +311,10 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                     />
                   </div>
                   {resetError && (
-                    <p className="text-xs text-red-400 text-center bg-red-400/10 rounded p-2 border border-red-400/20">{resetError}</p>
+                    <p className="text-xs text-red-400 text-center bg-red-400/10 rounded p-2 border border-red-400/20">{t(resetError)}</p>
                   )}
                   <Button type="submit" disabled={isSubmitting || resetCode.length !== 6} className="w-full gold-btn font-heading tracking-widest text-sm">
-                    {isSubmitting ? "SE PROCESEAZĂ..." : "SCHIMBĂ PAROLA"}
+                    {isSubmitting ? t("SE PROCESEAZĂ...") : t("SCHIMBĂ PAROLA")}
                   </Button>
                 </form>
                 <button
@@ -330,8 +322,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                   onClick={exitResetFlow}
                   className="w-full text-xs text-muted-foreground hover:text-amber-300 transition-colors cursor-pointer"
                 >
-                  ← Înapoi la conectare
-                </button>
+                   {t("← Înapoi la conectare")} </button>
               </div>
             ) : null}
           </TabsContent>
@@ -340,10 +331,10 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
           <TabsContent value="register" className="space-y-4 pt-3">
             <form onSubmit={handleRegister} className="space-y-3">
               <div>
-                <Label className="text-xs text-muted-foreground">Nume / Nickname</Label>
+                <Label className="text-xs text-muted-foreground">{t("Nume / Nickname")}</Label>
                 <Input
                   type="text"
-                  placeholder="Ex: Alexandru Cavalerul"
+                  placeholder={t("Ex: Alexandru Cavalerul")}
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
                   className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
@@ -362,10 +353,10 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Parolă</Label>
+                <Label className="text-xs text-muted-foreground">{t("Parolă")}</Label>
                 <Input
                   type="password"
-                  placeholder="Cel puțin 6 caractere"
+                  placeholder={t("Cel puțin 6 caractere")}
                   value={regPassword}
                   onChange={(e) => setRegPassword(e.target.value)}
                   className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
@@ -381,11 +372,10 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                   className="w-3.5 h-3.5 rounded border-purple-700/50 bg-purple-950/30 text-amber-500"
                 />
                 <Label htmlFor="keepLoggedInReg" className="text-xs text-muted-foreground cursor-pointer">
-                  Ține-mă conectat
-                </Label>
+                   {t("Ține-mă conectat")} </Label>
               </div>
               <Button type="submit" disabled={isSubmitting} className="w-full gold-btn font-heading tracking-widest text-base">
-                {isSubmitting ? "CREARE CONT..." : "CREEAZĂ CONTUL"}
+                {isSubmitting ? t("CREARE CONT...") : t("CREEAZĂ CONTUL")}
               </Button>
             </form>
           </TabsContent>
@@ -396,10 +386,10 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
               <div className="space-y-4">
                 {team ? (
                   <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-400/40 text-center space-y-2">
-                    <div className="text-xs uppercase tracking-widest text-amber-300 font-semibold">Echipa Ta Activă</div>
+                    <div className="text-xs uppercase tracking-widest text-amber-300 font-semibold">{t("Echipa Ta Activă")}</div>
                     <div className="font-heading text-2xl text-gold-gradient">{team.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      Cod de invitație pentru prieteni: <span className="font-mono font-bold text-amber-400 text-sm bg-purple-950/80 px-2 py-0.5 rounded border border-amber-400/30">{team.inviteCode}</span>
+                       {t("Cod de invitație pentru prieteni:")} <span className="font-mono font-bold text-amber-400 text-sm bg-purple-950/80 px-2 py-0.5 rounded border border-amber-400/30">{team.inviteCode}</span>
                     </div>
                   </div>
                 ) : (
@@ -407,44 +397,40 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                     {/* Create Team Option */}
                     <div className="p-3 bg-purple-950/30 rounded border border-purple-700/40">
                       <h4 className="font-heading text-lg text-amber-300 flex items-center gap-1.5 mb-2">
-                        👑 Creează o Echipă Nouă (Devino Căpitan)
-                      </h4>
+                         {t("👑 Creează o Echipă Nouă (Devino Căpitan)")} </h4>
                       <form onSubmit={handleCreateTeam} className="space-y-2">
                         <Input
-                          placeholder="Numele Echipei (ex: Dragonii din Cluj)"
+                          placeholder={t("Numele Echipei (ex: Dragonii din Cluj)")}
                           value={teamName}
                           onChange={(e) => setTeamName(e.target.value)}
                           className="bg-purple-950/50 border-purple-700/50 text-sm"
                           required
                         />
                         <Input
-                          placeholder="Motto / Tagline (opțional)"
+                          placeholder={t("Motto / Tagline (opțional)")}
                           value={teamTagline}
                           onChange={(e) => setTeamTagline(e.target.value)}
                           className="bg-purple-950/50 border-purple-700/50 text-sm"
                         />
                         <Button type="submit" className="w-full gold-btn text-xs font-heading">
-                          FORMEAZĂ ECHIPA & GENEREAZĂ COD
-                        </Button>
+                           {t("FORMEAZĂ ECHIPA & GENEREAZĂ COD")} </Button>
                       </form>
                     </div>
 
                     {/* Join Team Option */}
                     <div className="p-3 bg-purple-950/30 rounded border border-purple-700/40">
                       <h4 className="font-heading text-lg text-purple-300 flex items-center gap-1.5 mb-2">
-                        🛡️ Alătură-te unei Echipe Existente
-                      </h4>
+                         {t("🛡️ Alătură-te unei Echipe Existente")} </h4>
                       <form onSubmit={handleJoinTeam} className="space-y-2">
                         <Input
-                          placeholder="Introdu Codul de Invitație (ex: NOCT-77)"
+                          placeholder={t("Introdu Codul de Invitație (ex: NOCT-77)")}
                           value={inviteCodeInput}
                           onChange={(e) => setInviteCodeInput(e.target.value.toUpperCase())}
                           className="bg-purple-950/50 border-purple-700/50 text-sm font-mono"
                           required
                         />
                         <Button type="submit" className="w-full purple-btn text-xs font-heading">
-                          INTRĂ ÎN ECHIPĂ
-                        </Button>
+                           {t("INTRĂ ÎN ECHIPĂ")} </Button>
                       </form>
                     </div>
                   </div>
@@ -452,8 +438,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
               </div>
             ) : (
               <div className="p-6 text-center text-muted-foreground text-sm">
-                Te rugăm să te conectezi mai întâi pentru a crea sau gestiona o echipă.
-              </div>
+                 {t("Te rugăm să te conectezi mai întâi pentru a crea sau gestiona o echipă.")} </div>
             )}
           </TabsContent>
         </Tabs>

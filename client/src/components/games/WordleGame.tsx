@@ -1,23 +1,25 @@
+import { t } from "@/lib/i18n";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import VALID_WORDS from "./valid-words.json";
-import { getCurrentWeeklyGameData } from "../../lib/weeklyGames";
+import ENGLISH_WORDS from "./valid-words-en.json";
+import { getLanguage } from "@/lib/i18n";
+import type { WeeklyGameData } from "../../lib/weeklyGames";
 
 interface WordleGameProps {
+  weeklyData: WeeklyGameData;
   onSolve: (data: any) => void;
   isAlreadySolved?: boolean;
 }
 
 const WORD_LENGTH = 5;
 
-// Today's target word based on the weekly engine
-const weeklyData = getCurrentWeeklyGameData();
-const TARGET_WORD = weeklyData.wordleWord;
 
-export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleGameProps) {
+export default function WordleGame({ weeklyData, onSolve, isAlreadySolved = false }: WordleGameProps) {
+  const TARGET_WORD = weeklyData.wordleWord;
   const { toast } = useToast();
   const [guesses, setGuesses] = useState<string[]>(isAlreadySolved ? [TARGET_WORD] : []);
   const [currentGuess, setCurrentGuess] = useState("");
@@ -44,17 +46,17 @@ export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleG
 
   const submitGuess = () => {
     if (currentGuess.length !== WORD_LENGTH) {
-      triggerInvalidShake("Cuvânt incomplet", `Cuvântul trebuie să aibă exact ${WORD_LENGTH} litere.`);
+      triggerInvalidShake(t("Cuvânt incomplet"), t("Cuvântul trebuie să aibă exact {0} litere.", [WORD_LENGTH]));
       return;
     }
 
-    if (!VALID_WORDS.includes(currentGuess)) {
-      triggerInvalidShake("Cuvânt invalid", "Acest cuvânt nu există în dicționarul nostru.");
+    if (!(getLanguage() === "en" ? ENGLISH_WORDS : VALID_WORDS).includes(currentGuess)) {
+      triggerInvalidShake(t("Cuvânt invalid"), t("Acest cuvânt nu există în dicționarul nostru."));
       return;
     }
 
     if (guesses.includes(currentGuess)) {
-      triggerInvalidShake("Deja încercat", "Ai introdus deja acest cuvânt.");
+      triggerInvalidShake(t("Deja încercat"), t("Ai introdus deja acest cuvânt."));
       return;
     }
 
@@ -64,7 +66,7 @@ export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleG
     if (currentGuess === TARGET_WORD) {
       setTimeout(() => {
         setGameWon(true);
-        toast({ title: "🎉 Felicitări!", description: "Ai ghicit cuvântul din dicționar!" });
+        toast({ title: t("🎉 Felicitări!"), description: t("Ai ghicit cuvântul din dicționar!") });
         onSolve({ solution: TARGET_WORD, attempts: newGuesses.length });
       }, WORD_LENGTH * 300 + 500);
     }
@@ -94,7 +96,7 @@ export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleG
       ) {
         return;
       }
-      
+
       if (e.key === "Enter") handleCharInput("ENTER");
       else if (e.key === "Backspace") handleCharInput("⌫");
       else if (/^[a-zA-Z]$/.test(e.key)) handleCharInput(e.key.toUpperCase());
@@ -106,14 +108,14 @@ export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleG
   const getLetterStatus = (letter: string, index: number, guessWord: string) => {
     if (!letter) return "empty";
     if (TARGET_WORD[index] === letter) return "correct";
-    
+
     const letterCountInTarget = TARGET_WORD.split("").filter((l) => l === letter).length;
     let priorOccurrencesInGuess = 0;
     for (let i = 0; i <= index; i++) {
       if (guessWord[i] === letter) priorOccurrencesInGuess++;
     }
     const correctOccurrences = guessWord.split("").filter((l, i) => l === letter && TARGET_WORD[i] === letter).length;
-    
+
     if (TARGET_WORD.includes(letter) && priorOccurrencesInGuess <= letterCountInTarget - correctOccurrences) {
       return "present";
     }
@@ -152,18 +154,17 @@ export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleG
     <div className="flex flex-col items-center max-w-md mx-auto w-full">
       <div className="text-center mb-6">
         <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/40 text-xs mb-1">
-          Cuvântul Săptămânii • {WORD_LENGTH} Litere
-        </Badge>
-        <p className="text-xs text-purple-300/80">Număr nelimitat de încercări. Trebuie să fie un cuvânt valid.</p>
+           {t("Cuvântul Săptămânii •")} {WORD_LENGTH}  {t("Litere")} </Badge>
+        <p className="text-xs text-purple-300/80">{t("Număr nelimitat de încercări. Trebuie să fie un cuvânt valid.")}</p>
       </div>
 
       {/* Grid Container with Scrolling */}
-      <div 
+      <div
         ref={scrollRef}
         className="mb-8 w-full flex flex-col items-center overflow-y-auto custom-scrollbar pr-2"
-        style={{ 
+        style={{
           height: '384px', // Exactly fits 6 rows of 56px height + 8px gap
-          scrollBehavior: 'smooth' 
+          scrollBehavior: 'smooth'
         }}
       >
         <div className="flex flex-col gap-2 pb-1">
@@ -173,8 +174,8 @@ export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleG
             const isSubmitted = rowIndex < guesses.length;
 
             return (
-              <motion.div 
-                key={rowIndex} 
+              <motion.div
+                key={rowIndex}
                 className="grid grid-cols-5 gap-2"
                 animate={isCurrentRow && invalidShake ? { x: [-5, 5, -5, 5, 0] } : {}}
                 transition={{ duration: 0.4 }}
@@ -183,7 +184,7 @@ export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleG
                   const letter = guess[colIndex] || "";
                   const status = isSubmitted ? getLetterStatus(letter, colIndex, guess) : (letter ? "filled" : "empty");
                   const colors = getStatusColors(status);
-                  
+
                   return (
                     <motion.div
                       key={colIndex}
@@ -196,7 +197,7 @@ export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleG
                           : {}
                       }
                       transition={
-                        isSubmitted 
+                        isSubmitted
                           ? { duration: 0.6, delay: colIndex * 0.3 }
                           : { duration: 0.1 }
                       }
@@ -217,8 +218,7 @@ export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleG
       {gameWon && (
         <div className="w-full p-3 rounded-lg bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-center text-sm font-semibold mb-4 flex items-center justify-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          Rezolvat pentru Echipă din {guesses.length} încercări!
-        </div>
+           {t("Rezolvat pentru Echipă din")} {guesses.length}  {t("încercări!")} </div>
       )}
 
       {/* Virtual Keyboard */}
@@ -232,7 +232,7 @@ export default function WordleGame({ onSolve, isAlreadySolved = false }: WordleG
               if (keyStatus === "correct") keyBg = "bg-emerald-500 border-emerald-500 text-white";
               if (keyStatus === "present") keyBg = "bg-amber-500 border-amber-500 text-white";
               if (keyStatus === "absent") keyBg = "bg-zinc-800 border-zinc-800 text-zinc-400";
-              
+
               return (
                 <button
                   key={key}

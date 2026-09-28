@@ -1,26 +1,28 @@
+import { getPuzzleWeekId, getRealCurrentWeekIndex, getWeekDateRange } from "../shared/puzzle-week.js";
+import { bucharestParts } from "../shared/event-time.js";
+import { getTargetPuzzle, isTargetSolution } from "../shared/target-game.js";
 import type { Express, Request, Response } from "express";
-import { createServer, type Server } from "http";
+import { type Server } from "http";
 import { storage } from "./storage.js";
-import { 
-  insertRegistrationSchema, 
-  insertUserSchema, 
-  insertTeamSchema,
-  insertPuzzleProgressSchema,
-  insertThemeSuggestionSchema
-} from "../shared/schema.js"; 
-import { getCurrentOrNextEdition, getFullSchedule } from "../shared/schedule.js";
+import { insertRegistrationSchema } from "../shared/schema.js";
+import { getCurrentOrNextEdition, getFullSchedule, getEditionDateTime } from "../shared/schedule.js";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
-import { sendRegistrationConfirmation, sendPasswordResetCode } from "./email.js";
+import { expandedCapacity } from "../shared/booking.js";
+import { buildEventEmail, buildPasswordResetEmail, FROM_EMAIL, sendPasswordResetCode } from "./email.js";
+import { teamService, TeamError } from "./team-service.js";
+import { notifications } from "./notifications.js";
+import { reminderIsDue, runNotifications } from "./scheduler.js";
 import { scoreQuizzability } from "./quizzability/index.js";
 import { randomInt } from "crypto";
+import { establishSession, hashPassword, verifyPassword, publicUser, requireUser, rateLimit, safeEqual } from "./security.js";
 
 // Helper function to check the password header securely
 function checkAuth(req: Request, res: Response, next: () => void) {
-  const adminPassword = process.env.ADMIN_PASSWORD || "TriviaAdmin2026!";
+  const adminPassword = process.env.ADMIN_PASSWORD;
   const clientPassword = req.headers["x-admin-password"];
 
-  if (!clientPassword || clientPassword !== adminPassword) {
+  if (!adminPassword || typeof clientPassword !== "string" || !safeEqual(clientPassword, adminPassword)) {
     return res.status(401).json({ message: "Neautorizat. Parolă incorectă!" });
   }
   next();
@@ -30,7 +32,31 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  
+
+  app.use("/api/admin", rateLimit(100));
+  app.get("/api/registrations", rateLimit(30));
+  app.delete("/api/registrations/:id", rateLimit(30));
+  app.delete("/api/theme-suggestions/:id", rateLimit(30));
+  app.post("/api/teams/join", rateLimit(20));
+  app.use("/api/auth", rateLimit(100));
+  app.post("/api/auth/login", rateLimit(15));
+  app.post("/api/auth/register", rateLimit(10));
+  app.post("/api/auth/forgot-password", rateLimit(10));
+  app.post("/api/auth/reset-password", rateLimit(15));
+  app.post("/api/registrations", rateLimit(15));
+  app.post("/api/theme-validator", rateLimit(10));
+  app.use("/api/teams", requireUser);
+  app.use("/api/games", requireUser);
+  app.use("/api/auth/me", requireUser);
+
+  app.post("/api/auth/logout", (req, res, next) => {
+    req.session.destroy(error => {
+      if (error) return next(error);
+      res.clearCookie("tt.sid", { path: "/" });
+      res.json({ ok: true });
+    });
+  });
+
   // ==========================================
   // 1. SCHEDULE & ACTIVE EDITION ENDPOINTS
   // ==========================================
@@ -39,15 +65,20 @@ export async function registerRoutes(
   app.get("/api/schedule/current", async (_req, res) => {
     try {
       const activeState = getCurrentOrNextEdition(new Date());
-      const registeredTeams = await storage.getRegistrations(activeState.currentEdition.id);
+      const allRegistrations = await storage.getRegistrations(activeState.currentEdition.id);
+      const registeredTeams = allRegistrations.filter(r => r.status === "CONFIRMED");
       
+      const capacity = expandedCapacity(registeredTeams.length, await storage.getEditionCapacityOverride(activeState.currentEdition.id) ?? activeState.currentEdition.maxTeams);
       res.json({
         ...activeState,
+        currentEdition: { ...activeState.currentEdition, maxTeams: capacity },
         registeredCount: registeredTeams.length,
-        maxTeams: activeState.currentEdition.maxTeams,
-        isFull: registeredTeams.length >= activeState.currentEdition.maxTeams,
+        maxTeams: capacity,
+        isFull: registeredTeams.length >= Math.min(capacity, 15) || allRegistrations.some(r => r.status === "WAITLISTED"),
+        waitlistCount: allRegistrations.filter(r => r.status === "WAITLISTED").length,
       });
     } catch (error) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       console.error("Error fetching current schedule:", error);
       res.status(500).json({ message: "Eroare la calcularea programului activ" });
     }
@@ -59,6 +90,7 @@ export async function registerRoutes(
       const full = getFullSchedule();
       res.json(full);
     } catch (error) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       res.status(500).json({ message: "Eroare la obținerea calendarului complet" });
     }
   });
@@ -70,8 +102,9 @@ export async function registerRoutes(
   app.get("/api/admin/users", checkAuth, async (_req, res) => {
     try {
       const allUsers = await storage.getAllUsers();
-      res.json(allUsers);
+      res.json(allUsers.map(publicUser));
     } catch (error) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       console.error("Error fetching users:", error);
       res.status(500).json({ message: "Eroare la încărcarea utilizatorilor" });
     }
@@ -80,30 +113,13 @@ export async function registerRoutes(
   // Delete user (admin)
   app.delete("/api/admin/users/:id", checkAuth, async (req, res) => {
     try {
-      const userId = req.params.id;
-      const user = await storage.getUser(userId);
-      if (!user) return res.status(404).json({ message: "Utilizatorul nu a fost găsit" });
-
-      // Handle team exit logic if they are in a team
-      if (user.teamId) {
-        const members = await storage.getTeamMembers(user.teamId);
-        if (user.role === "TEAM_LEADER") {
-          const otherMembers = members.filter(m => m.id !== userId).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-          if (otherMembers.length > 0) {
-            const newLeader = otherMembers[0];
-            await storage.updateUserTeam(newLeader.id, user.teamId, "TEAM_LEADER");
-            await storage.updateTeam(user.teamId, { leaderId: newLeader.id });
-          } else {
-            await storage.deleteTeam(user.teamId);
-          }
-        }
-      }
-
-      await storage.deleteUser(userId);
+      await teamService.leave(req.params.id, true);
       res.json({ success: true });
     } catch (error) {
-      console.error("Delete admin user error:", error);
-      res.status(500).json({ message: "Eroare la ștergerea utilizatorului" });
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
+      if (error instanceof TeamError) return res.status(error.status).json({ message: error.message });
+      console.error("Team operation failed:", error);
+      res.status(500).json({ message: "Eroare la actualizarea echipei" });
     }
   });
 
@@ -118,7 +134,7 @@ export async function registerRoutes(
       const registeredList = await storage.getRegistrations(editionId);
       
       // Mask email / phone for public view
-      const publicList = registeredList.map((r) => ({
+      const publicList = registeredList.filter(r => r.status === "CONFIRMED").map((r) => ({
         id: r.id,
         teamName: r.teamName,
         captainName: r.captainName,
@@ -133,6 +149,7 @@ export async function registerRoutes(
         teams: publicList,
       });
     } catch (error) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       console.error("Error fetching active registrations:", error);
       res.status(500).json({ message: "Eroare la încărcarea echipelor înscrise" });
     }
@@ -147,48 +164,45 @@ export async function registerRoutes(
         editionId: req.body.editionId || active.currentEdition.id,
       };
 
-      const data = insertRegistrationSchema.parse(body);
+      const data: import("../shared/schema.js").InsertRegistration = insertRegistrationSchema.parse(body);
 
-      // Check if registration limit reached
-      const currentList = await storage.getRegistrations(data.editionId);
-      if (currentList.length >= active.currentEdition.maxTeams) {
-        return res.status(400).json({ 
-          message: `Toate cele ${active.currentEdition.maxTeams} locuri pentru această ediție sunt ocupate!` 
-        });
+      const edition = [...getFullSchedule(), active.currentEdition].find(item => item.id === data.editionId);
+      if (!edition) return res.status(400).json({ message: "Ediție invalidă" });
+      const eventDate = getEditionDateTime(edition);
+      if (eventDate <= new Date()) return res.status(400).json({ message: "Înscrierile pentru această ediție s-au închis" });
+      data.eventDate = eventDate;
+      if (data.teamId) {
+        await requireUser(req, res, (error?: unknown) => { if (error) throw error; });
+        if (res.headersSent) return;
+        const team = await storage.getTeam(data.teamId);
+        if (!team || team.leaderId !== req.session.userId) return res.status(403).json({ message: "Doar căpitanul poate înscrie echipa" });
+        data.teamName = team.name;
+        data.captainName = res.locals.user.name;
+        data.email = res.locals.user.email;
       }
-
-      // Check if team name already registered for this edition
-      const duplicate = currentList.find(
-        (t) => t.teamName.trim().toLowerCase() === data.teamName.trim().toLowerCase()
-      );
-      if (duplicate) {
-        return res.status(400).json({ 
-          message: "O echipă cu acest nume este deja înscrisă pentru această ediție!" 
-        });
-      }
-
-      const registration = await storage.createRegistration(data);
+      const capacity = await storage.getEditionCapacityOverride(data.editionId) ?? edition.maxTeams;
+      const registration = await storage.createRegistrationWithinCapacity(data, capacity);
       
+      let emailStatus = "pending";
       try {
-        await sendRegistrationConfirmation(
-          data.email,
-          data.teamName,
-          data.captainName,
-          data.memberCount
-        );
+        await notifications.queue(registration, registration.status === "WAITLISTED" ? "waitlist" : "confirmation");
+        if (registration.status === "WAITLISTED") await storage.markWaitlistQueued(registration.id);
+        else await storage.markConfirmationQueued(registration.id);
+        // Hobby cron runs once daily; registrations made afterward still receive today's reminder.
+        if (reminderIsDue(registration)) await notifications.queue(registration, "reminder");
+        const delivery = await notifications.deliver(registration.id);
+        if (await notifications.reminderComplete(registration.id)) await storage.markReminderSent(registration.id);
+        emailStatus = delivery.failed === 0 && delivery.sent > 0 ? "sent" : "pending";
       } catch (emailErr) {
-        console.error("Failed to send confirmation email:", emailErr);
+        console.error("Failed to queue/send confirmation:", emailErr);
       }
       
-      res.status(201).json(registration);
+      res.status(201).json({ ...registration, emailStatus });
     } catch (error) {
-      if (error instanceof ZodError) {
-        const validationError = fromZodError(error);
-        res.status(400).json({ message: validationError.message });
-      } else {
-        console.error("Registration error:", error);
-        res.status(500).json({ message: "Eroare la înregistrarea echipei" });
-      }
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
+      if (error instanceof Error && (error.message === "EDITION_FULL" || error.message === "DUPLICATE_REGISTRATION")) return res.status(409).json({ message: error.message === "EDITION_FULL" ? "Toate locurile sunt ocupate" : "Echipa este deja înscrisă" });
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Eroare la înregistrarea echipei" });
     }
   });
 
@@ -198,6 +212,7 @@ export async function registerRoutes(
       const registrations = await storage.getRegistrations();
       res.json(registrations);
     } catch (error) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       console.error("Get registrations error:", error);
       res.status(500).json({ message: "Eroare la obținerea înregistrărilor" });
     }
@@ -214,6 +229,7 @@ export async function registerRoutes(
         res.status(404).json({ message: "Înregistrarea nu a fost găsită" });
       }
     } catch (error) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       console.error("Delete registration error:", error);
       res.status(500).json({ message: "Eroare la ștergerea echipei" });
     }
@@ -227,10 +243,10 @@ export async function registerRoutes(
   app.post("/api/auth/register", async (req, res) => {
     try {
       const schema = z.object({
-        name: z.string().min(2, "Numele trebuie să aibă cel puțin 2 caractere"),
-        email: z.string().email("Adresă de email invalidă"),
-        password: z.string().min(6, "Parola trebuie să aibă cel puțin 6 caractere"),
-        role: z.enum(["TEAM_LEADER", "MEMBER", "ADMIN"]).default("MEMBER"),
+        name: z.string().trim().min(2, "Numele trebuie să aibă cel puțin 2 caractere").max(100),
+        email: z.string().trim().toLowerCase().email("Adresă de email invalidă").max(254),
+        password: z.string().min(6, "Parola trebuie să aibă cel puțin 6 caractere").max(256),
+        keepLoggedIn: z.boolean().optional(),
       });
 
       const data = schema.parse(req.body);
@@ -239,7 +255,8 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Există deja un cont cu această adresă de email!" });
       }
 
-      const user = await storage.createUser(data);
+      const user = await storage.createUser({ name: data.name, email: data.email, role: "MEMBER", password: await hashPassword(data.password) });
+      await establishSession(req, user, data.keepLoggedIn === true);
       res.status(201).json({
         id: user.id,
         name: user.name,
@@ -249,27 +266,30 @@ export async function registerRoutes(
         teamId: user.teamId,
       });
     } catch (error: any) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       console.error("Register Error:", error);
-      if (error instanceof ZodError) {
-        return res.status(400).json({ message: fromZodError(error).message });
-      }
-      res.status(500).json({ message: "Eroare internă: " + (error.message || "Eroare la crearea contului") });
+      res.status(500).json({ message: "Eroare la crearea contului" });
     }
   });
 
   // Login User
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, keepLoggedIn } = z.object({ email: z.string().trim().toLowerCase().email().max(254), password: z.string().min(1).max(256), keepLoggedIn: z.boolean().optional() }).parse(req.body);
       if (!email || !password) {
         return res.status(400).json({ message: "Emailul și parola sunt obligatorii" });
       }
 
-      const user = await storage.getUserByEmail(email);
-      if (!user || user.password !== password) {
+      let user = await storage.getUserByEmail(email);
+      if (!user || !await verifyPassword(password, user.password)) {
         return res.status(401).json({ message: "Email sau parolă incorectă" });
       }
 
+      if (!user.password?.startsWith("scrypt:")) {
+        user = await storage.upgradeLegacyPassword(user.id, user.password!, await hashPassword(password));
+        if (!user) return res.status(401).json({ message: "Email sau parolă incorectă" });
+      }
+      await establishSession(req, user, keepLoggedIn === true);
       let team = null;
       if (user.teamId) {
         team = await storage.getTeam(user.teamId);
@@ -287,8 +307,9 @@ export async function registerRoutes(
         team,
       });
     } catch (error: any) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       console.error("Login Error:", error);
-      res.status(500).json({ message: "Eroare internă: " + (error.message || "Eroare la autentificare") });
+      res.status(500).json({ message: "Eroare la autentificare" });
     }
   });
 
@@ -296,7 +317,7 @@ export async function registerRoutes(
   // ── Password Reset: Step 1 — send code to email ───────────────────────────
   app.post("/api/auth/forgot-password", async (req, res) => {
     try {
-      const { email } = req.body;
+      const { email, language } = z.object({ email: z.string().trim().toLowerCase().email().max(254), language: z.enum(["ro", "en"]).default("ro") }).parse(req.body);
       if (!email) {
         return res.status(400).json({ message: "Adresa de email este obligatorie" });
       }
@@ -313,15 +334,16 @@ export async function registerRoutes(
         return res.json({ message: "Dacă există un cont cu acest email, vei primi un cod de resetare." });
       }
 
-      const code = String(randomInt(100000, 999999));
+      const code = String(randomInt(100000, 1000000));
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
       await storage.createResetCode(email, code, expiresAt);
 
-      await sendPasswordResetCode(email, code);
-      console.log(`[Auth] Password reset code sent for ${email}`);
+      const delivery = await sendPasswordResetCode(email, code, language);
+      if (!delivery.success) await storage.deleteResetCodes(email);
 
       res.json({ message: "Dacă există un cont cu acest email, vei primi un cod de resetare." });
     } catch (error: any) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       console.error("Forgot Password Error:", error);
       res.status(500).json({ message: "Eroare internă" });
     }
@@ -331,26 +353,14 @@ export async function registerRoutes(
   app.post("/api/auth/reset-password", async (req, res) => {
     try {
       const schema = z.object({
-        email: z.string().email(),
-        code: z.string().length(6),
-        newPassword: z.string().min(6, "Parola trebuie să aibă cel puțin 6 caractere"),
+        email: z.string().trim().toLowerCase().email().max(254),
+        code: z.string().regex(/^\d{6}$/),
+        newPassword: z.string().min(6, "Parola trebuie să aibă cel puțin 6 caractere").max(256),
       });
 
       const { email, code, newPassword } = schema.parse(req.body);
-      const entry = await storage.getValidResetCode(email);
-
-      if (!entry) {
-        return res.status(400).json({ message: "Codul a expirat sau nu este valid. Te rugăm să soliciți un cod nou." });
-      }
-
-      if (entry.attempts >= 5) {
-        await storage.deleteResetCodes(email);
-        return res.status(429).json({ message: "Prea multe încercări. Te rugăm să soliciți un cod nou." });
-      }
-
-      if (entry.code !== code) {
-        await storage.incrementResetCodeAttempts(entry.id);
-        return res.status(400).json({ message: "Codul introdus nu este corect." });
+      if (!await storage.consumeResetCode(email, code)) {
+        return res.status(400).json({ message: "Cod invalid, expirat sau prea multe încercări. Solicită un cod nou." });
       }
 
       // Code is valid — update password
@@ -359,33 +369,21 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Contul nu a fost găsit." });
       }
 
-      await storage.updateUser(user.id, { password: newPassword });
-      await storage.deleteResetCodes(email);
-      console.log(`[Auth] Password reset successful for ${email}`);
+      await storage.updateUser(user.id, { password: await hashPassword(newPassword) });
 
       res.json({ message: "Parola a fost schimbată cu succes!" });
     } catch (error: any) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       console.error("Reset Password Error:", error);
-      if (error instanceof ZodError) {
-        return res.status(400).json({ message: fromZodError(error).message });
-      }
       res.status(500).json({ message: "Eroare internă" });
     }
   });
 
   // Get current user profile & team
-  app.get("/api/auth/me", async (req, res) => {
-    const userId = req.headers["x-user-id"] as string;
-    if (!userId) {
-      // Default to demo leader for ease of testing
-      const defaultUser = await storage.getUser("usr_vlad_leader");
-      if (defaultUser) {
-        const team = defaultUser.teamId ? await storage.getTeam(defaultUser.teamId) : null;
-        const members = defaultUser.teamId ? await storage.getTeamMembers(defaultUser.teamId) : [];
-        return res.json({ user: defaultUser, team, members });
-      }
-      return res.status(401).json({ message: "Neautentificat" });
-    }
+  app.get("/api/auth/me", async (req, res, next) => {
+    try {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Neautentificat" });
 
     const user = await storage.getUser(userId);
     if (!user) return res.status(404).json({ message: "Utilizatorul nu a fost găsit" });
@@ -393,17 +391,25 @@ export async function registerRoutes(
     const team = user.teamId ? await storage.getTeam(user.teamId) : null;
     const members = user.teamId ? await storage.getTeamMembers(user.teamId) : [];
 
-    res.json({ user, team, members });
+    res.json({ user: publicUser(user), team, members: members.map(publicUser) });
+    } catch (error) { next(error); }
   });
   // Update current user
   app.put("/api/auth/me", async (req, res) => {
     try {
-      const userId = req.headers["x-user-id"] as string;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ message: "Neautentificat" });
-      const { name, email, phoneNumber } = req.body;
+      const { name, email, phoneNumber } = z.object({
+        name: z.string().trim().min(2).max(100),
+        email: z.string().trim().toLowerCase().email().max(254),
+        phoneNumber: z.string().trim().max(30).nullable().optional(),
+      }).parse(req.body);
+      const existing = await storage.getUserByEmail(email);
+      if (existing && existing.id !== userId) return res.status(409).json({ message: "Email deja utilizat" });
       const updatedUser = await storage.updateUser(userId, { name, email, phoneNumber });
-      res.json(updatedUser);
+      res.json(publicUser(updatedUser));
     } catch (error: any) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       console.error("Update user error:", error);
       res.status(500).json({ message: "Eroare la actualizarea contului" });
     }
@@ -412,41 +418,22 @@ export async function registerRoutes(
   // Delete current user
   app.delete("/api/auth/me", async (req, res) => {
     try {
-      const userId = req.headers["x-user-id"] as string;
-      if (!userId) return res.status(401).json({ message: "Neautentificat" });
-      const user = await storage.getUser(userId);
-      if (!user) return res.status(404).json({ message: "User not found" });
-      
-      // Handle team exit logic
-      if (user.teamId) {
-        const members = await storage.getTeamMembers(user.teamId);
-        if (user.role === "TEAM_LEADER") {
-          const otherMembers = members.filter(m => m.id !== userId).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-          if (otherMembers.length > 0) {
-            const newLeader = otherMembers[0];
-            // Make the new leader a TEAM_LEADER
-            await storage.updateUserTeam(newLeader.id, user.teamId, "TEAM_LEADER");
-            await storage.updateTeam(user.teamId, { leaderId: newLeader.id });
-            // Delete the old user
-          } else {
-            // Delete team if no other members
-            await storage.deleteTeam(user.teamId);
-          }
-        }
-      }
-
-      await storage.deleteUser(userId);
+      await teamService.leave(req.session.userId!, true);
+      req.session.destroy(() => {});
+      res.clearCookie("tt.sid", { path: "/" });
       res.json({ success: true });
-    } catch (error: any) {
-      console.error("Delete user error:", error);
-      res.status(500).json({ message: "Eroare la ștergerea contului" });
+    } catch (error) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
+      if (error instanceof TeamError) return res.status(error.status).json({ message: error.message });
+      console.error("Team operation failed:", error);
+      res.status(500).json({ message: "Eroare la actualizarea echipei" });
     }
   });
 
   // Get current user's team theme suggestions
   app.get("/api/auth/me/theme-suggestions", async (req, res) => {
     try {
-      const userId = req.headers["x-user-id"] as string;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ message: "Neautentificat" });
       const user = await storage.getUser(userId);
       if (!user) return res.status(404).json({ message: "User not found" });
@@ -456,6 +443,7 @@ export async function registerRoutes(
       const teamSuggestions = user.teamId ? suggestions.filter(s => s.teamId === user.teamId) : [];
       res.json(teamSuggestions);
     } catch (error: any) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       console.error("Fetch theme suggestions error:", error);
       res.status(500).json({ message: "Eroare la obținerea sugestiilor" });
     }
@@ -464,30 +452,13 @@ export async function registerRoutes(
   // Leave team
   app.post("/api/teams/leave", async (req, res) => {
     try {
-      const userId = req.headers["x-user-id"] as string;
-      if (!userId) return res.status(401).json({ message: "Neautentificat" });
-      const user = await storage.getUser(userId);
-      if (!user || !user.teamId) return res.status(400).json({ message: "Nu ești într-o echipă" });
-
-      const teamId = user.teamId;
-      const members = await storage.getTeamMembers(teamId);
-      
-      if (user.role === "TEAM_LEADER") {
-        const otherMembers = members.filter(m => m.id !== userId).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-        if (otherMembers.length > 0) {
-          const newLeader = otherMembers[0];
-          await storage.updateUserTeam(newLeader.id, teamId, "TEAM_LEADER");
-          await storage.updateTeam(teamId, { leaderId: newLeader.id });
-        } else {
-          await storage.deleteTeam(teamId);
-        }
-      }
-
-      const updatedUser = await storage.updateUserTeam(userId, null, "MEMBER");
-      res.json(updatedUser);
-    } catch (error: any) {
-      console.error("Leave team error:", error);
-      res.status(500).json({ message: "Eroare la părăsirea echipei" });
+      const user = await teamService.leave(req.session.userId!);
+      res.json(publicUser(user));
+    } catch (error) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
+      if (error instanceof TeamError) return res.status(error.status).json({ message: error.message });
+      console.error("Team operation failed:", error);
+      res.status(500).json({ message: "Eroare la actualizarea echipei" });
     }
   });
 
@@ -499,110 +470,54 @@ export async function registerRoutes(
   // Create a Team
   app.post("/api/teams", async (req, res) => {
     try {
-      const { name, leaderId, tagline } = req.body;
-      if (!name || !leaderId) {
-        return res.status(400).json({ message: "Numele echipei și ID-ul liderului sunt obligatorii" });
-      }
-
-      // Generate unique invite code
-      let inviteCode = "";
-      let isUnique = false;
-      const codePrefix = name.replace(/[^A-Za-z]/g, "").substring(0, 4).toUpperCase() || "TEAM";
-      
-      while (!isUnique) {
-        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-        inviteCode = `${codePrefix}-${randomSuffix}`;
-        const existing = await storage.getTeamByInviteCode(inviteCode);
-        if (!existing) {
-          isUnique = true;
-        }
-      }
-
-      const team = await storage.createTeam({
-        name,
-        leaderId,
-        inviteCode,
-        tagline,
-      });
-
-      res.status(201).json(team);
+      const { name, tagline } = z.object({ name: z.string().trim().min(2).max(100), tagline: z.string().trim().max(300).optional() }).parse(req.body);
+      res.status(201).json(await teamService.create(req.session.userId!, name, tagline));
     } catch (error) {
-      console.error("Error creating team:", error);
-      res.status(500).json({ message: "Eroare la crearea echipei" });
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
+      if (error instanceof TeamError) return res.status(error.status).json({ message: error.message });
+      console.error("Team operation failed:", error);
+      res.status(500).json({ message: "Eroare la actualizarea echipei" });
     }
   });
 
   // Join a Team via Invite Code
   app.post("/api/teams/join", async (req, res) => {
     try {
-      const { inviteCode, userId } = req.body;
-      if (!inviteCode || !userId) {
-        return res.status(400).json({ message: "Codul de invitație și ID-ul utilizatorului sunt obligatorii" });
-      }
-
-      const team = await storage.getTeamByInviteCode(inviteCode);
-      if (!team) {
-        return res.status(404).json({ message: "Codul de invitație nu este valid sau echipa nu există!" });
-      }
-
-      const members = await storage.getTeamMembers(team.id);
-      if (members.length >= 6) {
-        return res.status(400).json({ message: "Echipa are deja numărul maxim de 6 membri!" });
-      }
-
-      const updatedUser = await storage.updateUserTeam(userId, team.id, "MEMBER");
-      res.json({ team, user: updatedUser, members: [...members, updatedUser] });
+      const { inviteCode } = z.object({ inviteCode: z.string().trim().toUpperCase().min(4).max(12) }).parse(req.body);
+      const result = await teamService.join(req.session.userId!, inviteCode);
+      res.json({ ...result, user: publicUser(result.user), members: result.members.map(publicUser) });
     } catch (error) {
-      res.status(500).json({ message: "Eroare la alăturarea în echipă" });
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
+      if (error instanceof TeamError) return res.status(error.status).json({ message: error.message });
+      console.error("Team operation failed:", error);
+      res.status(500).json({ message: "Eroare la actualizarea echipei" });
     }
   });
 
   // Remove team member (kick)
   app.delete("/api/teams/:teamId/members/:userId", async (req, res) => {
     try {
-      const { teamId, userId } = req.params;
-      const team = await storage.getTeam(teamId);
-      if (!team) return res.status(404).json({ message: "Echipa nu există" });
-      
-      const userToKick = await storage.getUser(userId);
-      if (!userToKick) return res.status(404).json({ message: "Utilizatorul nu există" });
-      if (userToKick.teamId !== teamId) return res.status(400).json({ message: "Utilizatorul nu este în această echipă" });
-      if (userToKick.role === "TEAM_LEADER") return res.status(400).json({ message: "Căpitanul nu poate fi eliminat" });
-
-      await storage.updateUserTeam(userId, null, "MEMBER");
-      res.json({ ok: true, message: "Membru eliminat" });
+      await teamService.kick(req.session.userId!, req.params.teamId, req.params.userId);
+      res.json({ ok: true });
     } catch (error) {
-      res.status(500).json({ message: "Eroare la eliminarea membrului" });
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
+      if (error instanceof TeamError) return res.status(error.status).json({ message: error.message });
+      console.error("Team operation failed:", error);
+      res.status(500).json({ message: "Eroare la actualizarea echipei" });
     }
   });
 
   // Transfer Leadership
   app.patch("/api/teams/:teamId/transfer-leadership", async (req, res) => {
     try {
-      const { teamId } = req.params;
-      const { newLeaderId } = req.body;
-      const requesterId = req.headers["x-user-id"] as string;
-
-      if (!requesterId) return res.status(401).json({ message: "Neautorizat" });
-
-      const team = await storage.getTeam(teamId);
-      if (!team) return res.status(404).json({ message: "Echipa nu există" });
-      if (team.leaderId !== requesterId) return res.status(403).json({ message: "Doar căpitanul curent poate transfera rolul" });
-
-      const newLeader = await storage.getUser(newLeaderId);
-      if (!newLeader) return res.status(404).json({ message: "Noul membru nu există" });
-      if (newLeader.teamId !== teamId) return res.status(400).json({ message: "Acest utilizator nu este în echipa ta" });
-
-      // Demote current leader
-      await storage.updateUserTeam(requesterId, teamId, "MEMBER");
-      // Promote new leader
-      await storage.updateUserTeam(newLeaderId, teamId, "TEAM_LEADER");
-      // Update team's leader_id reference
-      await storage.updateTeam(teamId, { leaderId: newLeaderId });
-
-      res.json({ ok: true, message: "Rol transferat" });
+      const { newLeaderId } = z.object({ newLeaderId: z.string().min(1).max(100) }).parse(req.body);
+      await teamService.transfer(req.session.userId!, req.params.teamId, newLeaderId);
+      res.json({ ok: true });
     } catch (error) {
-      res.status(500).json({ message: "Eroare la transferul rolului" });
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
+      if (error instanceof TeamError) return res.status(error.status).json({ message: error.message });
+      console.error("Team operation failed:", error);
+      res.status(500).json({ message: "Eroare la actualizarea echipei" });
     }
   });
 
@@ -611,9 +526,11 @@ export async function registerRoutes(
     try {
       const team = await storage.getTeam(req.params.id);
       if (!team) return res.status(404).json({ message: "Echipa nu a fost găsită" });
+      if (res.locals.user.teamId !== team.id) return res.status(403).json({ message: "Acces interzis" });
       const members = await storage.getTeamMembers(team.id);
-      res.json({ team, members });
+      res.json({ team, members: members.map(publicUser) });
     } catch (error) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       res.status(500).json({ message: "Eroare la preluarea echipei" });
     }
   });
@@ -622,14 +539,16 @@ export async function registerRoutes(
   // 5. WEEKLY PUZZLE PROGRESS ENDPOINTS
   // ==========================================
 
-  // Get team progress for an edition
-  app.get("/api/games/progress/:editionId", async (req, res) => {
+  // Get team progress for the current Wednesday–Tuesday puzzle week
+  app.get("/api/games/progress/:weekId", async (req, res) => {
     try {
-      const { editionId } = req.params;
-      const teamId = (req.query.teamId as string) || "team_night_scholars";
-      const progressList = await storage.getPuzzleProgress(teamId, editionId);
+      const { weekId } = req.params;
+      const teamId = res.locals.user.teamId as string;
+      if (!teamId || (req.query.teamId && req.query.teamId !== teamId)) return res.status(403).json({ message: "Acces interzis" });
+      if (weekId !== getPuzzleWeekId()) return res.status(409).json({ message: "Săptămâna jocurilor s-a schimbat. Reîncarcă jocurile." });
+      const progressList = await storage.getPuzzleProgress(teamId, weekId);
 
-      const gameTypes = ["WORDLE", "SUDOKU", "TIMELINE", "CONNECTIONS", "GLOBLE"];
+      const gameTypes = ["WORDLE", "TARGET", "TIMELINE", "CONNECTIONS", "GLOBLE"];
       const gamesState: Record<string, { isSolved: boolean; data: any; solvedAt: any }> = {};
 
       gameTypes.forEach((type) => {
@@ -643,17 +562,23 @@ export async function registerRoutes(
 
       const solvedCount = Object.values(gamesState).filter((g) => g.isSolved).length;
       const allCompleted = solvedCount === gameTypes.length;
+      const { startDate, endDate } = getWeekDateRange(getRealCurrentWeekIndex());
+      const hasEvent = getFullSchedule(bucharestParts(startDate).year, startDate).some(edition => {
+        const eventDate = getEditionDateTime(edition);
+        return eventDate >= startDate && eventDate <= endDate;
+      });
 
       res.json({
         teamId,
-        editionId,
+        weekId,
         solvedCount,
         totalGames: gameTypes.length,
         allCompleted,
-        secretClueUnlocked: allCompleted,
+        secretClueUnlocked: hasEvent && allCompleted,
         games: gamesState,
       });
     } catch (error) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       res.status(500).json({ message: "Eroare la încărcarea progresului jocurilor" });
     }
   });
@@ -661,14 +586,27 @@ export async function registerRoutes(
   // Submit puzzle solve / progress
   app.post("/api/games/progress", async (req, res) => {
     try {
-      const { teamId, editionId, gameType, isSolved, solvedByUserId, data } = req.body;
-      if (!teamId || !editionId || !gameType) {
-        return res.status(400).json({ message: "teamId, editionId și gameType sunt obligatorii" });
+      const { teamId, weekId, gameType, isSolved, data } = z.object({
+        teamId: z.string().min(1), weekId: z.string().min(1).max(100),
+        gameType: z.enum(["WORDLE", "TARGET", "TIMELINE", "CONNECTIONS", "GLOBLE"]),
+        isSolved: z.boolean(), data: z.unknown().optional(),
+      }).parse(req.body);
+      if (teamId !== res.locals.user.teamId) return res.status(403).json({ message: "Acces interzis" });
+      if (weekId !== getPuzzleWeekId()) return res.status(409).json({ message: "Săptămâna jocurilor s-a schimbat. Reîncarcă jocurile." });
+      if (gameType === "TARGET" && isSolved) {
+        const submitted = z.object({ moves: z.unknown() }).safeParse(data);
+        if (!submitted.success || !isTargetSolution(getTargetPuzzle(getRealCurrentWeekIndex()), submitted.data.moves)) {
+          return res.status(400).json({ message: "Folosește toate cele trei numere pentru a atinge ținta." });
+        }
+      }
+      const solvedByUserId = req.session.userId;
+      if (!teamId || !weekId || !gameType) {
+        return res.status(400).json({ message: "teamId, weekId și gameType sunt obligatorii" });
       }
 
       const result = await storage.savePuzzleProgress({
         teamId,
-        editionId,
+        editionId: weekId,
         gameType,
         isSolved: !!isSolved,
         solvedByUserId: solvedByUserId || null,
@@ -678,6 +616,7 @@ export async function registerRoutes(
 
       res.json(result);
     } catch (error) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       console.error("[POST /api/games/progress] Error:", error);
       res.status(500).json({ message: "Eroare la salvarea progresului jocului" });
     }
@@ -686,13 +625,16 @@ export async function registerRoutes(
   // Reset puzzle progress for testing / new session
   app.post("/api/games/progress/reset", async (req, res) => {
     try {
-      const { teamId, editionId } = req.body;
-      if (!teamId || !editionId) {
-        return res.status(400).json({ message: "teamId și editionId sunt obligatorii" });
+      const { teamId, weekId } = z.object({ teamId: z.string().min(1).max(100), weekId: z.string().min(1).max(100) }).parse(req.body);
+      if (teamId !== res.locals.user.teamId) return res.status(403).json({ message: "Acces interzis" });
+      if (!teamId || !weekId) {
+        return res.status(400).json({ message: "teamId și weekId sunt obligatorii" });
       }
-      await storage.resetPuzzleProgress(teamId, editionId);
-      res.json({ message: "Progresul jocurilor a fost resetat la 0/6!" });
+      if (weekId !== getPuzzleWeekId()) return res.status(409).json({ message: "Săptămâna jocurilor s-a schimbat. Reîncarcă jocurile." });
+      await storage.resetPuzzleProgress(teamId, weekId);
+      res.json({ message: "Progresul jocurilor a fost resetat la 0/5!" });
     } catch (error) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       res.status(500).json({ message: "Eroare la resetarea progresului" });
     }
   });
@@ -704,7 +646,7 @@ export async function registerRoutes(
   app.post("/api/theme-validator", async (req, res) => {
     try {
       const { theme } = req.body;
-      if (!theme || typeof theme !== "string" || theme.trim().length < 2) {
+      if (!theme || typeof theme !== "string" || theme.trim().length < 2 || theme.length > 200) {
         return res
           .status(400)
           .json({ message: "Te rugăm să introduci o temă de cel puțin 2 caractere" });
@@ -772,6 +714,7 @@ export async function registerRoutes(
         },
       });
     } catch (error) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       console.error("Theme validator error:", error);
       res.status(500).json({ message: "Eroare la validarea temei" });
     }
@@ -782,13 +725,17 @@ export async function registerRoutes(
   // ============================================================
 
   // Verify admin password
-  // Submit a theme suggestion (Public endpoint, used by ThemeValidator)
-  app.post("/api/theme-suggestions", async (req, res) => {
+  // Submit a suggestion for the authenticated team; approval remains an admin decision.
+  app.post("/api/theme-suggestions", requireUser, rateLimit(10), async (req, res) => {
     try {
-      const data = insertThemeSuggestionSchema.parse(req.body);
+      const input = z.object({ themeName: z.string().trim().min(2).max(200), description: z.string().max(2000).nullable().optional(), editionId: z.string().max(100).nullable().optional() }).parse(req.body);
+      if (!res.locals.user.teamId) return res.status(403).json({ message: "Alătură-te unei echipe pentru a propune o temă" });
+      const evaluation = await scoreQuizzability(input.themeName);
+      const data = { ...input, teamId: res.locals.user.teamId, proposedBy: res.locals.user.name, status: "PENDING", popularityScore: evaluation.quizzability_score };
       const suggestion = await storage.createThemeSuggestion(data);
       res.json(suggestion);
     } catch (error) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       console.error("Error creating theme suggestion:", error);
       res.status(400).json({ message: "Date invalide" });
     }
@@ -805,6 +752,7 @@ export async function registerRoutes(
       const suggestions = await storage.getThemeSuggestions();
       res.json(suggestions);
     } catch (error) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       console.error("Error fetching suggestions:", error);
       res.status(500).json({ message: "Eroare la încărcarea sugestiilor" });
     }
@@ -821,6 +769,7 @@ export async function registerRoutes(
       if (!updated) return res.status(404).json({ message: "Sugestia nu a fost găsită" });
       res.json(updated);
     } catch (error) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       console.error("Error updating suggestion:", error);
       res.status(500).json({ message: "Eroare la actualizarea sugestiei" });
     }
@@ -828,10 +777,21 @@ export async function registerRoutes(
 
   app.delete("/api/theme-suggestions/:id", async (req, res) => {
     try {
+      if (req.headers["x-admin-password"]) {
+        let allowed = false;
+        checkAuth(req, res, () => { allowed = true; });
+        if (!allowed) return;
+      } else {
+        await requireUser(req, res, (error?: unknown) => { if (error) throw error; });
+        if (res.headersSent) return;
+        const suggestion = (await storage.getThemeSuggestions()).find(item => item.id === req.params.id);
+        if (!suggestion || !res.locals.user.teamId || suggestion.teamId !== res.locals.user.teamId) return res.status(403).json({ message: "Acces interzis" });
+      }
       const deleted = await storage.deleteThemeSuggestion(req.params.id);
       if (!deleted) return res.status(404).json({ message: "Sugestia nu a fost găsită" });
       res.json({ success: true });
     } catch (error) {
+      if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
       console.error("Error deleting suggestion:", error);
       res.status(500).json({ message: "Eroare la ștergerea sugestiei" });
     }
@@ -847,14 +807,20 @@ export async function registerRoutes(
           const override = await storage.getEditionCapacityOverride(ed.id);
           return {
             ...ed,
-            maxTeams: override ?? ed.maxTeams,
-            registeredCount: regs.length,
+            eventDate: getEditionDateTime(ed),
+            secretClueEn: await storage.getEditionClue(`${ed.id}:en`) ?? "",
+            formattedDate: getEditionDateTime(ed).toLocaleString("ro-RO", { timeZone: "Europe/Bucharest", dateStyle: "long", timeStyle: "short" }),
+            maxTeams: expandedCapacity(regs.filter(r => r.status === "CONFIRMED").length, override ?? ed.maxTeams),
+            registeredCount: regs.filter(r => r.status === "CONFIRMED").length,
+            waitlistCount: regs.filter(r => r.status === "WAITLISTED").length,
+            secretClue: await storage.getEditionClue(ed.id) ?? ed.secretClue,
             registrations: regs,
           };
         })
       );
       res.json(result);
     } catch (err) {
+      if (err instanceof ZodError) return res.status(400).json({ message: fromZodError(err).message });
       res.status(500).json({ message: "Eroare la încărcarea edițiilor" });
     }
   });
@@ -863,22 +829,96 @@ export async function registerRoutes(
   app.patch("/api/admin/editions/:editionId/capacity", checkAuth, async (req, res) => {
     try {
       const { editionId } = req.params;
-      const maxTeams = parseInt(req.body.maxTeams, 10);
+      const maxTeams = z.number().int().min(1).max(1000).parse(req.body.maxTeams);
+      if (!getFullSchedule().some(item => item.id === editionId)) return res.status(400).json({ message: "Ediție invalidă" });
       if (isNaN(maxTeams) || maxTeams < 1) return res.status(400).json({ message: "Valoare invalidă" });
-      await storage.setEditionCapacityOverride(editionId, maxTeams);
+      await storage.withEditionMutation(editionId, async source => {
+        const confirmed = (await source.getRegistrations(editionId)).filter(r => r.status === "CONFIRMED").length;
+        if (maxTeams < Math.max(10, confirmed)) throw new Error("CAPACITY_TOO_LOW");
+        await source.setEditionCapacityOverride(editionId, expandedCapacity(confirmed, maxTeams));
+      });
       res.json({ ok: true, editionId, maxTeams });
     } catch (err) {
-      res.status(500).json({ message: "Eroare la actualizarea capacității" });
+      if (err instanceof ZodError) return res.status(400).json({ message: fromZodError(err).message });
+      res.status(400).json({ message: "Capacitatea nu poate fi sub 10 sau sub numărul echipelor acceptate." });
     }
+  });
+
+  app.patch("/api/admin/editions/:editionId/clue", checkAuth, async (req, res) => {
+    try {
+      const clue = z.string().trim().min(1).max(2000).parse(req.body.clue);
+      if (!getFullSchedule().some(ed => ed.id === req.params.editionId)) return res.status(400).json({ message: "Ediție invalidă" });
+      const clueEn = z.string().trim().max(2000).optional().parse(req.body.clueEn);
+      await storage.setEditionClue(req.params.editionId, clue);
+      if (clueEn !== undefined) await storage.setEditionClue(`${req.params.editionId}:en`, clueEn);
+      res.json({ clue });
+    } catch { res.status(400).json({ message: "Introdu un indiciu de 1–2000 de caractere." }); }
+  });
+
+  // The clue is requested by the game UI only once all five puzzles are complete.
+  // Like the existing client-authored puzzle answers, this is not an anti-cheat boundary.
+  app.get("/api/editions/:editionId/clue", async (req, res) => {
+    try {
+      const ed = getFullSchedule().find(ed => ed.id === req.params.editionId);
+      if (!ed) return res.status(404).json({ message: "Ediție invalidă" });
+      res.set("Cache-Control", "no-store");
+      const translated = req.query.language === "en" ? await storage.getEditionClue(`${ed.id}:en`) : undefined;
+      res.json({ clue: translated || await storage.getEditionClue(ed.id) || ed.secretClue });
+    } catch { res.status(500).json({ message: "Indiciul nu a putut fi încărcat." }); }
+  });
+
+  app.get("/api/teams/me/registrations", async (_req, res) => {
+    try {
+      const teamId = res.locals.user.teamId;
+      const registrations = (await storage.getRegistrations()).filter(r => r.teamId && r.teamId === teamId);
+      res.json(registrations.map(({ id, editionId, status, eventDate, registeredAt }) => ({ id, editionId, status, eventDate, registeredAt })));
+    } catch { res.status(500).json({ message: "Înscrierile nu au putut fi încărcate." }); }
+  });
+
+  app.post("/api/admin/registrations/:id/approve", checkAuth, async (req, res) => {
+    try {
+      const registration = await storage.approveRegistration(req.params.id);
+      if (!registration) return res.status(404).json({ message: "Înscriere inexistentă" });
+      let emailStatus = "pending";
+      try {
+        await notifications.queue(registration, "confirmation");
+        await storage.markConfirmationQueued(registration.id);
+        if (reminderIsDue(registration)) await notifications.queue(registration, "reminder");
+        const result = await notifications.deliver(registration.id);
+        if (await notifications.reminderComplete(registration.id)) await storage.markReminderSent(registration.id);
+        emailStatus = result.failed === 0 ? "queued-or-sent" : "pending";
+      } catch { /* Durable confirmation flag allows the scheduler to retry after an interrupted approval. */ }
+      res.json({ ...registration, emailStatus });
+    } catch (error) {
+      if (error instanceof Error && error.message === "EVENT_CLOSED") return res.status(409).json({ message: "Evenimentul a început deja." });
+      res.status(500).json({ message: "Echipa nu a putut fi acceptată." });
+    }
+  });
+
+  app.get("/api/admin/emails", checkAuth, async (req, res) => {
+    try {
+      const language = req.query.language === "en" ? "en" as const : "ro" as const;
+      const details = { language, email: "ana@example.com", name: "Ana", teamName: "Echipa Exemplu", memberCount: 4, eventDate: getCurrentOrNextEdition().eventDate, isCaptain: true };
+      const templates = (["confirmation", "waitlist", "reminder"] as const).flatMap(kind => [true, false].map(isCaptain => ({
+        kind, audience: isCaptain ? "Căpitan / contact fără cont" : "Membru cu cont",
+        payload: buildEventEmail(kind, { ...details, isCaptain, name: isCaptain ? "Ana" : "Mihai", email: isCaptain ? "ana@example.com" : "mihai@example.com" }),
+      })));
+      res.set("Cache-Control", "no-store");
+      res.json({ from: FROM_EMAIL, provider: "Resend", configured: !!process.env.RESEND_API_KEY,
+        templates: [...templates, { kind: "password-reset", audience: "Titularul contului (cod demonstrativ)", payload: buildPasswordResetEmail("ana@example.com", "123456", language) }],
+        deliveries: await notifications.listDeliveries(),
+      });
+    } catch { res.status(500).json({ message: "Emailurile nu au putut fi încărcate." }); }
   });
 
   // Update a registration
   app.patch("/api/admin/registrations/:id", checkAuth, async (req, res) => {
     try {
-      const updated = await storage.updateRegistration(req.params.id, req.body);
+      const updated = await storage.updateRegistration(req.params.id, insertRegistrationSchema.pick({ teamName: true, captainName: true, memberCount: true, email: true, phoneNumber: true }).partial().parse(req.body));
       if (!updated) return res.status(404).json({ message: "Înregistrare negăsită" });
       res.json(updated);
     } catch (err) {
+      if (err instanceof ZodError) return res.status(400).json({ message: fromZodError(err).message });
       res.status(500).json({ message: "Eroare la actualizare" });
     }
   });
@@ -889,6 +929,7 @@ export async function registerRoutes(
       const ok = await storage.deleteRegistration(req.params.id);
       res.json({ ok });
     } catch (err) {
+      if (err instanceof ZodError) return res.status(400).json({ message: fromZodError(err).message });
       res.status(500).json({ message: "Eroare la ștergere" });
     }
   });
@@ -898,10 +939,11 @@ export async function registerRoutes(
     try {
       const allTeams = await storage.getAllTeams();
       const withMembers = await Promise.all(
-        allTeams.map(async (t) => ({ ...t, members: await storage.getTeamMembers(t.id) }))
+        allTeams.map(async (t) => ({ ...t, members: (await storage.getTeamMembers(t.id)).map(publicUser) }))
       );
       res.json(withMembers);
     } catch (err) {
+      if (err instanceof ZodError) return res.status(400).json({ message: fromZodError(err).message });
       res.status(500).json({ message: "Eroare la încărcarea echipelor" });
     }
   });
@@ -909,10 +951,11 @@ export async function registerRoutes(
   // Update a team
   app.patch("/api/admin/teams/:id", checkAuth, async (req, res) => {
     try {
-      const updated = await storage.updateTeam(req.params.id, req.body);
+      const updated = await storage.updateTeam(req.params.id, z.object({ name: z.string().trim().min(2).max(100).optional(), tagline: z.string().max(300).nullable().optional(), score: z.number().int().min(0).optional() }).parse(req.body));
       if (!updated) return res.status(404).json({ message: "Echipă negăsită" });
       res.json(updated);
     } catch (err) {
+      if (err instanceof ZodError) return res.status(400).json({ message: fromZodError(err).message });
       res.status(500).json({ message: "Eroare la actualizare" });
     }
   });
@@ -920,12 +963,18 @@ export async function registerRoutes(
   // Delete a team entirely
   app.delete("/api/admin/teams/:id", checkAuth, async (req, res) => {
     try {
-      const ok = await storage.deleteTeam(req.params.id);
+      const ok = await teamService.delete(req.params.id);
       res.json({ ok });
     } catch (err) {
+      if (err instanceof ZodError) return res.status(400).json({ message: fromZodError(err).message });
       res.status(500).json({ message: "Eroare la ștergere" });
     }
   });
 
+  app.get("/api/cron/notifications", async (req, res, next) => {
+    const secret = process.env.CRON_SECRET;
+    if (!secret || !safeEqual(req.get("authorization") || "", `Bearer ${secret}`)) return res.status(401).json({ message: "Unauthorized" });
+    try { res.json(await runNotifications()); } catch (error) { next(error); }
+  });
   return httpServer;
 }

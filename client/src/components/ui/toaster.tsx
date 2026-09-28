@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,
@@ -17,9 +18,9 @@ export function Toaster() {
         return (
           <Toast key={id} {...props}>
             <div className="grid gap-1">
-              {title && <ToastTitle>{title}</ToastTitle>}
+              {title && <ToastTitle>{typeof title === "string" ? t(title) : title}</ToastTitle>}
               {description && (
-                <ToastDescription>{description}</ToastDescription>
+                <ToastDescription>{typeof description === "string" ? t(description) : description}</ToastDescription>
               )}
             </div>
             {action}

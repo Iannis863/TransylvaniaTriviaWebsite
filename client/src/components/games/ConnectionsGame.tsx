@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
+import { t } from "@/lib/i18n";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Shuffle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getCurrentWeeklyGameData } from "../../lib/weeklyGames";
+import type { WeeklyGameData } from "../../lib/weeklyGames";
 
 interface ConnectionsGameProps {
+  weeklyData: WeeklyGameData;
   onSolve: (data: any) => void;
   isAlreadySolved?: boolean;
 }
@@ -24,26 +26,18 @@ const colors = [
   "bg-purple-500/20 border-purple-400 text-purple-300",
 ];
 
-const weeklyData = getCurrentWeeklyGameData();
-const CATEGORIES: Category[] = weeklyData.connectionsGroups.map((group, idx) => ({
-  id: `cat-${idx}`,
-  name: group.category,
-  color: colors[idx % colors.length],
-  items: group.items,
-}));
-
 // Smart shuffle: avoid having 4 matching words in the same row
-const getSmartShuffled = (words: string[]) => {
+const getSmartShuffled = (words: string[], categories: Category[]) => {
   if (words.length <= 4) return [...words].sort(() => Math.random() - 0.5);
 
   let shuffled = [...words];
   for (let attempt = 0; attempt < 100; attempt++) {
     shuffled.sort(() => Math.random() - 0.5);
     let hasAccidentalSolve = false;
-    
+
     for (let i = 0; i < shuffled.length; i += 4) {
       const row = shuffled.slice(i, i + 4);
-      const isSolved = CATEGORIES.some(cat => row.every(w => cat.items.includes(w)));
+      const isSolved = categories.some(cat => row.every(w => cat.items.includes(w)));
       if (isSolved) {
         hasAccidentalSolve = true;
         break;
@@ -54,7 +48,14 @@ const getSmartShuffled = (words: string[]) => {
   return shuffled;
 };
 
-export default function ConnectionsGame({ onSolve, isAlreadySolved = false }: ConnectionsGameProps) {
+export default function ConnectionsGame({ weeklyData, onSolve, isAlreadySolved = false }: ConnectionsGameProps) {
+  const CATEGORIES: Category[] = useMemo(() => weeklyData.connectionsGroups.map((group, idx) => ({
+    id: `cat-${idx}`,
+    name: group.category,
+    color: colors[idx % colors.length],
+    items: group.items,
+  })), [weeklyData.connectionsGroups]);
+
   const { toast } = useToast();
   const [solvedCategories, setSolvedCategories] = useState<Category[]>(
     isAlreadySolved ? CATEGORIES : []
@@ -67,9 +68,9 @@ export default function ConnectionsGame({ onSolve, isAlreadySolved = false }: Co
   useEffect(() => {
     if (!isAlreadySolved) {
       const allWords = CATEGORIES.flatMap((c) => c.items);
-      setBoardWords(getSmartShuffled(allWords));
+      setBoardWords(getSmartShuffled(allWords, CATEGORIES));
     }
-  }, [isAlreadySolved]);
+  }, [isAlreadySolved, CATEGORIES]);
 
   const toggleWord = (word: string) => {
     if (isWon) return;
@@ -81,7 +82,7 @@ export default function ConnectionsGame({ onSolve, isAlreadySolved = false }: Co
   };
 
   const handleShuffle = () => {
-    setBoardWords(getSmartShuffled(boardWords));
+    setBoardWords(getSmartShuffled(boardWords, CATEGORIES));
   };
 
   const submitGroup = () => {
@@ -97,20 +98,20 @@ export default function ConnectionsGame({ onSolve, isAlreadySolved = false }: Co
       const nextSolved = [...solvedCategories, matched];
       setSolvedCategories(nextSolved);
       setSelectedWords([]);
-      
+
       const newBoard = boardWords.filter(w => !matched.items.includes(w));
       setBoardWords(newBoard);
-      
-      toast({ title: `Grup Găsit: ${matched.name}`, description: "Excelentă conexiune!" });
+
+      toast({ title: t("Grup Găsit: {0}", [matched.name]), description: t("Excelentă conexiune!") });
 
       if (nextSolved.length === CATEGORIES.length) {
         setIsWon(true);
-        toast({ title: "🎉 Toate conexiunile au fost găsite!", description: "Ai completat jocul Connections pentru echipă!" });
+        toast({ title: t("🎉 Toate conexiunile au fost găsite!"), description: t("Ai completat jocul Connections pentru echipă!") });
         onSolve({ completed: true });
       }
     } else {
       setSelectedWords([]);
-      toast({ title: "Grup incorect", description: "Aceste cuvinte nu formează o categorie. Încearcă din nou!", variant: "destructive" });
+      toast({ title: t("Grup incorect"), description: t("Aceste cuvinte nu formează o categorie. Încearcă din nou!"), variant: "destructive" });
     }
   };
 
@@ -118,9 +119,8 @@ export default function ConnectionsGame({ onSolve, isAlreadySolved = false }: Co
     <div className="flex flex-col items-center max-w-md mx-auto">
       <div className="text-center mb-4">
         <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/40 text-xs mb-1">
-          Conexiuni Trivia (4 Categorii x 4 Cuvinte)
-        </Badge>
-        <p className="text-xs text-purple-300/80">Selectează 4 cuvinte care aparțin aceleiași categorii. (Încercări nelimitate)</p>
+           {t("Conexiuni Trivia (4 Categorii x 4 Cuvinte)")} </Badge>
+        <p className="text-xs text-purple-300/80">{t("Selectează 4 cuvinte care aparțin aceleiași categorii. (Încercări nelimitate)")}</p>
       </div>
 
       {/* Solved Categories Banners */}
@@ -169,8 +169,7 @@ export default function ConnectionsGame({ onSolve, isAlreadySolved = false }: Co
             className="text-xs text-purple-300 hover:text-amber-300 hover:bg-purple-900/40"
           >
             <Shuffle className="w-4 h-4 mr-1.5" />
-            Amestecă
-          </Button>
+             {t("Amestecă")} </Button>
 
           <div className="flex items-center gap-2">
             <Button
@@ -180,15 +179,14 @@ export default function ConnectionsGame({ onSolve, isAlreadySolved = false }: Co
               disabled={selectedWords.length === 0}
               className="text-xs border-purple-700 text-purple-300"
             >
-              Deselectează
-            </Button>
+               {t("Deselectează")} </Button>
             <Button
               size="sm"
               onClick={submitGroup}
               disabled={selectedWords.length !== 4}
               className="gold-btn text-xs font-heading"
             >
-              TRIMITE ({selectedWords.length}/4)
+               {t("TRIMITE (")}{selectedWords.length}/4)
             </Button>
           </div>
         </div>
@@ -197,8 +195,7 @@ export default function ConnectionsGame({ onSolve, isAlreadySolved = false }: Co
       {isWon && (
         <div className="w-full p-3 rounded-lg bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-center text-sm font-semibold flex items-center justify-center gap-2 mt-3">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          Toate Conexiunile Rezolvate pentru Echipă!
-        </div>
+           {t("Toate Conexiunile Rezolvate pentru Echipă!")} </div>
       )}
     </div>
   );

@@ -20,7 +20,7 @@ export class ThemeCache<T> {
   /**
    * @param ttlMinutes How long entries survive before expiring. Default: 60 min.
    */
-  constructor(ttlMinutes: number = 60) {
+  constructor(ttlMinutes: number = 60, private readonly maxEntries = 500) {
     this.ttlMs = ttlMinutes * 60 * 1000;
   }
 
@@ -49,6 +49,8 @@ export class ThemeCache<T> {
   /** Store a value in the cache. */
   set(theme: string, data: T): void {
     const key = this.normalizeKey(theme);
+    this.store.delete(key);
+    if (this.store.size >= this.maxEntries) this.store.delete(this.store.keys().next().value!);
     this.store.set(key, { data, timestamp: Date.now() });
   }
 

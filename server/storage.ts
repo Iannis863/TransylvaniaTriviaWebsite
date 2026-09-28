@@ -1,3 +1,4 @@
+import { bookTeam, approveTeam } from "./booking.js";
 import { 
   type User, type InsertUser, 
   type Team, type InsertTeam,
@@ -10,9 +11,10 @@ import {
 import { getCurrentOrNextEdition } from "../shared/schedule.js";
 import { db } from "./db.js";
 import { randomUUID } from "crypto";
-import { eq, and, gt } from "drizzle-orm";
+import { eq, and, gt, sql } from "drizzle-orm";
 
 export interface IStorage {
+  withTeamMutation<T>(operation: (source: IStorage) => Promise<T>): Promise<T>;
   // User Operations
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
@@ -20,6 +22,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, data: Partial<Pick<User, "name" | "email" | "phoneNumber" | "password">>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
+  upgradeLegacyPassword(id: string, previous: string, hashed: string): Promise<User | undefined>;
   updateUserTeam(userId: string, teamId: string | null, role?: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
 
@@ -30,9 +33,18 @@ export interface IStorage {
   getTeamMembers(teamId: string): Promise<User[]>;
   getAllTeams(): Promise<Team[]>;
 
+  withEditionMutation<T>(editionId: string, operation: (source: IStorage) => Promise<T>): Promise<T>;
+  getRegistration(id: string): Promise<Registration | undefined>;
+  confirmRegistration(id: string): Promise<Registration | undefined>;
+  approveRegistration(id: string): Promise<Registration | undefined>;
+  markWaitlistQueued(id: string): Promise<void>;
+  getEditionClue(editionId: string): Promise<string | undefined>;
+  setEditionClue(editionId: string, clue: string): Promise<void>;
   // Registration Operations
   getRegistrations(editionId?: string): Promise<Registration[]>;
   createRegistration(registration: InsertRegistration): Promise<Registration>;
+  createRegistrationWithinCapacity(registration: InsertRegistration, capacity: number): Promise<Registration>;
+  markConfirmationQueued(id: string): Promise<void>;
   deleteRegistration(id: string): Promise<boolean>;
   markReminderSent(id: string): Promise<void>;
 
@@ -61,6 +73,7 @@ export interface IStorage {
 
   // ── Password Reset Codes ──────────────────────────────────────────────────
   createResetCode(email: string, code: string, expiresAt: Date): Promise<void>;
+  consumeResetCode(email: string, code: string): Promise<boolean>;
   getValidResetCode(email: string): Promise<PasswordResetCode | undefined>;
   incrementResetCodeAttempts(id: string): Promise<void>;
   deleteResetCodes(email: string): Promise<void>;
@@ -72,10 +85,19 @@ export class MemStorage implements IStorage {
   private registrations: Map<string, Registration> = new Map();
   private puzzleProgress: Map<string, WeeklyPuzzleProgress> = new Map();
   private themeSuggestions: Map<string, ThemeSuggestion> = new Map();
+  private editionClues = new Map<string, string>();
+  private bookingMutation: Promise<unknown> = Promise.resolve();
   private editionCapacityOverrides: Map<string, number> = new Map();
 
+  private teamMutation: Promise<unknown> = Promise.resolve();
+  async withTeamMutation<T>(operation: (source: IStorage) => Promise<T>): Promise<T> {
+    const result = this.teamMutation.then(() => operation(this));
+    this.teamMutation = result.catch(() => undefined);
+    return result;
+  }
+
   constructor() {
-    this.seedInitialData();
+    if (process.env.SEED_DEMO_DATA === "true") this.seedInitialData();
   }
 
   private seedInitialData() {
@@ -201,6 +223,11 @@ export class MemStorage implements IStorage {
         email: reg.email,
         phoneNumber: reg.phoneNumber || null,
         memberCount: reg.memberCount,
+        language: "ro",
+        confirmationQueued: true,
+        waitlistQueued: false,
+        status: "CONFIRMED",
+        eventDate: active.eventDate,
         reminderSent: false,
         registeredAt: new Date(Date.now() - Math.floor(Math.random() * 86400000 * 2)),
       });
@@ -225,7 +252,7 @@ export class MemStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
-      (u) => u.email.toLowerCase() === email.toLowerCase()
+      (u) => u.email.trim().toLowerCase() === email.trim().toLowerCase()
     );
   }
 
@@ -261,7 +288,16 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values());
   }
 
+  async upgradeLegacyPassword(id: string, previous: string, hashed: string): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user || user.password !== previous) return undefined;
+    const updated = { ...user, password: hashed };
+    this.users.set(id, updated);
+    return updated;
+  }
+
   async deleteUser(id: string): Promise<boolean> {
+    this.puzzleProgress.forEach(progress => { if (progress.solvedByUserId === id) progress.solvedByUserId = null; });
     return this.users.delete(id);
   }
 
@@ -328,11 +364,47 @@ export class MemStorage implements IStorage {
       email: registration.email,
       phoneNumber: registration.phoneNumber || null,
       memberCount: registration.memberCount,
+      language: registration.language ?? "ro",
+      confirmationQueued: false,
+      waitlistQueued: false,
+      status: registration.status ?? "CONFIRMED",
+      eventDate: registration.eventDate || null,
       reminderSent: false,
       registeredAt: new Date(),
     };
     this.registrations.set(id, newReg);
     return newReg;
+  }
+
+  async withEditionMutation<T>(_editionId: string, operation: (source: IStorage) => Promise<T>): Promise<T> {
+    const result = this.bookingMutation.then(() => operation(this));
+    this.bookingMutation = result.catch(() => undefined);
+    return result;
+  }
+  async getRegistration(id: string) { return this.registrations.get(id); }
+  async confirmRegistration(id: string) {
+    const reg = this.registrations.get(id);
+    if (!reg) return undefined;
+    const result: Registration = { ...reg, status: "CONFIRMED", confirmationQueued: false };
+    this.registrations.set(id, result);
+    return result;
+  }
+  async approveRegistration(id: string) {
+    const reg = await this.getRegistration(id);
+    return reg ? this.withEditionMutation(reg.editionId, source => approveTeam(source, id)) : undefined;
+  }
+  async markWaitlistQueued(id: string) {
+    const reg = this.registrations.get(id);
+    if (reg) reg.waitlistQueued = true;
+  }
+  async getEditionClue(id: string) { return this.editionClues.get(id); }
+  async setEditionClue(id: string, clue: string) { this.editionClues.set(id, clue); }
+  async createRegistrationWithinCapacity(registration: InsertRegistration, capacity: number): Promise<Registration> {
+    return this.withEditionMutation(registration.editionId, source => bookTeam(source, registration, capacity));
+  }
+  async markConfirmationQueued(id: string): Promise<void> {
+    const reg = this.registrations.get(id);
+    if (reg) reg.confirmationQueued = true;
   }
 
   async deleteRegistration(id: string): Promise<boolean> {
@@ -368,14 +440,14 @@ export class MemStorage implements IStorage {
   async savePuzzleProgress(progress: InsertPuzzleProgress): Promise<WeeklyPuzzleProgress> {
     const key = `${progress.teamId}_${progress.editionId}_${progress.gameType}`;
     const existing = this.puzzleProgress.get(key);
-    const isSolvedBool = progress.isSolved ?? false;
+    const isSolvedBool = !!existing?.isSolved || (progress.isSolved ?? false);
 
     if (existing) {
       const updated: WeeklyPuzzleProgress = {
         ...existing,
         isSolved: isSolvedBool,
-        solvedByUserId: progress.solvedByUserId || existing.solvedByUserId,
-        data: progress.data || existing.data,
+        solvedByUserId: existing.isSolved ? existing.solvedByUserId : (progress.solvedByUserId || existing.solvedByUserId),
+        data: existing.isSolved ? existing.data : (progress.data ?? existing.data),
         solvedAt: isSolvedBool ? (existing.solvedAt || new Date()) : null,
         updatedAt: new Date(),
       };
@@ -462,6 +534,8 @@ export class MemStorage implements IStorage {
     this.registrations.forEach((reg, rid) => {
       if (reg.teamId === id) this.registrations.delete(rid);
     });
+    this.puzzleProgress.forEach((progress, key) => { if (progress.teamId === id) this.puzzleProgress.delete(key); });
+    this.themeSuggestions.forEach(suggestion => { if (suggestion.teamId === id) suggestion.teamId = null; });
     return this.teams.delete(id);
   }
 
@@ -498,6 +572,16 @@ export class MemStorage implements IStorage {
     return entry;
   }
 
+  async consumeResetCode(email: string, code: string): Promise<boolean> {
+    const key = email.toLowerCase();
+    const entry = this.resetCodes.get(key);
+    if (!entry || entry.expiresAt <= new Date() || entry.attempts >= 5) return false;
+    entry.attempts++;
+    if (entry.code !== code) return false;
+    this.resetCodes.delete(key);
+    return true;
+  }
+
   async incrementResetCodeAttempts(id: string): Promise<void> {
     this.resetCodes.forEach((entry, key) => {
       if (entry.id === id) {
@@ -512,13 +596,22 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  constructor(private database: any = db) {}
+  async withTeamMutation<T>(operation: (source: IStorage) => Promise<T>): Promise<T> {
+    return this.database.transaction(async (tx: any) => {
+      // Serializes membership/leadership changes across server instances.
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('app-team-mutations'))`);
+      return operation(new DatabaseStorage(tx));
+    });
+  }
+
   async getUser(id: string): Promise<User | undefined> {
-    const [result] = await db.select().from(users).where(eq(users.id, id));
+    const [result] = await this.database.select().from(users).where(eq(users.id, id));
     return result;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [result] = await db.select().from(users).where(eq(users.email, email));
+    const [result] = await this.database.select().from(users).where(sql`lower(trim(${users.email})) = ${email.trim().toLowerCase()}`);
     return result;
   }
 
@@ -527,73 +620,114 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [result] = await db.insert(users).values(insertUser).returning();
+    const [result] = await this.database.insert(users).values(insertUser).returning();
     return result;
   }
 
   async updateUser(id: string, data: Partial<Pick<User, "name" | "email" | "phoneNumber" | "password">>): Promise<User | undefined> {
-    const [result] = await db.update(users).set(data).where(eq(users.id, id)).returning();
+    const [result] = await this.database.update(users).set(data).where(eq(users.id, id)).returning();
     return result;
   }
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
+    return await this.database.select().from(users);
+  }
+
+  async upgradeLegacyPassword(id: string, previous: string, hashed: string): Promise<User | undefined> {
+    const [user] = await this.database.update(users).set({ password: hashed })
+      .where(and(eq(users.id, id), eq(users.password, previous))).returning();
+    return user;
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    const [result] = await db.delete(users).where(eq(users.id, id)).returning();
+    const [result] = await this.database.delete(users).where(eq(users.id, id)).returning();
     return !!result;
   }
 
   async updateUserTeam(userId: string, teamId: string | null, role?: string): Promise<User | undefined> {
     const updateValues: any = { teamId };
     if (role) updateValues.role = role;
-    const [result] = await db.update(users).set(updateValues).where(eq(users.id, userId)).returning();
+    const [result] = await this.database.update(users).set(updateValues).where(eq(users.id, userId)).returning();
     return result;
   }
 
   async getTeam(id: string): Promise<Team | undefined> {
-    const [result] = await db.select().from(teams).where(eq(teams.id, id));
+    const [result] = await this.database.select().from(teams).where(eq(teams.id, id));
     return result;
   }
 
   async getTeamByInviteCode(code: string): Promise<Team | undefined> {
-    const [result] = await db.select().from(teams).where(eq(teams.inviteCode, code));
+    const [result] = await this.database.select().from(teams).where(eq(teams.inviteCode, code.trim().toUpperCase()));
     return result;
   }
 
   async createTeam(insertTeam: InsertTeam): Promise<Team> {
-    const [result] = await db.insert(teams).values(insertTeam).returning();
+    const [result] = await this.database.insert(teams).values(insertTeam).returning();
     await this.updateUserTeam(insertTeam.leaderId, result.id, "TEAM_LEADER");
     return result;
   }
 
   async getTeamMembers(teamId: string): Promise<User[]> {
-    return await db.select().from(users).where(eq(users.teamId, teamId));
+    return await this.database.select().from(users).where(eq(users.teamId, teamId));
   }
 
   async getAllTeams(): Promise<Team[]> {
-    return await db.select().from(teams);
+    return await this.database.select().from(teams);
   }
 
   async getRegistrations(editionId?: string): Promise<Registration[]> {
     if (editionId) {
-      return await db.select().from(registrations).where(eq(registrations.editionId, editionId));
+      return await this.database.select().from(registrations).where(eq(registrations.editionId, editionId));
     }
-    return await db.select().from(registrations);
+    return await this.database.select().from(registrations);
   }
 
   async createRegistration(registration: InsertRegistration): Promise<Registration> {
-    const [result] = await db.insert(registrations).values(registration).returning();
+    const [result] = await this.database.insert(registrations).values(registration).returning();
     return result;
   }
 
+  async withEditionMutation<T>(editionId: string, operation: (source: IStorage) => Promise<T>): Promise<T> {
+    return this.database.transaction(async (tx: any) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${editionId}))`);
+      return operation(new DatabaseStorage(tx));
+    });
+  }
+  async getRegistration(id: string): Promise<Registration | undefined> {
+    const [result] = await this.database.select().from(registrations).where(eq(registrations.id, id));
+    return result;
+  }
+  async confirmRegistration(id: string): Promise<Registration | undefined> {
+    const [result] = await this.database.update(registrations).set({ status: "CONFIRMED", confirmationQueued: false }).where(eq(registrations.id, id)).returning();
+    return result;
+  }
+  async approveRegistration(id: string) {
+    const reg = await this.getRegistration(id);
+    return reg ? this.withEditionMutation(reg.editionId, source => approveTeam(source, id)) : undefined;
+  }
+  async markWaitlistQueued(id: string) {
+    await this.database.update(registrations).set({ waitlistQueued: true }).where(eq(registrations.id, id));
+  }
+  async getEditionClue(id: string): Promise<string | undefined> {
+    const result = await this.database.execute(sql`SELECT clue FROM app_edition_clues WHERE edition_id = ${id}`);
+    return result.rows[0]?.clue;
+  }
+  async setEditionClue(id: string, clue: string) {
+    await this.database.execute(sql`INSERT INTO app_edition_clues (edition_id, clue) VALUES (${id}, ${clue}) ON CONFLICT (edition_id) DO UPDATE SET clue = EXCLUDED.clue`);
+  }
+  async createRegistrationWithinCapacity(registration: InsertRegistration, capacity: number): Promise<Registration> {
+    return this.withEditionMutation(registration.editionId, source => bookTeam(source, registration, capacity));
+  }
+  async markConfirmationQueued(id: string): Promise<void> {
+    await this.database.update(registrations).set({ confirmationQueued: true }).where(eq(registrations.id, id));
+  }
+
   async deleteRegistration(id: string): Promise<boolean> {
-    const result = await db.delete(registrations).where(eq(registrations.id, id)).returning();
+    const result = await this.database.delete(registrations).where(eq(registrations.id, id)).returning();
     return result.length > 0;
   }
 
   async markReminderSent(id: string): Promise<void> {
-    await db.update(registrations).set({ reminderSent: true }).where(eq(registrations.id, id));
+    await this.database.update(registrations).set({ reminderSent: true }).where(eq(registrations.id, id));
   }
 
   async createTeamRegistration(registration: InsertRegistration): Promise<Registration> {
@@ -609,7 +743,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPuzzleProgress(teamId: string, editionId: string): Promise<WeeklyPuzzleProgress[]> {
-    return await db.select().from(weeklyPuzzleProgress).where(
+    return await this.database.select().from(weeklyPuzzleProgress).where(
       and(
         eq(weeklyPuzzleProgress.teamId, teamId),
         eq(weeklyPuzzleProgress.editionId, editionId)
@@ -618,31 +752,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async savePuzzleProgress(progress: InsertPuzzleProgress): Promise<WeeklyPuzzleProgress> {
-    const [existing] = await db.select().from(weeklyPuzzleProgress).where(
-      and(
-        eq(weeklyPuzzleProgress.teamId, progress.teamId),
-        eq(weeklyPuzzleProgress.editionId, progress.editionId),
-        eq(weeklyPuzzleProgress.gameType, progress.gameType)
-      )
-    );
-
-    if (existing) {
-      const [updated] = await db.update(weeklyPuzzleProgress).set({
-        isSolved: progress.isSolved,
-        solvedByUserId: progress.solvedByUserId || existing.solvedByUserId,
-        data: progress.data || existing.data,
-        solvedAt: progress.isSolved ? (existing.solvedAt || new Date()) : null,
-        updatedAt: new Date(),
-      }).where(eq(weeklyPuzzleProgress.id, existing.id)).returning();
-      return updated;
-    }
-
-    const [result] = await db.insert(weeklyPuzzleProgress).values(progress).returning();
-    return result;
+    return this.database.transaction(async (tx: any) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`puzzle:${progress.teamId}:${progress.editionId}`}))`);
+      const [existing] = await tx.select().from(weeklyPuzzleProgress).where(and(
+        eq(weeklyPuzzleProgress.teamId, progress.teamId), eq(weeklyPuzzleProgress.editionId, progress.editionId), eq(weeklyPuzzleProgress.gameType, progress.gameType)
+      ));
+      if (existing) {
+        const [updated] = await tx.update(weeklyPuzzleProgress).set({
+          isSolved: existing.isSolved || progress.isSolved,
+          solvedByUserId: existing.isSolved ? existing.solvedByUserId : progress.solvedByUserId,
+          data: existing.isSolved ? existing.data : (progress.data ?? existing.data),
+          solvedAt: existing.solvedAt || (progress.isSolved ? new Date() : null), updatedAt: new Date(),
+        }).where(eq(weeklyPuzzleProgress.id, existing.id)).returning();
+        return updated;
+      }
+      const [result] = await tx.insert(weeklyPuzzleProgress).values(progress).returning();
+      return result;
+    });
   }
 
   async resetPuzzleProgress(teamId: string, editionId: string): Promise<void> {
-    await db.delete(weeklyPuzzleProgress).where(
+    await this.database.delete(weeklyPuzzleProgress).where(
       and(
         eq(weeklyPuzzleProgress.teamId, teamId),
         eq(weeklyPuzzleProgress.editionId, editionId)
@@ -652,68 +782,64 @@ export class DatabaseStorage implements IStorage {
 
   async getThemeSuggestions(editionId?: string): Promise<ThemeSuggestion[]> {
     if (editionId) {
-      return await db.select().from(themeSuggestions).where(eq(themeSuggestions.editionId, editionId));
+      return await this.database.select().from(themeSuggestions).where(eq(themeSuggestions.editionId, editionId));
     }
-    return await db.select().from(themeSuggestions);
+    return await this.database.select().from(themeSuggestions);
   }
 
   async createThemeSuggestion(suggestion: InsertThemeSuggestion): Promise<ThemeSuggestion> {
-    const [result] = await db.insert(themeSuggestions).values(suggestion).returning();
+    const [result] = await this.database.insert(themeSuggestions).values(suggestion).returning();
     return result;
   }
 
   async updateThemeSuggestionStatus(id: string, status: "APPROVED" | "REJECTED"): Promise<ThemeSuggestion | undefined> {
-    const [result] = await db.update(themeSuggestions).set({ status }).where(eq(themeSuggestions.id, id)).returning();
+    const [result] = await this.database.update(themeSuggestions).set({ status }).where(eq(themeSuggestions.id, id)).returning();
     return result;
   }
   async deleteThemeSuggestion(id: string): Promise<boolean> {
-    const [result] = await db.delete(themeSuggestions).where(eq(themeSuggestions.id, id)).returning();
+    const [result] = await this.database.delete(themeSuggestions).where(eq(themeSuggestions.id, id)).returning();
     return !!result;
   }
 
   // ── Admin Operations ───────────────────────────────────────────────────────
 
   async updateRegistration(id: string, data: Partial<Pick<Registration, "teamName" | "captainName" | "memberCount" | "email" | "phoneNumber">>): Promise<Registration | undefined> {
-    const [result] = await db.update(registrations).set(data).where(eq(registrations.id, id)).returning();
+    const [result] = await this.database.update(registrations).set(data).where(eq(registrations.id, id)).returning();
     return result;
   }
 
   async updateTeam(id: string, data: Partial<Pick<Team, "name" | "tagline" | "score" | "leaderId">>): Promise<Team | undefined> {
-    const [result] = await db.update(teams).set(data).where(eq(teams.id, id)).returning();
+    const [result] = await this.database.update(teams).set(data).where(eq(teams.id, id)).returning();
     return result;
   }
 
   async deleteTeam(id: string): Promise<boolean> {
-    await db.update(users).set({ teamId: null, role: "MEMBER" }).where(eq(users.teamId, id));
-    await db.delete(registrations).where(eq(registrations.teamId, id));
-    const result = await db.delete(teams).where(eq(teams.id, id)).returning();
+    await this.database.update(users).set({ teamId: null, role: "MEMBER" }).where(eq(users.teamId, id));
+    await this.database.delete(registrations).where(eq(registrations.teamId, id));
+    const result = await this.database.delete(teams).where(eq(teams.id, id)).returning();
     return result.length > 0;
   }
 
-  // Capacity overrides are runtime-only (not persisted to DB — admin can set per restart)
-  private static capacityOverrides: Map<string, number> = new Map();
-
   async getEditionCapacityOverride(editionId: string): Promise<number | undefined> {
-    return DatabaseStorage.capacityOverrides.get(editionId);
+    const result = await this.database.execute(sql`SELECT max_teams FROM app_edition_capacity WHERE edition_id = ${editionId}`);
+    return result.rows[0]?.max_teams;
   }
 
   async setEditionCapacityOverride(editionId: string, maxTeams: number): Promise<void> {
-    DatabaseStorage.capacityOverrides.set(editionId, maxTeams);
+    await this.database.execute(sql`INSERT INTO app_edition_capacity (edition_id, max_teams) VALUES (${editionId}, ${maxTeams}) ON CONFLICT (edition_id) DO UPDATE SET max_teams = EXCLUDED.max_teams`);
   }
 
   // ── Password Reset Codes ─────────────────────────────────────────────────
   async createResetCode(email: string, code: string, expiresAt: Date): Promise<void> {
-    // Remove any existing codes for this email first
-    await db.delete(passwordResetCodes).where(eq(passwordResetCodes.email, email.toLowerCase()));
-    await db.insert(passwordResetCodes).values({
-      email: email.toLowerCase(),
-      code,
-      expiresAt,
+    await this.database.transaction(async (tx: any) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`reset:${email.toLowerCase()}`}))`);
+      await tx.delete(passwordResetCodes).where(eq(passwordResetCodes.email, email.toLowerCase()));
+      await tx.insert(passwordResetCodes).values({ email: email.toLowerCase(), code, expiresAt });
     });
   }
 
   async getValidResetCode(email: string): Promise<PasswordResetCode | undefined> {
-    const [result] = await db.select()
+    const [result] = await this.database.select()
       .from(passwordResetCodes)
       .where(and(
         eq(passwordResetCodes.email, email.toLowerCase()),
@@ -722,17 +848,31 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
+  async consumeResetCode(email: string, code: string): Promise<boolean> {
+    return this.database.transaction(async (tx: any) => {
+      const [entry] = await tx.select().from(passwordResetCodes)
+        .where(eq(passwordResetCodes.email, email.toLowerCase())).for("update");
+      if (!entry || entry.expiresAt <= new Date() || entry.attempts >= 5) return false;
+      if (entry.code !== code) {
+        await tx.update(passwordResetCodes).set({ attempts: entry.attempts + 1 }).where(eq(passwordResetCodes.id, entry.id));
+        return false;
+      }
+      await tx.delete(passwordResetCodes).where(eq(passwordResetCodes.email, email.toLowerCase()));
+      return true;
+    });
+  }
+
   async incrementResetCodeAttempts(id: string): Promise<void> {
-    const entry = await db.select().from(passwordResetCodes).where(eq(passwordResetCodes.id, id));
+    const entry = await this.database.select().from(passwordResetCodes).where(eq(passwordResetCodes.id, id));
     if (entry.length > 0) {
-      await db.update(passwordResetCodes)
-        .set({ attempts: entry[0].attempts + 1 })
+      await this.database.update(passwordResetCodes)
+        .set({ attempts: sql`${passwordResetCodes.attempts} + 1` })
         .where(eq(passwordResetCodes.id, id));
     }
   }
 
   async deleteResetCodes(email: string): Promise<void> {
-    await db.delete(passwordResetCodes).where(eq(passwordResetCodes.email, email.toLowerCase()));
+    await this.database.delete(passwordResetCodes).where(eq(passwordResetCodes.email, email.toLowerCase()));
   }
 }
 

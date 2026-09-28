@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,7 +28,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password?: string, keepLoggedIn?: boolean) => Promise<boolean>;
   register: (name: string, email: string, password?: string, keepLoggedIn?: boolean) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   createTeam: (name: string, tagline?: string) => Promise<boolean>;
   joinTeam: (inviteCode: string) => Promise<boolean>;
   refreshAuth: () => Promise<void>;
@@ -42,38 +43,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { toast } = useToast();
 
-  const setStoredUserId = (id: string, keepLoggedIn: boolean) => {
-    if (keepLoggedIn) {
-      localStorage.setItem("tt_user_id", id);
-      sessionStorage.removeItem("tt_user_id");
-    } else {
-      sessionStorage.setItem("tt_user_id", id);
-      localStorage.removeItem("tt_user_id");
-    }
-  };
-
-  const getStoredUserId = () => {
-    return localStorage.getItem("tt_user_id") || sessionStorage.getItem("tt_user_id");
-  };
-
   const refreshAuth = async () => {
     try {
-      const storedUserId = getStoredUserId();
-      if (!storedUserId) {
-        setIsLoading(false);
-        return;
-      }
-      
-      const res = await fetch("/api/auth/me", {
-        headers: { "x-user-id": storedUserId },
-      });
+      const res = await fetch("/api/auth/me", { credentials: "same-origin" });
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
         setTeam(data.team);
         setTeamMembers(data.members || []);
       } else {
-        logout();
+        setUser(null);
+        setTeam(null);
+        setTeamMembers([]);
       }
     } catch (err) {
       console.error("Auth refresh error:", err);
@@ -86,26 +67,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshAuth();
   }, []);
 
-  const login = async (email: string, password: string = "password123", keepLoggedIn: boolean = false): Promise<boolean> => {
+  const login = async (email: string, password: string = "", keepLoggedIn: boolean = false): Promise<boolean> => {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, keepLoggedIn }),
       });
       const data = await res.json();
       if (!res.ok) {
-        toast({ title: "Eroare autentificare", description: data.message || "Email sau parolă greșită", variant: "destructive" });
+        toast({ title: t("Eroare autentificare"), description: data.message || t("Email sau parolă greșită"), variant: "destructive" });
         return false;
       }
       setUser(data.user);
       setTeam(data.team);
-      setStoredUserId(data.user.id, keepLoggedIn);
-      toast({ title: `Bine ai revenit, ${data.user.name}!`, description: "Te-ai autentificat cu succes." });
+      toast({ title: t("Bine ai revenit, {0}!", [data.user.name]), description: t("Te-ai autentificat cu succes.") });
       await refreshAuth();
       return true;
     } catch (err) {
-      toast({ title: "Eroare", description: "Nu s-a putut realiza conexiunea", variant: "destructive" });
+      toast({ title: t("Eroare"), description: t("Nu s-a putut realiza conexiunea"), variant: "destructive" });
       return false;
     }
   };
@@ -116,36 +96,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password: password || "password123", role: "MEMBER" }),
+        body: JSON.stringify({ name, email, password, keepLoggedIn }),
       });
       const data = await res.json();
       if (!res.ok) {
-        toast({ title: "Eroare înregistrare", description: data.message, variant: "destructive" });
+        toast({ title: t("Eroare înregistrare"), description: data.message, variant: "destructive" });
         return false;
       }
       setUser(data);
-      setStoredUserId(data.id, keepLoggedIn);
-      toast({ title: "Cont creat cu succes!", description: "Bine ai venit în Transilvania Trivia." });
+      toast({ title: t("Cont creat cu succes!"), description: t("Bine ai venit în Transilvania Trivia.") });
       await refreshAuth();
       return true;
     } catch (err) {
-      toast({ title: "Eroare", description: "Eroare la crearea contului", variant: "destructive" });
+      toast({ title: t("Eroare"), description: t("Eroare la crearea contului"), variant: "destructive" });
       return false;
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const response = await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+    if (!response?.ok) {
+      toast({ title: t("Deconectarea a eșuat"), variant: "destructive" });
+      return;
+    }
     setUser(null);
     setTeam(null);
     setTeamMembers([]);
     localStorage.removeItem("tt_user_id");
     sessionStorage.removeItem("tt_user_id");
-    toast({ title: "Deconectat", description: "Ai ieșit din cont." });
+    toast({ title: t("Deconectat"), description: t("Ai ieșit din cont.") });
   };
 
   const createTeam = async (name: string, tagline?: string): Promise<boolean> => {
     if (!user) {
-      toast({ title: "Autentificare necesară", description: "Trebuie să fii autentificat pentru a crea o echipă.", variant: "destructive" });
+      toast({ title: t("Autentificare necesară"), description: t("Trebuie să fii autentificat pentru a crea o echipă."), variant: "destructive" });
       return false;
     }
     try {
@@ -156,22 +140,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast({ title: "Eroare creare echipă", description: data.message, variant: "destructive" });
+        toast({ title: t("Eroare creare echipă"), description: data.message, variant: "destructive" });
         return false;
       }
       setTeam(data);
-      toast({ title: `Echipa "${data.name}" a fost creată!`, description: `Codul tău de invitație este: ${data.inviteCode}` });
+      toast({ title: t("Echipa \"{0}\" a fost creată!", [data.name]), description: t("Codul tău de invitație este: {0}", [data.inviteCode]) });
       await refreshAuth();
       return true;
     } catch (err) {
-      toast({ title: "Eroare", description: "Nu s-a putut crea echipa", variant: "destructive" });
+      toast({ title: t("Eroare"), description: t("Nu s-a putut crea echipa"), variant: "destructive" });
       return false;
     }
   };
 
   const joinTeam = async (inviteCode: string): Promise<boolean> => {
     if (!user) {
-      toast({ title: "Autentificare necesară", description: "Trebuie să fii conectat pentru a te alătura unei echipe.", variant: "destructive" });
+      toast({ title: t("Autentificare necesară"), description: t("Trebuie să fii conectat pentru a te alătura unei echipe."), variant: "destructive" });
       return false;
     }
     try {
@@ -182,16 +166,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast({ title: "Nu s-a putut intra în echipă", description: data.message, variant: "destructive" });
+        toast({ title: t("Nu s-a putut intra în echipă"), description: data.message, variant: "destructive" });
         return false;
       }
       setTeam(data.team);
       setTeamMembers(data.members || []);
-      toast({ title: `Te-ai alăturat echipei "${data.team.name}"!`, description: "Acum poți participa împreună cu coechipierii tăi." });
+      toast({ title: t("Te-ai alăturat echipei \"{0}\"!", [data.team.name]), description: t("Acum poți participa împreună cu coechipierii tăi.") });
       await refreshAuth();
       return true;
     } catch (err) {
-      toast({ title: "Eroare", description: "Eroare la procesarea codului de invitație", variant: "destructive" });
+      toast({ title: t("Eroare"), description: t("Eroare la procesarea codului de invitație"), variant: "destructive" });
       return false;
     }
   };
@@ -207,7 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!user) {
         // User not logged in, save intent
         sessionStorage.setItem("pending_join_code", joinCode);
-        toast({ title: "Autentificare Necesară", description: "Creează un cont sau loghează-te pentru a intra în echipă." });
+        toast({ title: t("Autentificare Necesară"), description: t("Creează un cont sau loghează-te pentru a intra în echipă.") });
         window.dispatchEvent(new CustomEvent("open-auth-modal"));
         // Clean URL
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -218,7 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       } else {
         // User already in a team
-        toast({ title: "Ești deja într-o echipă", description: "Nu poți folosi link-ul de invitație, ești deja membru al unei echipe." });
+        toast({ title: t("Ești deja într-o echipă"), description: t("Nu poți folosi link-ul de invitație, ești deja membru al unei echipe.") });
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     } else if (user && !user.teamId) {

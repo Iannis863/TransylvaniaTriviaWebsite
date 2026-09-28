@@ -1,14 +1,34 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { countryCode } from "@/lib/country-code";
+import { t, getLanguage } from "@/lib/i18n";
+import { Component, type ReactNode, useState, useEffect, useRef, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Globe2, Compass } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Globe from "react-globe.gl";
-import { getCurrentWeeklyGameData } from "../../lib/weeklyGames";
+import type { WeeklyGameData } from "../../lib/weeklyGames";
 import roCountries from "./ro_countries.json";
 
+function GlobeFallback() {
+  return <div className="p-5 text-center text-purple-200 text-sm"><Globe2 aria-hidden="true" className="w-16 h-16 mx-auto mb-4 text-purple-400" />{t("Globul 3D nu este disponibil. Poți juca în continuare folosind țările, distanțele și direcțiile.")}</div>;
+}
+class GlobeBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() { return this.state.failed ? <GlobeFallback /> : this.props.children; }
+}
+function supportsWebGL() {
+  try {
+    const context = document.createElement("canvas").getContext("webgl2");
+    if (!context) return false;
+    context.getExtension("WEBGL_lose_context")?.loseContext();
+    return true;
+  } catch { return false; }
+}
+
 interface GlobleGameProps {
+  weeklyData: WeeklyGameData;
   onSolve: (data: any) => void;
   isAlreadySolved?: boolean;
 }
@@ -52,7 +72,7 @@ const getMinPolygonDistance = (geom1: any, geom2: any) => {
     }
   }
   // The geojson is 110m resolution, so borders can have up to 50-70km gaps in the data points
-  return minD < 75 ? 0 : Math.round(minD); 
+  return minD < 75 ? 0 : Math.round(minD);
 };
 
 // Calculate compass heading
@@ -83,7 +103,7 @@ const getCentroid = (geometry: any) => {
   return { lat: latSum / pts, lng: lonSum / pts };
 };
 
-export default function GlobleGame({ onSolve, isAlreadySolved = false }: GlobleGameProps) {
+export default function GlobleGame({ weeklyData, onSolve, isAlreadySolved = false }: GlobleGameProps) {
   const { toast } = useToast();
   const [countries, setCountries] = useState<any[]>([]);
   const [guesses, setGuesses] = useState<any[]>([]);
@@ -91,33 +111,47 @@ export default function GlobleGame({ onSolve, isAlreadySolved = false }: GlobleG
   const [isWon, setIsWon] = useState(isAlreadySolved);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const globeRef = useRef<any>(null);
+  const globeContainer = useRef<HTMLDivElement>(null);
+  const [globeSize, setGlobeSize] = useState({ width: 400, height: 300 });
+  const [webGLSupported] = useState(supportsWebGL);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  useEffect(() => {
+    const element = globeContainer.current;
+    if (!element) return;
+    const observer = new ResizeObserver(([entry]) => setGlobeSize({ width: entry.contentRect.width, height: entry.contentRect.height }));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   // Target Country: based on current week
-  const weeklyData = getCurrentWeeklyGameData();
   const targetIso = weeklyData.globleTarget;
 
   useEffect(() => {
-    // Fetch world geojson
-    fetch('https://raw.githubusercontent.com/vasturiano/react-globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
-      .then(res => res.json())
+    const controller = new AbortController();
+    setLoadError(false);
+    fetch('/data/countries.geojson', { signal: controller.signal })
+      .then(res => { if (!res.ok) throw new Error("Country data unavailable"); return res.json(); })
       .then(data => {
         // Pre-compute centroids and apply Romanian translations
         const enhanced = data.features.map((f: any) => {
-          const iso = f.properties.ISO_A3;
+          const iso = countryCode(f.properties);
           const admin = f.properties.ADMIN;
           // @ts-ignore
           const translatedName = roCountries[iso] || roCountries[admin] || admin;
           return {
             ...f,
+            properties: { ...f.properties, ISO_A3: iso },
             centroid: getCentroid(f.geometry),
-            name: translatedName
+            name: getLanguage() === "en" ? admin : translatedName
           };
         });
         setCountries(enhanced);
-      });
-  }, []);
+      }).catch(() => { if (!controller.signal.aborted) setLoadError(true); });
+    return () => controller.abort();
+  }, [loadAttempt]);
 
-  const targetCountry = useMemo(() => countries.find(c => c.properties.ISO_A3 === targetIso), [countries]);
+  const targetCountry = useMemo(() => countries.find(c => c.properties.ISO_A3 === targetIso), [countries, targetIso]);
 
   const normalizeStr = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
@@ -134,7 +168,7 @@ export default function GlobleGame({ onSolve, isAlreadySolved = false }: GlobleG
   const submitGuess = (country: any) => {
     if (isWon || !targetCountry) return;
     if (guesses.find(g => g.properties.ISO_A3 === country.properties.ISO_A3)) {
-      toast({ title: "Deja încercat", description: "Ai ghicit deja această țară.", variant: "destructive" });
+      toast({ title: t("Deja încercat"), description: t("Ai ghicit deja această țară."), variant: "destructive" });
       return;
     }
 
@@ -142,7 +176,7 @@ export default function GlobleGame({ onSolve, isAlreadySolved = false }: GlobleG
     const dist = getMinPolygonDistance(country.geometry, targetCountry.geometry);
     country.distance = dist; // store it
     const heading = getHeading(country.centroid.lat, country.centroid.lng, targetCountry.centroid.lat, targetCountry.centroid.lng);
-    
+
     const newGuess = { ...country, dist, heading };
     const newGuesses = [newGuess, ...guesses];
     setGuesses(newGuesses);
@@ -155,7 +189,7 @@ export default function GlobleGame({ onSolve, isAlreadySolved = false }: GlobleG
 
     if (country.properties.ISO_A3 === targetIso) {
       setIsWon(true);
-      toast({ title: "🎉 Corect!", description: `Țara este ${targetCountry.name}!` });
+      toast({ title: t("🎉 Corect!"), description: t("Țara este {0}!", [targetCountry.name]) });
       onSolve({ completed: true });
     }
   };
@@ -163,14 +197,14 @@ export default function GlobleGame({ onSolve, isAlreadySolved = false }: GlobleG
   const getPolygonColor = (feat: any) => {
     // If target is found (or rendering the target itself)
     if (feat.properties.ISO_A3 === targetIso && isWon) return 'rgba(153, 27, 27, 0.9)'; // Dark Red (Tailwind red-800)
-    
+
     const guessed = guesses.find(g => g.properties.ISO_A3 === feat.properties.ISO_A3);
     if (!guessed) return 'rgba(100, 100, 100, 0.1)'; // default invisible
-    
+
     if (feat.properties.ISO_A3 === targetIso) return 'rgba(153, 27, 27, 0.9)'; // found it!
-    
+
     const d = guessed.distance;
-    
+
     // Scheme: Dark Blue -> Light Blue -> Yellow -> Orange -> Bright Red -> Dark Red (adjacent)
     if (d <= 50) return 'rgba(153, 27, 27, 0.9)'; // Adjacent: Dark Red
     if (d < 1500) return 'rgba(239, 68, 68, 0.8)'; // Bright Red
@@ -190,19 +224,18 @@ export default function GlobleGame({ onSolve, isAlreadySolved = false }: GlobleG
     <div className="flex flex-col items-center max-w-md mx-auto w-full">
       <div className="text-center mb-4">
         <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/40 text-xs mb-1">
-          Ghicește Țara
-        </Badge>
-        <p className="text-xs text-purple-300/80">Introdu o țară. Culorile calde înseamnă că ești mai aproape!</p>
+           {t("Ghicește Țara")} </Badge>
+        <p className="text-xs text-purple-300/80">{t("Introdu o țară. Culorile calde înseamnă că ești mai aproape!")}</p>
       </div>
 
-      <div className="w-full aspect-square sm:aspect-video bg-[#000010] rounded-xl border-2 border-purple-800/50 shadow-xl overflow-hidden mb-4 relative flex items-center justify-center cursor-move">
-        {countries.length === 0 ? (
-          <div className="text-purple-400 text-sm animate-pulse">Se încarcă globul...</div>
-        ) : (
-          <Globe
+      <div ref={globeContainer} className="w-full aspect-square sm:aspect-video bg-[#000010] rounded-xl border-2 border-purple-800/50 shadow-xl overflow-hidden mb-4 relative flex items-center justify-center cursor-move">
+        {loadError ? <div className="p-4 text-center text-purple-200"><p>{t("Țările nu au putut fi încărcate.")}</p><Button onClick={() => setLoadAttempt(value => value + 1)}>{t("Reîncearcă")}</Button></div> : countries.length === 0 ? (
+          <div className="text-purple-400 text-sm animate-pulse">{t("Se încarcă globul...")}</div>
+        ) : !webGLSupported ? <GlobeFallback /> : (
+          <GlobeBoundary><Globe
             ref={globeRef}
-            width={400}
-            height={300}
+            width={globeSize.width}
+            height={globeSize.height}
             globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
             polygonsData={countries}
             polygonAltitude={0.01}
@@ -211,29 +244,30 @@ export default function GlobleGame({ onSolve, isAlreadySolved = false }: GlobleG
             polygonStrokeColor={() => '#111'}
             polygonsTransitionDuration={300}
             backgroundColor="#000010"
-          />
+          /></GlobeBoundary>
         )}
       </div>
 
       {!isWon && (
         <div className="w-full relative mb-4 z-50">
-          <Input 
+          <Input
+            aria-label={t("Numele țării")}
             value={currentGuess}
             onChange={(e) => setCurrentGuess(e.target.value)}
-            placeholder="Numele țării (ex: Franța, România)..."
+            placeholder={t("Numele țării (ex: Franța, România)...")}
             className="bg-purple-950/60 border-purple-700 text-white placeholder:text-purple-400/50"
             autoComplete="off"
           />
           {suggestions.length > 0 && (
             <div className="absolute top-full left-0 w-full bg-purple-900 border border-purple-700 rounded-md mt-1 shadow-2xl overflow-hidden">
               {suggestions.map(s => (
-                <div 
-                  key={s.properties.ISO_A3} 
-                  className="p-2 text-sm text-purple-100 hover:bg-purple-800 cursor-pointer"
+                <button type="button"
+                  key={s.properties.ISO_A3}
+                  className="block w-full text-left p-2 text-sm text-purple-100 hover:bg-purple-800 cursor-pointer"
                   onClick={() => submitGuess(s)}
                 >
                   {s.name}
-                </div>
+                </button>
               ))}
             </div>
           )}
@@ -256,7 +290,7 @@ export default function GlobleGame({ onSolve, isAlreadySolved = false }: GlobleG
       {isWon && (
         <div className="w-full p-3 rounded-lg bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-center text-sm font-semibold flex items-center justify-center gap-2">
           <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-          Țara ghicită: {targetCountry?.name}
+           {t("Țara ghicită:")} {targetCountry?.name}
         </div>
       )}
     </div>

@@ -1,5 +1,7 @@
+import { bucharestParts, bucharestDateKey, eventDateInBucharest } from "./event-time.js";
 export interface ScheduleEdition {
   id: string;
+  year?: number;
   seasonNumber: number;
   seasonName: string;
   editionNumber: number; // 1 to 15
@@ -72,14 +74,14 @@ export const SEASON_2_SCHEDULE: Omit<ScheduleEdition, "id">[] = [
 /**
  * Calculates concrete calendar dates for all editions based on the base year.
  */
-export function getFullSchedule(baseYear: number = new Date().getFullYear()): ScheduleEdition[] {
+export function getFullSchedule(baseYear: number = bucharestParts(new Date()).year, referenceDate: Date = new Date()): ScheduleEdition[] {
   // If current month is Jan-May, baseYear starts from previous year (Oct of baseYear - 1)
-  const currentMonth = new Date().getMonth();
+  const currentMonth = bucharestParts(referenceDate).month - 1;
   const academicBaseYear = currentMonth < 6 ? baseYear - 1 : baseYear;
 
   const s1 = SEASON_1_SCHEDULE.map((item) => {
     const year = academicBaseYear + item.yearOffset;
-    const id = `s1-e${item.editionNumber}`;
+    const id = `${academicBaseYear === 2026 ? "" : `${academicBaseYear}-`}s1-e${item.editionNumber}`;
     return {
       ...item,
       id,
@@ -89,7 +91,7 @@ export function getFullSchedule(baseYear: number = new Date().getFullYear()): Sc
 
   const s2 = SEASON_2_SCHEDULE.map((item) => {
     const year = academicBaseYear + item.yearOffset;
-    const id = `s2-e${item.editionNumber}`;
+    const id = `${academicBaseYear === 2026 ? "" : `${academicBaseYear}-`}s2-e${item.editionNumber}`;
     return {
       ...item,
       id,
@@ -100,13 +102,10 @@ export function getFullSchedule(baseYear: number = new Date().getFullYear()): Sc
   return [...s1, ...s2];
 }
 
-export function getEditionDateTime(edition: ScheduleEdition, baseYear: number = new Date().getFullYear()): Date {
-  const currentMonth = new Date().getMonth();
-  const academicBaseYear = currentMonth < 6 ? baseYear - 1 : baseYear;
-  const year = academicBaseYear + edition.yearOffset;
-  
-  const date = new Date(year, edition.monthIndex, edition.dayOfMonth, 20, 0, 0, 0);
-  return date;
+export function getEditionDateTime(edition: ScheduleEdition, baseYear?: number): Date {
+  const now = bucharestParts(new Date());
+  const academicBaseYear = now.month <= 6 ? (baseYear ?? now.year) - 1 : (baseYear ?? now.year);
+  return eventDateInBucharest(edition.year ?? academicBaseYear + edition.yearOffset, edition.monthIndex, edition.dayOfMonth);
 }
 
 export interface ActiveEditionState {
@@ -134,7 +133,7 @@ export interface ActiveEditionState {
  * Automatically computes the Next/Current Active Edition based on the schedule and system time.
  */
 export function getCurrentOrNextEdition(now: Date = new Date()): ActiveEditionState {
-  const allEditions = getFullSchedule(now.getFullYear());
+  const allEditions = getFullSchedule(bucharestParts(now).year, now);
   
   // Find all upcoming editions where event time is in the future or within the active 4-hour window
   const editionsWithDates = allEditions.map((ed) => {
@@ -157,7 +156,7 @@ export function getCurrentOrNextEdition(now: Date = new Date()): ActiveEditionSt
 
   // If all are in the past (e.g. end of May), wrap around to Season 1 Edition 1 of next cycle
   if (!chosen) {
-    const nextYearEditions = getFullSchedule(now.getFullYear() + 1);
+    const nextYearEditions = getFullSchedule(bucharestParts(now).year + 1, now);
     const firstEd = nextYearEditions[0];
     const eventDate = getEditionDateTime(firstEd, now.getFullYear() + 1);
     chosen = {
@@ -170,7 +169,7 @@ export function getCurrentOrNextEdition(now: Date = new Date()): ActiveEditionSt
 
   const { edition, eventDate } = chosen;
   const diffMs = eventDate.getTime() - now.getTime();
-  const isHappeningToday = now.toDateString() === eventDate.toDateString();
+  const isHappeningToday = bucharestDateKey(now) === bucharestDateKey(eventDate);
   const isHappeningNow = diffMs <= 0 && now.getTime() <= chosen.endWindow.getTime();
 
   const totalSecondsRemaining = Math.max(0, Math.floor(diffMs / 1000));
@@ -184,7 +183,8 @@ export function getCurrentOrNextEdition(now: Date = new Date()): ActiveEditionSt
     "Iulie", "August", "Septembrie", "Octombrie", "Noiembrie", "Decembrie"
   ];
 
-  const formattedDate = `Marți, ${edition.dayOfMonth} ${monthNamesRo[edition.monthIndex]} ${eventDate.getFullYear()}`;
+  const weekday = new Intl.DateTimeFormat("ro-RO", { weekday: "long", timeZone: "Europe/Bucharest" }).format(eventDate);
+  const formattedDate = `${weekday[0].toUpperCase() + weekday.slice(1)}, ${edition.dayOfMonth} ${monthNamesRo[edition.monthIndex]} ${bucharestParts(eventDate).year}`;
   const formattedTime = "20:00";
 
   return {

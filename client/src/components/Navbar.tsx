@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { motion, useScroll, useMotionValue, useSpring, useMotionValueEvent } from "framer-motion";
@@ -37,7 +38,7 @@ interface NavbarProps {
 export default function Navbar({
   activeSection,
   onNavigate,
-  editionLabel = "Marți 20:00",
+  editionLabel = t("Marți 20:00"),
 }: NavbarProps) {
   const { user, team, logout } = useAuth();
   const [, setLocation]                     = useLocation();
@@ -258,7 +259,7 @@ export default function Navbar({
                 >
                   {/* Base layer — always light/purple (visible in un-highlighted areas) */}
                   <Icon className="w-3.5 h-3.5 text-amber-400/80" />
-                  <span className="text-purple-200/80">{link.label}</span>
+                  <span className="text-purple-200/80">{t(link.label)}</span>
 
                   {/* Overlay layer — dark color, clipped to where the pill overlaps.
                       clip-path is updated on every spring frame by applyClipPaths(). */}
@@ -269,7 +270,7 @@ export default function Navbar({
                     style={{ clipPath: "inset(0 100% 0 0)" }}
                   >
                     <Icon className="w-3.5 h-3.5 text-purple-950" />
-                    {link.label}
+                    {t(link.label)}
                   </span>
                 </button>
               );
@@ -284,9 +285,9 @@ export default function Navbar({
                   <button
                     onClick={copyInviteCode}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-900/50 border border-purple-600/40 hover:border-amber-400/60 text-[11px] font-mono transition-colors text-purple-200"
-                    title="Copiază codul de invitație pentru coechipieri"
+                    title={t("Copiază codul de invitație pentru coechipieri")}
                   >
-                    <span className="text-amber-400 font-bold">Cod:</span>
+                    <span className="text-amber-400 font-bold">{t("Cod:")}</span>
                     <span>{team.inviteCode}</span>
                     {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-purple-400" />}
                   </button>
@@ -294,7 +295,7 @@ export default function Navbar({
                 <div
                   onClick={() => setLocation("/cont")}
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 cursor-pointer hover:bg-amber-500/20 transition-all"
-                  title="Contul Meu"
+                  title={t("Contul Meu")}
                 >
                   <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-400 to-purple-600 flex items-center justify-center text-xs shadow">
                     {user.avatar || (user.role === "TEAM_LEADER" ? "👑" : "👤")}
@@ -306,7 +307,7 @@ export default function Navbar({
                 <button
                   onClick={logout}
                   className="w-8 h-8 rounded-full flex items-center justify-center text-purple-400 hover:text-red-400 hover:bg-purple-900/30 transition-colors"
-                  title="Deconectare"
+                  title={t("Deconectare")}
                 >
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
@@ -317,8 +318,7 @@ export default function Navbar({
                 className="hidden lg:flex gold-btn rounded-full text-xs font-heading tracking-wider px-4 py-1.5 h-8 items-center gap-1.5"
               >
                 <LogIn className="w-3.5 h-3.5" />
-                AUTENTIFICARE
-              </Button>
+                 {t("AUTENTIFICARE")} </Button>
             )}
 
             {/* Mobile Menu Toggle (Always visible on mobile) */}
@@ -335,12 +335,12 @@ export default function Navbar({
         {/* Mobile Flyout Menu */}
         {mobileMenuOpen && (
           <div className="lg:hidden pointer-events-auto max-w-sm mx-auto mt-2 rounded-3xl border border-purple-700/50 bg-[#0f041e]/95 backdrop-blur-2xl p-4 shadow-2xl animate-in slide-in-from-top-3 duration-200">
-            
+
             {/* Mobile Auth / Profile Section */}
             {user ? (
               <div className="flex flex-col gap-3 p-3 bg-purple-950/40 border border-purple-800/50 rounded-2xl mb-4">
                 <div className="flex items-center justify-between gap-3">
-                  <div 
+                  <div
                     onClick={() => {
                       setLocation("/cont");
                       setMobileMenuOpen(false);
@@ -352,7 +352,7 @@ export default function Navbar({
                     </div>
                     <div>
                       <div className="text-sm font-bold text-white leading-tight">{user.name}</div>
-                      <div className="text-[10px] text-amber-300 uppercase tracking-widest font-semibold mt-0.5">{user.role === "TEAM_LEADER" ? "Căpitan" : "Membru"}</div>
+                      <div className="text-[10px] text-amber-300 uppercase tracking-widest font-semibold mt-0.5">{user.role === "TEAM_LEADER" ? t("Căpitan") : t("Membru")}</div>
                     </div>
                   </div>
                   <button
@@ -370,7 +370,7 @@ export default function Navbar({
                     onClick={copyInviteCode}
                     className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-black/40 border border-purple-700/40 hover:border-amber-400/50 transition-all text-xs w-full text-left"
                   >
-                    <span className="text-purple-300">Cod echipă: <span className="font-mono text-amber-400 font-bold ml-1.5 tracking-wider">{team.inviteCode}</span></span>
+                    <span className="text-purple-300">{t("Cod echipă:")} <span className="font-mono text-amber-400 font-bold ml-1.5 tracking-wider">{team.inviteCode}</span></span>
                     {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-purple-400" />}
                   </button>
                 )}
@@ -384,8 +384,7 @@ export default function Navbar({
                 className="w-full gold-btn rounded-xl py-6 text-sm font-heading tracking-widest flex items-center justify-center gap-2.5 mb-4 shadow-[0_0_20px_rgba(246,184,40,0.15)]"
               >
                 <LogIn className="w-4 h-4" />
-                AUTENTIFICARE
-              </Button>
+                 {t("AUTENTIFICARE")} </Button>
             )}
 
             {/* Navigation Links */}
@@ -407,7 +406,7 @@ export default function Navbar({
                     }`}
                   >
                     <Icon className="w-4 h-4" />
-                    {link.label}
+                    {t(link.label)}
                   </button>
                 );
               })}

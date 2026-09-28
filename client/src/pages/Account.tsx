@@ -1,3 +1,6 @@
+import { locale } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
+import TeamRegistrationStatus from "@/components/TeamRegistrationStatus";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
@@ -19,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function Account() {
-  const { user, team, refreshAuth, logout } = useAuth();
+  const { user, team, refreshAuth, logout, isLoading } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -32,7 +35,7 @@ export default function Account() {
   useEffect(() => {
     if (user?.teamId) {
       fetch("/api/auth/me/theme-suggestions", {
-        headers: { "x-user-id": user.id }
+        credentials: "same-origin"
       })
       .then(res => res.json())
       .then(data => {
@@ -42,10 +45,16 @@ export default function Account() {
     }
   }, [user]);
 
-  if (!user) {
-    setLocation("/");
-    return null;
-  }
+  useEffect(() => {
+    if (!isLoading && !user) setLocation("/");
+  }, [isLoading, user, setLocation]);
+  useEffect(() => {
+    if (user) {
+      setName(user.name); setEmail(user.email); setPhoneNumber(user.phoneNumber || "");
+    }
+  }, [user?.id]);
+  if (isLoading) return <p role="status" className="p-8 text-purple-200">{t("Se încarcă…")}</p>;
+  if (!user) return null;
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,16 +64,15 @@ export default function Account() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": user.id,
         },
         body: JSON.stringify({ name, email, phoneNumber }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      toast({ title: "Cont actualizat cu succes!" });
+      toast({ title: t("Cont actualizat cu succes!") });
       await refreshAuth();
     } catch (err: any) {
-      toast({ title: "Eroare", description: err.message, variant: "destructive" });
+      toast({ title: t("Eroare"), description: err.message, variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -74,14 +82,14 @@ export default function Account() {
     try {
       const res = await fetch("/api/teams/leave", {
         method: "POST",
-        headers: { "x-user-id": user.id },
+        credentials: "same-origin",
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      toast({ title: "Ai părăsit echipa." });
+      toast({ title: t("Ai părăsit echipa.") });
       await refreshAuth();
     } catch (err: any) {
-      toast({ title: "Eroare", description: err.message, variant: "destructive" });
+      toast({ title: t("Eroare"), description: err.message, variant: "destructive" });
     }
   };
 
@@ -89,36 +97,34 @@ export default function Account() {
     try {
       const res = await fetch("/api/auth/me", {
         method: "DELETE",
-        headers: { "x-user-id": user.id },
+        credentials: "same-origin",
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      toast({ title: "Cont șters definitiv." });
+      toast({ title: t("Cont șters definitiv.") });
       logout();
     } catch (err: any) {
-      toast({ title: "Eroare", description: err.message, variant: "destructive" });
+      toast({ title: t("Eroare"), description: err.message, variant: "destructive" });
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-950 text-white font-sans selection:bg-amber-500/30">
       <main className="max-w-2xl mx-auto px-4 py-16">
-        <button 
-          onClick={() => setLocation("/")} 
+        <button
+          onClick={() => setLocation("/")}
           className="flex items-center gap-2 text-purple-400 hover:text-amber-400 transition-colors text-sm font-medium mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
-          Înapoi la Eveniment
-        </button>
+           {t("Înapoi la Eveniment")} </button>
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-8">
-          Contul Meu
-        </h1>
+           {t("Contul Meu")} </h1>
 
         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 md:p-8 space-y-8">
           <form onSubmit={handleUpdate} className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nume</Label>
+                <Label htmlFor="name">{t("Nume")}</Label>
                 <Input
                   id="name"
                   value={name}
@@ -129,7 +135,7 @@ export default function Account() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Adresă de email</Label>
+                <Label htmlFor="email">{t("Adresă de email")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -141,7 +147,7 @@ export default function Account() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Număr de telefon (Opțional)</Label>
+                <Label htmlFor="phone">{t("Număr de telefon (Opțional)")}</Label>
                 <Input
                   id="phone"
                   type="tel"
@@ -158,56 +164,55 @@ export default function Account() {
               disabled={isSubmitting}
               className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold"
             >
-              {isSubmitting ? "Se salvează..." : "Salvează Modificările"}
+              {isSubmitting ? t("Se salvează...") : t("Salvează Modificările")}
             </Button>
           </form>
 
           <hr className="border-gray-800" />
 
           <div className="space-y-4">
-            <h3 className="text-xl font-semibold">Echipa Ta</h3>
+            <h3 className="text-xl font-semibold">{t("Echipa Ta")}</h3>
+            <TeamRegistrationStatus />
             {team ? (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-950 rounded-lg border border-gray-800 gap-4">
                 <div>
                   <p className="font-medium">{team.name}</p>
                   <p className="text-sm text-gray-400">
-                    Rol: {user.role === "TEAM_LEADER" ? "Căpitan" : "Membru"}
+                     {t("Rol:")} {user.role === "TEAM_LEADER" ? t("Căpitan") : t("Membru")}
                   </p>
                 </div>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" className="border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-400 shrink-0">
                       <UserMinus className="w-4 h-4 mr-2" />
-                      Părăsește Echipa
-                    </Button>
+                       {t("Părăsește Echipa")} </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent className="bg-gray-900 border-gray-800 text-white">
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Ești sigur?</AlertDialogTitle>
+                      <AlertDialogTitle>{t("Ești sigur?")}</AlertDialogTitle>
                       <AlertDialogDescription className="text-gray-400">
-                        {user.role === "TEAM_LEADER" 
-                          ? "Ești căpitanul echipei. Dacă pleci, cel mai vechi membru va deveni noul căpitan. Dacă ești singurul membru, echipa va fi ștearsă definitiv."
-                          : "Vei părăsi această echipă și nu vei mai avea acces la progresul ei."}
+                        {user.role === "TEAM_LEADER"
+                          ? t("Ești căpitanul echipei. Dacă pleci, cel mai vechi membru va deveni noul căpitan. Dacă ești singurul membru, echipa va fi ștearsă definitiv.")
+                          : t("Vei părăsi această echipă și nu vei mai avea acces la progresul ei.")}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel className="bg-transparent border-gray-700 hover:bg-gray-800 text-white">Anulează</AlertDialogCancel>
+                      <AlertDialogCancel className="bg-transparent border-gray-700 hover:bg-gray-800 text-white">{t("Anulează")}</AlertDialogCancel>
                       <AlertDialogAction onClick={handleLeaveTeam} className="bg-red-500 hover:bg-red-600 text-white">
-                        Confirmă
-                      </AlertDialogAction>
+                         {t("Confirmă")} </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
             ) : (
-              <p className="text-gray-400 text-sm">Nu ești în nicio echipă în acest moment.</p>
+              <p className="text-gray-400 text-sm">{t("Nu ești în nicio echipă în acest moment.")}</p>
             )}
           </div>
 
           <hr className="border-gray-800" />
 
           <div className="space-y-4">
-            <h3 className="text-xl font-semibold">Propuneri Teme (Echipă)</h3>
+            <h3 className="text-xl font-semibold">{t("Propuneri Teme (Echipă)")}</h3>
             {themeSuggestions.length > 0 ? (
               <div className="space-y-3">
                 {[...themeSuggestions]
@@ -225,20 +230,19 @@ export default function Account() {
                         <AlertDialogTrigger asChild>
                           <button
                             className="absolute top-2 right-2 text-gray-500 hover:text-red-400 transition-colors"
-                            title="Șterge din istoric"
+                            title={t("Șterge din istoric")}
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                           </button>
                         </AlertDialogTrigger>
                         <AlertDialogContent className="bg-gray-900 border-gray-800 text-white">
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Ești sigur?</AlertDialogTitle>
+                            <AlertDialogTitle>{t("Ești sigur?")}</AlertDialogTitle>
                             <AlertDialogDescription className="text-gray-400">
-                              Acest lucru va șterge tema "{theme.themeName}" din istoricul propunerilor tale.
-                            </AlertDialogDescription>
+                               {t("Acest lucru va șterge tema \"")}{theme.themeName}{t("\" din istoricul propunerilor tale.")} </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel className="bg-gray-800 hover:bg-gray-700 text-white border-none">Anulează</AlertDialogCancel>
+                            <AlertDialogCancel className="bg-gray-800 hover:bg-gray-700 text-white border-none">{t("Anulează")}</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={async () => {
                                 await fetch(`/api/theme-suggestions/${theme.id}`, { method: "DELETE" });
@@ -246,8 +250,7 @@ export default function Account() {
                               }}
                               className="bg-red-500 hover:bg-red-600 text-white"
                             >
-                              Șterge
-                            </AlertDialogAction>
+                               {t("Șterge")} </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
@@ -255,67 +258,61 @@ export default function Account() {
                     <div className="pr-6">
                       <p className="font-medium">{theme.themeName}</p>
                       <p className="text-xs text-gray-400 mt-1">
-                        Scor: <strong className="text-amber-400">{theme.popularityScore}</strong> {theme.createdAt ? `• ${new Date(theme.createdAt).toLocaleDateString("ro-RO")}` : ""}
+                         {t("Scor:")} <strong className="text-amber-400">{theme.popularityScore}</strong> {theme.createdAt ? `• ${new Date(theme.createdAt).toLocaleDateString(locale())}` : ""}
                       </p>
                     </div>
                     <div className="shrink-0 mt-2 sm:mt-0">
                       <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded border ${
-                        theme.status === "APPROVED" 
-                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" 
+                        theme.status === "APPROVED"
+                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
                           : theme.status === "REJECTED"
                           ? "bg-red-500/20 text-red-300 border-red-500/30"
                           : "bg-amber-500/20 text-amber-300 border-amber-500/30"
                       }`}>
-                        {theme.status === "PENDING" ? "ÎN AȘTEPTARE" : theme.status === "APPROVED" ? "ACCEPTAT" : "RESPINS"}
+                        {theme.status === "PENDING" ? t("ÎN AȘTEPTARE") : theme.status === "APPROVED" ? t("ACCEPTAT") : t("RESPINS")}
                       </span>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-400 text-sm">Echipa ta nu a propus nicio temă încă.</p>
+              <p className="text-gray-400 text-sm">{t("Echipa ta nu a propus nicio temă încă.")}</p>
             )}
           </div>
 
           <hr className="border-gray-800" />
-          
+
           <div className="space-y-4">
-            <h3 className="text-xl font-semibold">Deconectare</h3>
+            <h3 className="text-xl font-semibold">{t("Deconectare")}</h3>
             <p className="text-sm text-gray-400">
-              Ieși din contul tău de pe acest dispozitiv.
-            </p>
+               {t("Ieși din contul tău de pe acest dispozitiv.")} </p>
             <Button variant="outline" onClick={() => { logout(); setLocation("/"); }} className="w-full sm:w-auto text-white border-gray-700 hover:bg-gray-800">
               <LogOut className="w-4 h-4 mr-2" />
-              Deconectare
-            </Button>
+               {t("Deconectare")} </Button>
           </div>
 
           <hr className="border-gray-800" />
 
           <div className="space-y-4">
-            <h3 className="text-xl font-semibold text-red-400">Ștergere Cont</h3>
+            <h3 className="text-xl font-semibold text-red-400">{t("Ștergere Cont")}</h3>
             <p className="text-sm text-gray-400">
-              Vei părăsi automat echipa, iar contul tău va fi șters definitiv.
-            </p>
+               {t("Vei părăsi automat echipa, iar contul tău va fi șters definitiv.")} </p>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" className="w-full sm:w-auto">
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Șterge Contul
-                </Button>
+                   {t("Șterge Contul")} </Button>
               </AlertDialogTrigger>
               <AlertDialogContent className="bg-gray-900 border-gray-800 text-white">
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Ești sigur?</AlertDialogTitle>
+                  <AlertDialogTitle>{t("Ești sigur?")}</AlertDialogTitle>
                   <AlertDialogDescription className="text-gray-400">
-                    Acest lucru îți va șterge permanent contul.
-                  </AlertDialogDescription>
+                     {t("Acest lucru îți va șterge permanent contul.")} </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel className="bg-transparent border-gray-700 hover:bg-gray-800 text-white">Anulează</AlertDialogCancel>
+                  <AlertDialogCancel className="bg-transparent border-gray-700 hover:bg-gray-800 text-white">{t("Anulează")}</AlertDialogCancel>
                   <AlertDialogAction onClick={handleDeleteAccount} className="bg-red-500 hover:bg-red-600 text-white">
-                    Șterge Contul
-                  </AlertDialogAction>
+                     {t("Șterge Contul")} </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

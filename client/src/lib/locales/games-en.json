@@ -1,0 +1,2842 @@
+[
+  {
+    "timelineEvents": [
+      {
+        "id": "t0_0",
+        "year": 2019,
+        "content": "Pope Francis visits Romania"
+      },
+      {
+        "id": "t0_1",
+        "year": 1998,
+        "content": "France wins the World Cup at home"
+      },
+      {
+        "id": "t0_2",
+        "year": 1876,
+        "content": "Bell patents the telephone"
+      },
+      {
+        "id": "t0_3",
+        "year": 1931,
+        "content": "Empire State Building opens"
+      },
+      {
+        "id": "t0_4",
+        "year": 1949,
+        "content": "NATO is founded"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Basic colours",
+        "items": [
+          "RED",
+          "YELLOW",
+          "BLUE",
+          "GREEN"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "German car brands",
+        "items": [
+          "BMW",
+          "AUDI",
+          "MERCEDES",
+          "VOLKSWAGEN"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Flightless birds",
+        "items": [
+          "PENGUIN",
+          "OSTRICH",
+          "KIWI",
+          "EMU"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Keyboard instruments",
+        "items": [
+          "PIANO",
+          "ORGAN",
+          "SYNTHESIZER",
+          "ACCORDION"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t1_0",
+        "year": 1980,
+        "content": "Moscow Olympics boycott"
+      },
+      {
+        "id": "t1_1",
+        "year": 2007,
+        "content": "Romania joins the EU"
+      },
+      {
+        "id": "t1_2",
+        "year": 2020,
+        "content": "COVID-19 pandemic begins"
+      },
+      {
+        "id": "t1_3",
+        "year": 1979,
+        "content": "Iranian Islamic Revolution"
+      },
+      {
+        "id": "t1_4",
+        "year": 1992,
+        "content": "First SMS is sent"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Zodiac signs",
+        "items": [
+          "CANCER",
+          "SCORPIO",
+          "PISCES",
+          "AQUARIUS"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "European capitals",
+        "items": [
+          "PARIS",
+          "BERLIN",
+          "ROME",
+          "MADRID"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Noble gases",
+        "items": [
+          "HELIUM",
+          "NEON",
+          "ARGON",
+          "KRYPTON"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Exotic fruits",
+        "items": [
+          "MANGO",
+          "PAPAYA",
+          "PINEAPPLE",
+          "KIWI"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t2_0",
+        "year": 1939,
+        "content": "World War II begins"
+      },
+      {
+        "id": "t2_1",
+        "year": 1896,
+        "content": "First modern Olympics in Athens"
+      },
+      {
+        "id": "t2_2",
+        "year": 1898,
+        "content": "Marie Curie discovers radium"
+      },
+      {
+        "id": "t2_3",
+        "year": 1953,
+        "content": "Hillary and Norgay climb Everest"
+      },
+      {
+        "id": "t2_4",
+        "year": 1881,
+        "content": "Romania becomes a kingdom"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Pets",
+        "items": [
+          "DOG",
+          "CAT",
+          "HAMSTER",
+          "PARROT"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Team sports",
+        "items": [
+          "FOOTBALL",
+          "BASKETBALL",
+          "VOLLEYBALL",
+          "HANDBALL"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Seasons",
+        "items": [
+          "SPRING",
+          "SUMMER",
+          "AUTUMN",
+          "WINTER"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Chess pieces",
+        "items": [
+          "KING",
+          "QUEEN",
+          "BISHOP",
+          "KNIGHT"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t3_0",
+        "year": 1927,
+        "content": "The Jazz Singer premieres"
+      },
+      {
+        "id": "t3_1",
+        "year": 1919,
+        "content": "Treaty of Versailles"
+      },
+      {
+        "id": "t3_2",
+        "year": 1901,
+        "content": "First Nobel Prizes awarded"
+      },
+      {
+        "id": "t3_3",
+        "year": 1912,
+        "content": "Titanic sinks"
+      },
+      {
+        "id": "t3_4",
+        "year": 1883,
+        "content": "Peleș Castle opens"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Continents",
+        "items": [
+          "EUROPE",
+          "ASIA",
+          "AFRICA",
+          "AMERICA"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Major Greek gods",
+        "items": [
+          "ZEUS",
+          "POSEIDON",
+          "ARES",
+          "APOLLO"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Verb tenses",
+        "items": [
+          "PRESENT",
+          "IMPERFECT",
+          "PERFECT",
+          "FUTURE"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Synonyms for big",
+        "items": [
+          "HUGE",
+          "ENORMOUS",
+          "GIGANTIC",
+          "COLOSSAL"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t4_0",
+        "year": 1994,
+        "content": "Channel Tunnel opens"
+      },
+      {
+        "id": "t4_1",
+        "year": 2006,
+        "content": "Twitter launches"
+      },
+      {
+        "id": "t4_2",
+        "year": 1928,
+        "content": "Fleming discovers penicillin"
+      },
+      {
+        "id": "t4_3",
+        "year": 1933,
+        "content": "Hitler becomes German chancellor"
+      },
+      {
+        "id": "t4_4",
+        "year": 1859,
+        "content": "Union of the Romanian Principalities"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Spring flowers",
+        "items": [
+          "SNOWDROP",
+          "TULIP",
+          "HYACINTH",
+          "DAFFODIL"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Operating systems",
+        "items": [
+          "WINDOWS",
+          "MACOS",
+          "LINUX",
+          "ANDROID"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Social networks",
+        "items": [
+          "FACEBOOK",
+          "INSTAGRAM",
+          "TWITTER",
+          "TIKTOK"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Months",
+        "items": [
+          "JANUARY",
+          "FEBRUARY",
+          "MARCH",
+          "APRIL"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t5_0",
+        "year": 2023,
+        "content": "Barbie and Oppenheimer premiere"
+      },
+      {
+        "id": "t5_1",
+        "year": 1883,
+        "content": "Krakatoa erupts"
+      },
+      {
+        "id": "t5_2",
+        "year": 1912,
+        "content": "First Balkan War"
+      },
+      {
+        "id": "t5_3",
+        "year": 1796,
+        "content": "Jenner develops the first vaccine"
+      },
+      {
+        "id": "t5_4",
+        "year": 1595,
+        "content": "Battle of Călugăreni"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Human organs",
+        "items": [
+          "HEART",
+          "LIVER",
+          "LUNG",
+          "KIDNEY"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Music genres",
+        "items": [
+          "ROCK",
+          "POP",
+          "JAZZ",
+          "HIP-HOP"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Currencies",
+        "items": [
+          "DOLLAR",
+          "EURO",
+          "POUND",
+          "YEN"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Building materials",
+        "items": [
+          "CEMENT",
+          "BRICK",
+          "WOOD",
+          "STEEL"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t6_0",
+        "year": 2024,
+        "content": "Paris Olympics"
+      },
+      {
+        "id": "t6_1",
+        "year": 1991,
+        "content": "Soviet Union dissolves"
+      },
+      {
+        "id": "t6_2",
+        "year": 1990,
+        "content": "Hubble Space Telescope launches"
+      },
+      {
+        "id": "t6_3",
+        "year": 1475,
+        "content": "Battle of Vaslui"
+      },
+      {
+        "id": "t6_4",
+        "year": 1911,
+        "content": "Amundsen reaches the South Pole"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Types of triangle",
+        "items": [
+          "EQUILATERAL",
+          "ISOSCELES",
+          "SCALENE",
+          "RIGHT-ANGLED"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Classic Romanian writers",
+        "items": [
+          "EMINESCU",
+          "CREANGĂ",
+          "CARAGIALE",
+          "SLAVICI"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Famous seas",
+        "items": [
+          "BLACK",
+          "RED",
+          "DEAD",
+          "MEDITERRANEAN"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Moon phases",
+        "items": [
+          "FULL",
+          "NEW",
+          "WAXING",
+          "WANING"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t7_0",
+        "year": 1956,
+        "content": "Hungarian Revolution suppressed by the USSR"
+      },
+      {
+        "id": "t7_1",
+        "year": 1906,
+        "content": "Constanța Casino opens"
+      },
+      {
+        "id": "t7_2",
+        "year": 2011,
+        "content": "Fukushima nuclear accident"
+      },
+      {
+        "id": "t7_3",
+        "year": 1985,
+        "content": "Live Aid concert"
+      },
+      {
+        "id": "t7_4",
+        "year": 1995,
+        "content": "Amazon and eBay launch"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Nuts",
+        "items": [
+          "WALNUT",
+          "HAZELNUT",
+          "ALMOND",
+          "PISTACHIO"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Martial arts",
+        "items": [
+          "KARATE",
+          "JUDO",
+          "TAEKWONDO",
+          "KUNG-FU"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Celestial bodies",
+        "items": [
+          "SUN",
+          "MOON",
+          "STARS",
+          "COMETS"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Precious metals",
+        "items": [
+          "GOLD",
+          "SILVER",
+          "PLATINUM",
+          "PALLADIUM"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t8_0",
+        "year": 1859,
+        "content": "Darwin publishes On the Origin of Species"
+      },
+      {
+        "id": "t8_1",
+        "year": 1990,
+        "content": "June Mineriad in Romania"
+      },
+      {
+        "id": "t8_2",
+        "year": 2001,
+        "content": "The Lord of the Rings film premieres"
+      },
+      {
+        "id": "t8_3",
+        "year": 1945,
+        "content": "United Nations is founded"
+      },
+      {
+        "id": "t8_4",
+        "year": 1889,
+        "content": "Eiffel Tower opens"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Transylvanian counties",
+        "items": [
+          "CLUJ",
+          "BRAȘOV",
+          "SIBIU",
+          "ALBA"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Romanian rivers",
+        "items": [
+          "MUREȘ",
+          "OLT",
+          "SIRET",
+          "PRUT"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Scientists and inventors",
+        "items": [
+          "EDISON",
+          "TESLA",
+          "EINSTEIN",
+          "NEWTON"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Explorers",
+        "items": [
+          "COLUMBUS",
+          "MAGELLAN",
+          "POLO",
+          "COOK"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t9_0",
+        "year": 1999,
+        "content": "Pope John Paul II visits Romania"
+      },
+      {
+        "id": "t9_1",
+        "year": 1967,
+        "content": "Barnard performs the first heart transplant"
+      },
+      {
+        "id": "t9_2",
+        "year": 1997,
+        "content": "Titanic film premieres"
+      },
+      {
+        "id": "t9_3",
+        "year": 1914,
+        "content": "Panama Canal completed"
+      },
+      {
+        "id": "t9_4",
+        "year": 1945,
+        "content": "World War II ends"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Types of bread",
+        "items": [
+          "LOAVES",
+          "ROLLS",
+          "BAGUETTES",
+          "FLATBREADS"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Hot drinks",
+        "items": [
+          "COFFEE",
+          "TEA",
+          "CHOCOLATE",
+          "MILK"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Cheeses",
+        "items": [
+          "TELEMEA",
+          "CAȘCAVAL",
+          "MOZZARELLA",
+          "GOUDA"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Seasonings",
+        "items": [
+          "SALT",
+          "PEPPER",
+          "PAPRIKA",
+          "THYME"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t10_0",
+        "year": 1977,
+        "content": "Devastating Vrancea earthquake"
+      },
+      {
+        "id": "t10_1",
+        "year": 1895,
+        "content": "Lumière brothers' first public film screening"
+      },
+      {
+        "id": "t10_2",
+        "year": 2003,
+        "content": "Space Shuttle Columbia disaster"
+      },
+      {
+        "id": "t10_3",
+        "year": 1983,
+        "content": "TCP/IP protocol introduced"
+      },
+      {
+        "id": "t10_4",
+        "year": 1848,
+        "content": "Revolutions of 1848"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "African animals",
+        "items": [
+          "LION",
+          "ZEBRA",
+          "ELEPHANT",
+          "GIRAFFE"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Computer equipment",
+        "items": [
+          "MONITOR",
+          "KEYBOARD",
+          "MOUSE",
+          "TOWER"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Weather",
+        "items": [
+          "RAIN",
+          "SNOW",
+          "WIND",
+          "FOG"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Units of length",
+        "items": [
+          "METRE",
+          "KILOMETRE",
+          "CENTIMETRE",
+          "MILLIMETRE"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t11_0",
+        "year": 1986,
+        "content": "Space Shuttle Challenger disaster"
+      },
+      {
+        "id": "t11_1",
+        "year": 1970,
+        "content": "Catastrophic floods in Romania"
+      },
+      {
+        "id": "t11_2",
+        "year": 1885,
+        "content": "Karl Benz develops the automobile"
+      },
+      {
+        "id": "t11_3",
+        "year": 2011,
+        "content": "Game of Thrones premieres"
+      },
+      {
+        "id": "t11_4",
+        "year": 1917,
+        "content": "Bolshevik Revolution"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Solar System planets",
+        "items": [
+          "MARS",
+          "JUPITER",
+          "SATURN",
+          "VENUS"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Common health complaints",
+        "items": [
+          "COLD",
+          "FLU",
+          "TONSILLITIS",
+          "FEVER"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Transport",
+        "items": [
+          "CAR",
+          "PLANE",
+          "TRAIN",
+          "SHIP"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Energy sources",
+        "items": [
+          "SOLAR",
+          "WIND",
+          "NUCLEAR",
+          "HYDRO"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t12_0",
+        "year": 1963,
+        "content": "JFK is assassinated"
+      },
+      {
+        "id": "t12_1",
+        "year": 1936,
+        "content": "Bucharest Village Museum opens"
+      },
+      {
+        "id": "t12_2",
+        "year": 1944,
+        "content": "D-Day landings in Normandy"
+      },
+      {
+        "id": "t12_3",
+        "year": 2007,
+        "content": "First iPhone launches"
+      },
+      {
+        "id": "t12_4",
+        "year": 1999,
+        "content": "The Matrix premieres"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Dairy products",
+        "items": [
+          "MILK",
+          "CHEESE",
+          "YOGHURT",
+          "CREAM"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Clothing",
+        "items": [
+          "T-SHIRT",
+          "TROUSERS",
+          "JACKET",
+          "SHOES"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Fish",
+        "items": [
+          "CARP",
+          "PIKE",
+          "SALMON",
+          "TUNA"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Payment methods",
+        "items": [
+          "CASH",
+          "CARD",
+          "TRANSFER",
+          "PAYPAL"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t13_0",
+        "year": 1945,
+        "content": "Atomic bombings of Hiroshima and Nagasaki"
+      },
+      {
+        "id": "t13_1",
+        "year": 1948,
+        "content": "Universal Declaration of Human Rights"
+      },
+      {
+        "id": "t13_2",
+        "year": 1993,
+        "content": "Mosaic browser launches"
+      },
+      {
+        "id": "t13_3",
+        "year": 1982,
+        "content": "Michael Jackson releases Thriller"
+      },
+      {
+        "id": "t13_4",
+        "year": 1919,
+        "content": "Brașov uprising"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Card suits",
+        "items": [
+          "CLUBS",
+          "DIAMONDS",
+          "HEARTS",
+          "SPADES"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Arithmetic operations",
+        "items": [
+          "ADDITION",
+          "SUBTRACTION",
+          "MULTIPLICATION",
+          "DIVISION"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Angles",
+        "items": [
+          "ACUTE",
+          "OBTUSE",
+          "RIGHT",
+          "STRAIGHT"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Human senses",
+        "items": [
+          "SIGHT",
+          "HEARING",
+          "SMELL",
+          "TASTE"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t14_0",
+        "year": 1869,
+        "content": "Suez Canal completed"
+      },
+      {
+        "id": "t14_1",
+        "year": 2012,
+        "content": "Higgs boson discovered"
+      },
+      {
+        "id": "t14_2",
+        "year": 1957,
+        "content": "Treaty of Rome"
+      },
+      {
+        "id": "t14_3",
+        "year": 1997,
+        "content": "First Harry Potter book published"
+      },
+      {
+        "id": "t14_4",
+        "year": 1857,
+        "content": "Bucharest introduces kerosene street lighting"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Common insects",
+        "items": [
+          "BEE",
+          "ANT",
+          "FLY",
+          "MOSQUITO"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Trees in Romania",
+        "items": [
+          "BEECH",
+          "OAK",
+          "FIR",
+          "PINE"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Noble titles",
+        "items": [
+          "KING",
+          "DUKE",
+          "COUNT",
+          "BARON"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Rainbow colours",
+        "items": [
+          "RED",
+          "ORANGE",
+          "YELLOW",
+          "GREEN"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t15_0",
+        "year": 2006,
+        "content": "Pluto reclassified as a dwarf planet"
+      },
+      {
+        "id": "t15_1",
+        "year": 1967,
+        "content": "Dacia begins production at Mioveni"
+      },
+      {
+        "id": "t15_2",
+        "year": 1886,
+        "content": "Statue of Liberty unveiled"
+      },
+      {
+        "id": "t15_3",
+        "year": 1993,
+        "content": "Czechoslovakia splits"
+      },
+      {
+        "id": "t15_4",
+        "year": 1930,
+        "content": "First football World Cup in Uruguay"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Cereals",
+        "items": [
+          "WHEAT",
+          "MAIZE",
+          "BARLEY",
+          "OATS"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Wind instruments",
+        "items": [
+          "FLUTE",
+          "CLARINET",
+          "TRUMPET",
+          "SAXOPHONE"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Flower parts",
+        "items": [
+          "PETAL",
+          "STEM",
+          "ROOT",
+          "POLLEN"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Geometric shapes",
+        "items": [
+          "CIRCLE",
+          "SQUARE",
+          "TRIANGLE",
+          "RECTANGLE"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t16_0",
+        "year": 1947,
+        "content": "King Michael I abdicates"
+      },
+      {
+        "id": "t16_1",
+        "year": 1755,
+        "content": "Lisbon earthquake"
+      },
+      {
+        "id": "t16_2",
+        "year": 1941,
+        "content": "Attack on Pearl Harbor"
+      },
+      {
+        "id": "t16_3",
+        "year": 1977,
+        "content": "First Star Wars film premieres"
+      },
+      {
+        "id": "t16_4",
+        "year": 1961,
+        "content": "Yuri Gagarin's first human spaceflight"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Synonyms for beautiful",
+        "items": [
+          "SUPERB",
+          "WONDERFUL",
+          "SPLENDID",
+          "ATTRACTIVE"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Romania's neighbours",
+        "items": [
+          "BULGARIA",
+          "SERBIA",
+          "HUNGARY",
+          "UKRAINE"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Alcoholic drinks",
+        "items": [
+          "BEER",
+          "WINE",
+          "VODKA",
+          "ȚUICĂ"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Bakery products",
+        "items": [
+          "CROISSANT",
+          "STRUDEL",
+          "CHEESE PASTRY",
+          "PRETZEL"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t17_0",
+        "year": 1997,
+        "content": "Hong Kong handover"
+      },
+      {
+        "id": "t17_1",
+        "year": 1962,
+        "content": "Cuban Missile Crisis"
+      },
+      {
+        "id": "t17_2",
+        "year": 1877,
+        "content": "Romanian independence"
+      },
+      {
+        "id": "t17_3",
+        "year": 1972,
+        "content": "Munich Olympics massacre"
+      },
+      {
+        "id": "t17_4",
+        "year": 1915,
+        "content": "Einstein's general theory of relativity"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Film genres",
+        "items": [
+          "ACTION",
+          "COMEDY",
+          "DRAMA",
+          "HORROR"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Languages",
+        "items": [
+          "ENGLISH",
+          "SPANISH",
+          "MANDARIN",
+          "HINDI"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Rocks",
+        "items": [
+          "IGNEOUS",
+          "SEDIMENTARY",
+          "METAMORPHIC",
+          "BASALT"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "States of matter",
+        "items": [
+          "SOLID",
+          "LIQUID",
+          "GAS",
+          "PLASMA"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t18_0",
+        "year": 1940,
+        "content": "Leon Trotsky is assassinated"
+      },
+      {
+        "id": "t18_1",
+        "year": 1991,
+        "content": "September Mineriad in Romania"
+      },
+      {
+        "id": "t18_2",
+        "year": 2022,
+        "content": "Argentina wins the Qatar World Cup"
+      },
+      {
+        "id": "t18_3",
+        "year": 1968,
+        "content": "Prague Spring"
+      },
+      {
+        "id": "t18_4",
+        "year": 1969,
+        "content": "First Moon landing"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Romanian mountains",
+        "items": [
+          "CARPATHIANS",
+          "FĂGĂRAȘ",
+          "RETEZAT",
+          "APUSENI"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Oceans",
+        "items": [
+          "PACIFIC",
+          "ATLANTIC",
+          "INDIAN",
+          "ARCTIC"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Days of the week",
+        "items": [
+          "MONDAY",
+          "TUESDAY",
+          "WEDNESDAY",
+          "THURSDAY"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Art forms",
+        "items": [
+          "PAINTING",
+          "SCULPTURE",
+          "MUSIC",
+          "THEATRE"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t19_0",
+        "year": 1994,
+        "content": "Original PlayStation launches"
+      },
+      {
+        "id": "t19_1",
+        "year": 1453,
+        "content": "Fall of Constantinople"
+      },
+      {
+        "id": "t19_2",
+        "year": 1600,
+        "content": "Michael the Brave unites the principalities"
+      },
+      {
+        "id": "t19_3",
+        "year": 1908,
+        "content": "Ford Model T transforms the industry"
+      },
+      {
+        "id": "t19_4",
+        "year": 1948,
+        "content": "Mahatma Gandhi is assassinated"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Root vegetables",
+        "items": [
+          "CARROT",
+          "CELERIAC",
+          "PARSNIP",
+          "BEETROOT"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Car parts",
+        "items": [
+          "ENGINE",
+          "WHEEL",
+          "STEERING WHEEL",
+          "BRAKE"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Medicines",
+        "items": [
+          "PAINKILLERS",
+          "ANTIBIOTICS",
+          "VITAMINS",
+          "SYRUP"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Deserts",
+        "items": [
+          "SAHARA",
+          "GOBI",
+          "ATACAMA",
+          "KALAHARI"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t20_0",
+        "year": 1984,
+        "content": "Romania competes at the Los Angeles Olympics"
+      },
+      {
+        "id": "t20_1",
+        "year": 1922,
+        "content": "Mussolini comes to power"
+      },
+      {
+        "id": "t20_2",
+        "year": 1984,
+        "content": "First Macintosh launches"
+      },
+      {
+        "id": "t20_3",
+        "year": 1821,
+        "content": "Tudor Vladimirescu's uprising"
+      },
+      {
+        "id": "t20_4",
+        "year": 1865,
+        "content": "Abraham Lincoln is assassinated"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Forests",
+        "items": [
+          "CONIFEROUS",
+          "DECIDUOUS",
+          "TROPICAL",
+          "TAIGA"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Winter sports",
+        "items": [
+          "SKIING",
+          "SKATING",
+          "BOBSLEIGH",
+          "HOCKEY"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Eye colours",
+        "items": [
+          "BROWN",
+          "BLUE",
+          "GREEN",
+          "BLACK"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Percussion instruments",
+        "items": [
+          "DRUMS",
+          "CYMBALS",
+          "TAMBOURINE",
+          "XYLOPHONE"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t21_0",
+        "year": 2004,
+        "content": "Romania joins NATO"
+      },
+      {
+        "id": "t21_1",
+        "year": 2004,
+        "content": "Facebook launches"
+      },
+      {
+        "id": "t21_2",
+        "year": 1937,
+        "content": "Golden Gate Bridge opens"
+      },
+      {
+        "id": "t21_3",
+        "year": 1979,
+        "content": "Soviet invasion of Afghanistan"
+      },
+      {
+        "id": "t21_4",
+        "year": 1930,
+        "content": "Pluto discovered"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Film directors",
+        "items": [
+          "SPIELBERG",
+          "NOLAN",
+          "SCORSESE",
+          "TARANTINO"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Coffee drinks",
+        "items": [
+          "ESPRESSO",
+          "LATTE",
+          "CAPPUCCINO",
+          "AMERICANO"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Clouds",
+        "items": [
+          "CUMULUS",
+          "STRATUS",
+          "CIRRUS",
+          "NIMBUS"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Household appliances",
+        "items": [
+          "FRIDGE",
+          "OVEN",
+          "WASHING MACHINE",
+          "VACUUM CLEANER"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t22_0",
+        "year": 1960,
+        "content": "Iolanda Balaș wins Olympic gold in Rome"
+      },
+      {
+        "id": "t22_1",
+        "year": 79,
+        "content": "Vesuvius erupts over Pompeii"
+      },
+      {
+        "id": "t22_2",
+        "year": 1784,
+        "content": "Revolt of Horea, Cloșca and Crișan"
+      },
+      {
+        "id": "t22_3",
+        "year": 1975,
+        "content": "Microsoft is founded"
+      },
+      {
+        "id": "t22_4",
+        "year": 1950,
+        "content": "Korean War begins"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Textiles",
+        "items": [
+          "COTTON",
+          "SILK",
+          "WOOL",
+          "POLYESTER"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Political systems",
+        "items": [
+          "REPUBLIC",
+          "MONARCHY",
+          "DICTATORSHIP",
+          "DEMOCRACY"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Gemstones",
+        "items": [
+          "DIAMOND",
+          "RUBY",
+          "SAPPHIRE",
+          "EMERALD"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Renewable energy",
+        "items": [
+          "SOLAR",
+          "WIND",
+          "GEOTHERMAL",
+          "BIOMASS"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t23_0",
+        "year": 1965,
+        "content": "Malcolm X is assassinated"
+      },
+      {
+        "id": "t23_1",
+        "year": 2003,
+        "content": "Iraq War begins"
+      },
+      {
+        "id": "t23_2",
+        "year": 1996,
+        "content": "Emil Constantinescu wins the election"
+      },
+      {
+        "id": "t23_3",
+        "year": 1996,
+        "content": "Dolly the sheep is cloned"
+      },
+      {
+        "id": "t23_4",
+        "year": 2019,
+        "content": "Simona Halep wins Wimbledon"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Bears",
+        "items": [
+          "POLAR",
+          "PANDA",
+          "GRIZZLY",
+          "BROWN"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Stages of life",
+        "items": [
+          "CHILDHOOD",
+          "ADOLESCENCE",
+          "YOUTH",
+          "OLD AGE"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Egyptian gods",
+        "items": [
+          "RA",
+          "ANUBIS",
+          "OSIRIS",
+          "ISIS"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Memory units",
+        "items": [
+          "BYTE",
+          "KILOBYTE",
+          "MEGABYTE",
+          "GIGABYTE"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t24_0",
+        "year": 1789,
+        "content": "French Revolution begins"
+      },
+      {
+        "id": "t24_1",
+        "year": 2010,
+        "content": "Instagram launches"
+      },
+      {
+        "id": "t24_2",
+        "year": 1895,
+        "content": "Röntgen discovers X-rays"
+      },
+      {
+        "id": "t24_3",
+        "year": 1923,
+        "content": "Great Kantō earthquake in Japan"
+      },
+      {
+        "id": "t24_4",
+        "year": 2008,
+        "content": "NATO summit in Bucharest"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Nordic countries",
+        "items": [
+          "SWEDEN",
+          "NORWAY",
+          "DENMARK",
+          "FINLAND"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Life-sustaining liquids",
+        "items": [
+          "WATER",
+          "BLOOD",
+          "SAP",
+          "TEARS"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Italian dishes",
+        "items": [
+          "PIZZA",
+          "PASTA",
+          "LASAGNA",
+          "RISOTTO"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Furniture",
+        "items": [
+          "BED",
+          "WARDROBE",
+          "CHAIR",
+          "TABLE"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t25_0",
+        "year": 1912,
+        "content": "First successful frameless parachute descent"
+      },
+      {
+        "id": "t25_1",
+        "year": 2015,
+        "content": "Colectiv nightclub fire"
+      },
+      {
+        "id": "t25_2",
+        "year": 1950,
+        "content": "Maracanazo: Uruguay beats Brazil"
+      },
+      {
+        "id": "t25_3",
+        "year": 1955,
+        "content": "Warsaw Pact formed"
+      },
+      {
+        "id": "t25_4",
+        "year": 2001,
+        "content": "September 11 attacks"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Classic rock bands",
+        "items": [
+          "BEATLES",
+          "QUEEN",
+          "ROLLING STONES",
+          "LED ZEPPELIN"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Casino games",
+        "items": [
+          "POKER",
+          "ROULETTE",
+          "BLACKJACK",
+          "BACCARAT"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Greek philosophers",
+        "items": [
+          "SOCRATES",
+          "PLATO",
+          "ARISTOTLE",
+          "EPICURUS"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Landforms",
+        "items": [
+          "MOUNTAIN",
+          "HILL",
+          "PLAIN",
+          "PLATEAU"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t26_0",
+        "year": 1957,
+        "content": "Sputnik satellite launches"
+      },
+      {
+        "id": "t26_1",
+        "year": 1923,
+        "content": "Greater Romania adopts its constitution"
+      },
+      {
+        "id": "t26_2",
+        "year": 1986,
+        "content": "Chernobyl nuclear disaster"
+      },
+      {
+        "id": "t26_3",
+        "year": 1974,
+        "content": "ABBA wins Eurovision with Waterloo"
+      },
+      {
+        "id": "t26_4",
+        "year": 1936,
+        "content": "Spanish Civil War begins"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Homes",
+        "items": [
+          "VILLA",
+          "APARTMENT BLOCK",
+          "CABIN",
+          "COTTAGE"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Literary forms",
+        "items": [
+          "POETRY",
+          "PROSE",
+          "PLAY",
+          "ESSAY"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Dwarf planets",
+        "items": [
+          "PLUTO",
+          "CERES",
+          "ERIS",
+          "MAKEMAKE"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Historical empires",
+        "items": [
+          "ROMAN",
+          "OTTOMAN",
+          "BRITISH",
+          "MONGOL"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t27_0",
+        "year": 1965,
+        "content": "Ceaușescu becomes Communist Party leader"
+      },
+      {
+        "id": "t27_1",
+        "year": 1913,
+        "content": "Second Balkan War"
+      },
+      {
+        "id": "t27_2",
+        "year": 1966,
+        "content": "England wins the World Cup"
+      },
+      {
+        "id": "t27_3",
+        "year": 2010,
+        "content": "First iPad launches"
+      },
+      {
+        "id": "t27_4",
+        "year": 1922,
+        "content": "Tutankhamun's tomb discovered"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Water sports",
+        "items": [
+          "SWIMMING",
+          "WATER POLO",
+          "SURFING",
+          "KAYAKING"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Body parts",
+        "items": [
+          "HEAD",
+          "HAND",
+          "FOOT",
+          "TORSO"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Glasses",
+        "items": [
+          "PRESCRIPTION",
+          "SUNGLASSES",
+          "SAFETY",
+          "3D"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Apple varieties",
+        "items": [
+          "JONATHAN",
+          "GOLDEN",
+          "RABBIT'S SNOUT",
+          "GRANNY SMITH"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t28_0",
+        "year": 2000,
+        "content": "Romanian election: Iliescu and C. V. Tudor"
+      },
+      {
+        "id": "t28_1",
+        "year": 2004,
+        "content": "Romania wins 3 gymnastics golds in Athens"
+      },
+      {
+        "id": "t28_2",
+        "year": 1998,
+        "content": "Google search engine created"
+      },
+      {
+        "id": "t28_3",
+        "year": 1990,
+        "content": "Persian Gulf War"
+      },
+      {
+        "id": "t28_4",
+        "year": 1937,
+        "content": "Hindenburg disaster"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Clocks and watches",
+        "items": [
+          "WRIST",
+          "WALL",
+          "POCKET",
+          "DIGITAL"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "IT roles",
+        "items": [
+          "PROGRAMMER",
+          "TESTER",
+          "MANAGER",
+          "DESIGNER"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Viral diseases",
+        "items": [
+          "COVID",
+          "FLU",
+          "RUBELLA",
+          "MEASLES"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Romanian attractions",
+        "items": [
+          "BRAN",
+          "PELEȘ",
+          "CORVIN CASTLE",
+          "BABELE"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t29_0",
+        "year": 1330,
+        "content": "Battle of Posada"
+      },
+      {
+        "id": "t29_1",
+        "year": 1492,
+        "content": "Columbus reaches the Americas"
+      },
+      {
+        "id": "t29_2",
+        "year": 2016,
+        "content": "Brexit referendum"
+      },
+      {
+        "id": "t29_3",
+        "year": 1929,
+        "content": "First Academy Awards"
+      },
+      {
+        "id": "t29_4",
+        "year": 1971,
+        "content": "First email sent"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Hair textures",
+        "items": [
+          "STRAIGHT",
+          "CURLY",
+          "WAVY",
+          "COILY"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Classic monsters",
+        "items": [
+          "VAMPIRE",
+          "WEREWOLF",
+          "ZOMBIE",
+          "MUMMY"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Video games",
+        "items": [
+          "MINECRAFT",
+          "MARIO",
+          "TETRIS",
+          "GTA"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "File formats",
+        "items": [
+          "PDF",
+          "JPG",
+          "MP3",
+          "DOCX"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t30_0",
+        "year": 1999,
+        "content": "Cozia agreement ends the 1999 Mineriad"
+      },
+      {
+        "id": "t30_1",
+        "year": 1901,
+        "content": "President McKinley is assassinated"
+      },
+      {
+        "id": "t30_2",
+        "year": 1989,
+        "content": "The Simpsons debuts"
+      },
+      {
+        "id": "t30_3",
+        "year": 1687,
+        "content": "Newton publishes his laws of motion"
+      },
+      {
+        "id": "t30_4",
+        "year": 1999,
+        "content": "NATO intervention in Yugoslavia"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Units of mass",
+        "items": [
+          "GRAM",
+          "KILOGRAM",
+          "TONNE",
+          "MILLIGRAM"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Dog breeds",
+        "items": [
+          "SHEPHERD",
+          "BULLDOG",
+          "LABRADOR",
+          "BEAGLE"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Weather measurements",
+        "items": [
+          "TEMPERATURE",
+          "PRESSURE",
+          "HUMIDITY",
+          "WIND"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Ice cream flavours",
+        "items": [
+          "VANILLA",
+          "CHOCOLATE",
+          "STRAWBERRY",
+          "PISTACHIO"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t31_0",
+        "year": 1987,
+        "content": "Brașov workers' uprising"
+      },
+      {
+        "id": "t31_1",
+        "year": 1914,
+        "content": "World War I begins"
+      },
+      {
+        "id": "t31_2",
+        "year": 1968,
+        "content": "Martin Luther King Jr. is assassinated"
+      },
+      {
+        "id": "t31_3",
+        "year": 2001,
+        "content": "First Harry Potter film premieres"
+      },
+      {
+        "id": "t31_4",
+        "year": 1981,
+        "content": "First IBM PC launches"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Phone brands",
+        "items": [
+          "APPLE",
+          "SAMSUNG",
+          "XIAOMI",
+          "HUAWEI"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Flight types",
+        "items": [
+          "COMMERCIAL",
+          "CARGO",
+          "CHARTER",
+          "MILITARY"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Hair colours",
+        "items": [
+          "BLONDE",
+          "BROWN",
+          "BLACK",
+          "RED"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Romanian banks",
+        "items": [
+          "BCR",
+          "BRD",
+          "TRANSILVANIA",
+          "RAIFFEISEN"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t32_0",
+        "year": 1989,
+        "content": "Berlin Wall falls"
+      },
+      {
+        "id": "t32_1",
+        "year": 2009,
+        "content": "Avatar premieres"
+      },
+      {
+        "id": "t32_2",
+        "year": 2002,
+        "content": "Euro currency introduced"
+      },
+      {
+        "id": "t32_3",
+        "year": 1918,
+        "content": "Great Union at Alba Iulia"
+      },
+      {
+        "id": "t32_4",
+        "year": 1879,
+        "content": "Edison develops the practical light bulb"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Fizzy drinks",
+        "items": [
+          "COLA",
+          "FANTA",
+          "SPRITE",
+          "PEPSI"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Window types",
+        "items": [
+          "DOUBLE GLAZED",
+          "WOODEN",
+          "ALUMINIUM",
+          "SKYLIGHT"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Streaming platforms",
+        "items": [
+          "NETFLIX",
+          "HBO",
+          "DISNEY",
+          "AMAZON"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Pizzas",
+        "items": [
+          "MARGHERITA",
+          "QUATTRO",
+          "CAPRICCIOSA",
+          "DIAVOLA"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t33_0",
+        "year": 1984,
+        "content": "Danube–Black Sea Canal opens"
+      },
+      {
+        "id": "t33_1",
+        "year": 1878,
+        "content": "Treaty of Berlin"
+      },
+      {
+        "id": "t33_2",
+        "year": 1976,
+        "content": "Apple is founded"
+      },
+      {
+        "id": "t33_3",
+        "year": 1969,
+        "content": "Woodstock festival"
+      },
+      {
+        "id": "t33_4",
+        "year": 2004,
+        "content": "Indian Ocean tsunami"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Units of time",
+        "items": [
+          "SECOND",
+          "MINUTE",
+          "HOUR",
+          "DAY"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Parts of the day",
+        "items": [
+          "MORNING",
+          "NOON",
+          "EVENING",
+          "NIGHT"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Space programmes",
+        "items": [
+          "APOLLO",
+          "GEMINI",
+          "MERCURY",
+          "ARTEMIS"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Supermarket chains",
+        "items": [
+          "KAUFLAND",
+          "LIDL",
+          "CARREFOUR",
+          "AUCHAN"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t34_0",
+        "year": 1884,
+        "content": "Timișoara introduces electric street lighting"
+      },
+      {
+        "id": "t34_1",
+        "year": 1989,
+        "content": "World Wide Web invented"
+      },
+      {
+        "id": "t34_2",
+        "year": 1909,
+        "content": "Peary's North Pole expedition"
+      },
+      {
+        "id": "t34_3",
+        "year": 1991,
+        "content": "Freddie Mercury dies"
+      },
+      {
+        "id": "t34_4",
+        "year": 1914,
+        "content": "Archduke Franz Ferdinand is assassinated"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Units of volume",
+        "items": [
+          "LITRE",
+          "MILLILITRE",
+          "DECILITRE",
+          "CENTILITRE"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Romanian actors",
+        "items": [
+          "PINTILIE",
+          "CARAMITRU",
+          "MĂLĂELE",
+          "MORARU"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Dinosaurs",
+        "items": [
+          "T-REX",
+          "TRICERATOPS",
+          "STEGOSAURUS",
+          "VELOCIRAPTOR"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Romanian football clubs",
+        "items": [
+          "STEAUA",
+          "DINAMO",
+          "RAPID",
+          "CFR"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t35_0",
+        "year": 1953,
+        "content": "DNA structure discovered"
+      },
+      {
+        "id": "t35_1",
+        "year": 1980,
+        "content": "John Lennon is assassinated"
+      },
+      {
+        "id": "t35_2",
+        "year": 2008,
+        "content": "Global financial crisis"
+      },
+      {
+        "id": "t35_3",
+        "year": 1955,
+        "content": "Vietnam War begins"
+      },
+      {
+        "id": "t35_4",
+        "year": 1866,
+        "content": "Carol I arrives in Romania"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Painters",
+        "items": [
+          "DA VINCI",
+          "PICASSO",
+          "VAN GOGH",
+          "DALI"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Footwear",
+        "items": [
+          "TRAINERS",
+          "SHOES",
+          "BOOTS",
+          "SANDALS"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Bicycles",
+        "items": [
+          "MTB",
+          "ROAD",
+          "BMX",
+          "CITY"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Books of the Bible",
+        "items": [
+          "GENESIS",
+          "EXODUS",
+          "PSALMS",
+          "REVELATION"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t36_0",
+        "year": 1906,
+        "content": "San Francisco earthquake"
+      },
+      {
+        "id": "t36_1",
+        "year": 1924,
+        "content": "Tatarbunary uprising"
+      },
+      {
+        "id": "t36_2",
+        "year": 1982,
+        "content": "Falklands War"
+      },
+      {
+        "id": "t36_3",
+        "year": 2021,
+        "content": "James Webb Space Telescope launches"
+      },
+      {
+        "id": "t36_4",
+        "year": 2008,
+        "content": "Beijing Olympics"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Roman gods",
+        "items": [
+          "JUPITER",
+          "NEPTUNE",
+          "MARS",
+          "VENUS"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Bacterial diseases",
+        "items": [
+          "TUBERCULOSIS",
+          "CHOLERA",
+          "PLAGUE",
+          "TETANUS"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Stock market terms",
+        "items": [
+          "BUY",
+          "SELL",
+          "HOLD",
+          "DIVIDEND"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Blood components",
+        "items": [
+          "PLASMA",
+          "RED CELL",
+          "WHITE CELL",
+          "PLATELET"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t37_0",
+        "year": 1439,
+        "content": "Gutenberg develops the printing press"
+      },
+      {
+        "id": "t37_1",
+        "year": 1936,
+        "content": "Berlin Olympics: Jesse Owens"
+      },
+      {
+        "id": "t37_2",
+        "year": 1927,
+        "content": "Charles Lindbergh's transatlantic flight"
+      },
+      {
+        "id": "t37_3",
+        "year": 1956,
+        "content": "Romanian Television is founded"
+      },
+      {
+        "id": "t37_4",
+        "year": 1861,
+        "content": "American Civil War begins"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "School supplies",
+        "items": [
+          "NOTEBOOK",
+          "FOUNTAIN PEN",
+          "PENCIL CASE",
+          "BACKPACK"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Literary genres",
+        "items": [
+          "EPIC",
+          "LYRIC",
+          "DRAMATIC",
+          "SCI-FI"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Ancient cities",
+        "items": [
+          "BABYLON",
+          "TROY",
+          "SPARTA",
+          "ATHENS"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Building stones",
+        "items": [
+          "MARBLE",
+          "GRANITE",
+          "LIMESTONE",
+          "SANDSTONE"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t38_0",
+        "year": 1666,
+        "content": "Great Fire of London"
+      },
+      {
+        "id": "t38_1",
+        "year": 1933,
+        "content": "Grivița strikes"
+      },
+      {
+        "id": "t38_2",
+        "year": 2005,
+        "content": "YouTube launches"
+      },
+      {
+        "id": "t38_3",
+        "year": 1920,
+        "content": "League of Nations is founded"
+      },
+      {
+        "id": "t38_4",
+        "year": 1921,
+        "content": "Banting discovers insulin"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Snow types",
+        "items": [
+          "POWDER",
+          "ICY",
+          "SLUSH",
+          "WET"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Soups",
+        "items": [
+          "CHICKEN",
+          "BEEF",
+          "TOMATO",
+          "ROOT VEGETABLE"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Aircraft",
+        "items": [
+          "HELICOPTER",
+          "PLANE",
+          "GLIDER",
+          "ZEPPELIN"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Computer components",
+        "items": [
+          "CPU",
+          "RAM",
+          "GPU",
+          "MOTHERBOARD"
+        ],
+        "difficulty": 4
+      }
+    ]
+  },
+  {
+    "timelineEvents": [
+      {
+        "id": "t39_0",
+        "year": 1954,
+        "content": "Miracle of Bern: Germany beats Hungary"
+      },
+      {
+        "id": "t39_1",
+        "year": 2010,
+        "content": "Burj Khalifa opens"
+      },
+      {
+        "id": "t39_2",
+        "year": 1990,
+        "content": "Nelson Mandela released"
+      },
+      {
+        "id": "t39_3",
+        "year": 1903,
+        "content": "Wright brothers' first flight"
+      },
+      {
+        "id": "t39_4",
+        "year": 1989,
+        "content": "Romanian Revolution"
+      }
+    ],
+    "connectionsGroups": [
+      {
+        "category": "Garden tools",
+        "items": [
+          "HOE",
+          "RAKE",
+          "SHOVEL",
+          "FORK"
+        ],
+        "difficulty": 1
+      },
+      {
+        "category": "Car components",
+        "items": [
+          "SPARK PLUG",
+          "BELT",
+          "PISTON",
+          "RADIATOR"
+        ],
+        "difficulty": 2
+      },
+      {
+        "category": "Lucky symbols",
+        "items": [
+          "CLOVER",
+          "HORSESHOE",
+          "CHIMNEY SWEEP",
+          "LADYBIRD"
+        ],
+        "difficulty": 3
+      },
+      {
+        "category": "Administrative divisions",
+        "items": [
+          "STATE",
+          "PROVINCE",
+          "COMMUNE",
+          "VILLAGE"
+        ],
+        "difficulty": 4
+      }
+    ]
+  }
+]

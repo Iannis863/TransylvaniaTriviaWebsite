@@ -1,15 +1,16 @@
+import { t } from "@/lib/i18n";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Sparkles, 
-  Scroll, 
-  Crown, 
-  ShieldCheck, 
-  Flame, 
-  Lock, 
-  Unlock, 
-  KeyRound, 
+import {
+  Sparkles,
+  Scroll,
+  Crown,
+  ShieldCheck,
+  Flame,
+  Lock,
+  Unlock,
+  KeyRound,
   AlertCircle,
   CheckCircle2
 } from "lucide-react";
@@ -42,7 +43,7 @@ export default function SecretClueModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[560px] bg-[#0c0317] border-2 border-amber-400/80 text-foreground p-6 sm:p-8 rounded-[2.5rem] shadow-[0_0_80px_rgba(246,184,40,0.35)]">
-        
+
         <DialogHeader className="text-center pb-2">
           <div className="flex justify-center mb-3">
             <div className={`w-16 h-16 rounded-2xl border-2 flex items-center justify-center shadow-lg transition-all ${
@@ -57,16 +58,16 @@ export default function SecretClueModal({
           <Badge className={`mx-auto mb-2 text-xs font-bold uppercase tracking-wider px-3 py-1 ${
             isUnlocked ? "bg-amber-400 text-purple-950" : "bg-purple-900/60 text-purple-200 border-purple-600/40"
           }`}>
-            {isUnlocked ? "LACĂTUL ESTE DESCHIS" : `LACĂTUL ESTE BLOCAT (${solvedCount}/${totalGames})`}
+            {isUnlocked ? t("LACĂTUL ESTE DESCHIS") : t("LACĂTUL ESTE BLOCAT ({0}/{1})", [solvedCount, totalGames])}
           </Badge>
 
           <DialogTitle className="text-2xl sm:text-3xl font-heading tracking-widest text-gold-gradient">
-            {isUnlocked ? `PERGAMENTUL SECRET • EDIȚIA #${editionNumber}` : `MISTERUL ESTE ÎNCĂ PECETLUIT`}
+            {isUnlocked ? t("PERGAMENTUL SECRET • EDIȚIA #{0}", [editionNumber]) : t("MISTERUL ESTE ÎNCĂ PECETLUIT")}
           </DialogTitle>
           <DialogDescription className="text-purple-300/80 text-xs sm:text-sm">
             {isUnlocked
-              ? "Felicitări! Echipa ta a rezolvat toate cele 5 puzzle-uri săptămânale."
-              : `Mai aveți de rezolvat ${remaining} ${remaining === 1 ? 'puzzle' : 'puzzle-uri'} pentru a descoperi indiciul.`}
+              ? t("Felicitări! Echipa ta a rezolvat toate cele 5 puzzle-uri săptămânale.")
+              : t("Mai aveți de rezolvat {0} {1} pentru a descoperi indiciul.", [remaining, remaining === 1 ? 'puzzle' : 'puzzle-uri'])}
           </DialogDescription>
         </DialogHeader>
 
@@ -76,15 +77,13 @@ export default function SecretClueModal({
             <div className="flex items-center gap-2.5 mb-4">
               <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400 flex-shrink-0" />
               <span className="text-sm sm:text-base uppercase tracking-wider font-bold text-amber-300">
-                Sezonul {["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"][seasonNumber] || seasonNumber}, Ediția {editionNumber} • Runda IV
-              </span>
+                 {t("Sezonul")} {["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"][seasonNumber] || seasonNumber}{t(", Ediția")} {editionNumber}  {t("• Runda IV")} </span>
             </div>
 
             <div className="p-5 rounded-xl bg-purple-950/90 border border-amber-400/40 mb-4 shadow-lg">
               <div className="font-heading text-lg text-amber-400 flex items-center gap-2 mb-2">
                 <Scroll className="w-5 h-5 text-amber-400" />
-                Indiciul Secret al Ediției:
-              </div>
+                 {t("Indiciul Secret al Ediției:")} </div>
               <p className="text-base text-purple-50 italic leading-relaxed font-serif font-medium">
                 "{secretClue}"
               </p>
@@ -93,20 +92,18 @@ export default function SecretClueModal({
             <div className="flex items-start gap-2.5 text-xs text-emerald-400 bg-emerald-950/40 p-3 rounded-lg border border-emerald-500/30">
               <ShieldCheck className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>
-                <strong>Avantaj Strategic la Quiz:</strong> Prin acest indiciu știi tema Rundei IV de la Quiz-ul următor.
-              </span>
+                <strong>{t("Avantaj Strategic la Quiz:")}</strong>  {t("Prin acest indiciu știi tema Rundei IV de la Quiz-ul următor.")} </span>
             </div>
           </div>
         ) : (
           <div className="relative my-4 p-6 rounded-2xl bg-purple-950/40 border border-purple-800/60 text-center space-y-4">
-            
+
             {/* Redacted Clue Preview Box */}
             <div className="p-5 rounded-xl bg-purple-950/80 border border-purple-700/40 relative overflow-hidden">
               <div className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-300 mb-2">
                 <Lock className="w-4 h-4 text-amber-400" />
-                Conținut Criptat de Quizmaster
-              </div>
-              
+                 {t("Conținut Criptat de Quizmaster")} </div>
+
               {/* Blur / Redacted placeholders */}
               <div className="space-y-2 select-none filter blur-sm opacity-50 py-2">
                 <div className="h-4 bg-purple-600/40 rounded w-full" />
@@ -116,17 +113,15 @@ export default function SecretClueModal({
 
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-xs p-4">
                 <span className="font-mono text-xs font-bold text-amber-300">
-                  🔒 ACCES INTERZIS FĂRĂ CELE 5 CHEI
-                </span>
+                   {t("🔒 ACCES INTERZIS FĂRĂ CELE 5 CHEI")} </span>
                 <span className="text-[11px] text-purple-300 mt-1">
-                  Progres actual: <strong>{solvedCount} / {totalGames} jocuri rezolvate</strong>
+                   {t("Progres actual:")} <strong>{solvedCount} / {totalGames}  {t("jocuri rezolvate")}</strong>
                 </span>
               </div>
             </div>
 
             <div className="text-xs text-purple-300/80 max-w-sm mx-auto leading-relaxed">
-              Colaborează cu coechipierii tăi pentru a finaliza Wordle, Sudoku, Cronologie, Conexiunile și Ghicește Țara!
-            </div>
+               {t("Colaborează cu coechipierii tăi pentru a finaliza Wordle, Atinge Ținta, Cronologie, Conexiunile și Ghicește Țara!")} </div>
           </div>
         )}
 
@@ -134,7 +129,7 @@ export default function SecretClueModal({
           onClick={onClose}
           className={isUnlocked ? "w-full gold-btn py-5 font-heading text-base tracking-widest" : "w-full purple-btn py-4 font-heading text-sm tracking-wider"}
         >
-          {isUnlocked ? "AM REȚINUT SECRETUL" : "ÎNAPOI LA JOCURI"}
+          {isUnlocked ? t("AM REȚINUT SECRETUL") : t("ÎNAPOI LA JOCURI")}
         </Button>
       </DialogContent>
     </Dialog>

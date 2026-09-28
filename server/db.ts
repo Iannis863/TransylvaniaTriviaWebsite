@@ -5,15 +5,15 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-let pool: pg.Pool | null = null;
+export let pool: pg.Pool | null = null;
 let dbInstance: any = null;
+export let databaseReady: Promise<unknown> = Promise.resolve();
 
 if (process.env.DATABASE_URL) {
   pool = new pg.Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false,
-    },
+    // Respect the connection URL's TLS settings; never silently disable certificate checks.
+    ...(process.env.DATABASE_CA_CERT ? { ssl: { ca: process.env.DATABASE_CA_CERT, rejectUnauthorized: true } } : {}),
     max: 1,
     connectionTimeoutMillis: 5000,
   });
@@ -23,7 +23,7 @@ if (process.env.DATABASE_URL) {
   try {
     const __dirname = path.dirname(fileURLToPath(import.meta.url));
     const schemaSql = fs.readFileSync(path.resolve(__dirname, "../schema.sql"), "utf-8");
-    pool.query(schemaSql)
+    databaseReady = pool.query(schemaSql)
       .then(() => {
         console.log("[DB Init] Automatically created all app_ tables from schema.sql!");
         // Ensure new columns added later are patched
@@ -37,9 +37,9 @@ if (process.env.DATABASE_URL) {
           ALTER TABLE app_theme_suggestions DROP CONSTRAINT IF EXISTS app_theme_suggestions_edition_id_fkey;
         `);
       })
-      .catch((err) => console.error("[DB Init Error] Failed to execute schema.sql or patches:", err.message));
+      .catch((err) => { console.error("[DB Init Error] Schema initialization failed"); throw err; });
   } catch (err: any) {
-    console.error("[DB Init Error] Failed to read schema.sql:", err.message);
+    throw new Error("Failed to read database schema", { cause: err });
   }
 } else {
   console.log("[DB] No DATABASE_URL provided. Running in In-Memory Storage Mode for local preview.");

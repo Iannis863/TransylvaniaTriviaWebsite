@@ -1,17 +1,18 @@
+import { t } from "@/lib/i18n";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Users, 
-  Crown, 
-  Sparkles, 
-  Copy, 
-  Check, 
-  Share2, 
-  Trophy, 
-  ShieldCheck, 
+import {
+  Users,
+  Crown,
+  Sparkles,
+  Copy,
+  Check,
+  Share2,
+  Trophy,
+  ShieldCheck,
   Flame,
   ArrowRight,
   MoreHorizontal,
@@ -20,6 +21,7 @@ import {
   UserMinus
 } from "lucide-react";
 import AuthModal from "./AuthModal";
+import TeamRegistrationStatus from "./TeamRegistrationStatus";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,7 +55,7 @@ export default function TeamDashboard() {
     if (team?.inviteCode) {
       navigator.clipboard.writeText(team.inviteCode);
       setCopied(true);
-      toast({ title: "Cod copiat!", description: `Codul ${team.inviteCode} a fost copiat în clipboard.` });
+      toast({ title: t("Cod copiat!"), description: t("Codul {0} a fost copiat în clipboard.", [team.inviteCode]) });
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -63,7 +65,7 @@ export default function TeamDashboard() {
       const link = `${window.location.origin}/?join=${team.inviteCode}`;
       navigator.clipboard.writeText(link);
       setCopied(true);
-      toast({ title: "Link de invitație copiat!", description: "Trimite linkul prietenilor tăi." });
+      toast({ title: t("Link de invitație copiat!"), description: t("Trimite linkul prietenilor tăi.") });
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -75,8 +77,8 @@ export default function TeamDashboard() {
     if (!team) return;
     setConfirmDialog({
       isOpen: true,
-      title: "Elimini membrul?",
-      description: "Ești sigur că vrei să elimini acest membru din echipă?",
+      title: t("Elimini membrul?"),
+      description: t("Ești sigur că vrei să elimini acest membru din echipă?"),
       action: async () => {
         setIsKicking(true);
         try {
@@ -85,10 +87,10 @@ export default function TeamDashboard() {
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message);
-          toast({ title: "Membru eliminat cu succes" });
+          toast({ title: t("Membru eliminat cu succes") });
           await refreshAuth();
         } catch (err: any) {
-          toast({ title: "Eroare", description: err.message, variant: "destructive" });
+          toast({ title: t("Eroare"), description: err.message, variant: "destructive" });
         } finally {
           setIsKicking(false);
         }
@@ -100,8 +102,8 @@ export default function TeamDashboard() {
     if (!team) return;
     setConfirmDialog({
       isOpen: true,
-      title: "Transferi rolul de Căpitan?",
-      description: "Ești sigur că vrei să transferi titlul de Căpitan către acest membru? Tu vei deveni un simplu membru.",
+      title: t("Transferi rolul de Căpitan?"),
+      description: t("Ești sigur că vrei să transferi titlul de Căpitan către acest membru? Tu vei deveni un simplu membru."),
       action: async () => {
         setIsKicking(true); // Reusing loading state for simplicity
         try {
@@ -112,10 +114,10 @@ export default function TeamDashboard() {
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message);
-          toast({ title: "Transfer reușit", description: "Ai cedat titlul de Căpitan cu succes." });
+          toast({ title: t("Transfer reușit"), description: t("Ai cedat titlul de Căpitan cu succes.") });
           await refreshAuth();
         } catch (err: any) {
-          toast({ title: "Eroare", description: err.message, variant: "destructive" });
+          toast({ title: t("Eroare"), description: err.message, variant: "destructive" });
         } finally {
           setIsKicking(false);
         }
@@ -132,14 +134,11 @@ export default function TeamDashboard() {
               <Users className="w-8 h-8 text-amber-400" />
             </div>
             <h2 className="text-3xl font-heading tracking-wider text-gold-gradient mb-2">
-              GESTIONEAZĂ-ȚI ECHIPA DE TRIVIA
-            </h2>
+               {t("GESTIONEAZĂ-ȚI ECHIPA DE TRIVIA")} </h2>
             <p className="text-purple-200/80 text-sm max-w-md mx-auto mb-6">
-              Autentifică-te pentru a crea o echipă, a genera codul de invitație sau a-ți administra membrii.
-            </p>
+               {t("Autentifică-te pentru a crea o echipă, a genera codul de invitație sau a-ți administra membrii.")} </p>
             <Button onClick={() => setIsAuthOpen(true)} className="gold-btn rounded-full px-8 py-5 font-heading text-base tracking-wider">
-              AUTENTIFICARE / ÎNREGISTRARE
-            </Button>
+               {t("AUTENTIFICARE / ÎNREGISTRARE")} </Button>
             <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
           </div>
         </div>
@@ -156,14 +155,11 @@ export default function TeamDashboard() {
               <Crown className="w-8 h-8 text-amber-400" />
             </div>
             <h2 className="text-3xl font-heading text-gold-gradient mb-2">
-              NU FACI PARTE DINTR-O ECHIPĂ ÎNCĂ
-            </h2>
+               {t("NU FACI PARTE DINTR-O ECHIPĂ ÎNCĂ")} </h2>
             <p className="text-purple-200/80 text-sm max-w-md mx-auto mb-6">
-              Poți crea o echipă nouă pentru a deveni Căpitan sau te poți alătura echipei prietenilor tăi folosind codul de invitație.
-            </p>
+               {t("Poți crea o echipă nouă pentru a deveni Căpitan sau te poți alătura echipei prietenilor tăi folosind codul de invitație.")} </p>
             <Button onClick={() => setIsAuthOpen(true)} className="gold-btn rounded-full px-8 py-5 font-heading text-base">
-              FORMEAZĂ SAU INTRĂ ÎNTR-O ECHIPĂ
-            </Button>
+               {t("FORMEAZĂ SAU INTRĂ ÎNTR-O ECHIPĂ")} </Button>
             <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} defaultTab="team" />
           </div>
         </div>
@@ -176,13 +172,12 @@ export default function TeamDashboard() {
   return (
     <section id="team" className="py-24 px-4 sm:px-6 lg:px-8 relative">
       <div className="max-w-5xl mx-auto">
-        
+
         {/* Section Header */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-400/40 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-amber-300 mb-3 shadow-[0_0_15px_rgba(246,184,40,0.15)]">
             <Crown className="w-3.5 h-3.5 text-amber-400" />
-            Panoul de Comandă al Echipei
-          </div>
+             {t("Panoul de Comandă al Echipei")} </div>
           <h2 className="text-3xl sm:text-5xl font-heading tracking-widest text-gold-gradient">
             {team.name.toUpperCase()}
           </h2>
@@ -194,23 +189,24 @@ export default function TeamDashboard() {
         </div>
 
         {/* Double-Bezel Team Hub Card */}
+        <TeamRegistrationStatus />
         <div className="p-2 sm:p-2.5 rounded-[2.5rem] bg-gradient-to-b from-amber-500/15 via-purple-900/10 to-amber-500/5 ring-1 ring-amber-400/30 shadow-2xl mb-8">
           <div className="p-6 sm:p-10 rounded-[calc(2.5rem-0.5rem)] bg-[#0e041d] shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)]">
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-8 border-b border-purple-800/40">
-              
+
               {/* Stat 1: Role */}
               <div className="p-4 rounded-2xl bg-purple-950/40 border border-purple-800/50 flex items-center gap-3.5">
                 <div className="w-12 h-12 rounded-xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-2xl shadow">
                   {isLeader ? "👑" : "🛡️"}
                 </div>
                 <div>
-                  <div className="text-[10px] text-purple-300 uppercase tracking-wider font-bold">Rolul Tău</div>
+                  <div className="text-[10px] text-purple-300 uppercase tracking-wider font-bold">{t("Rolul Tău")}</div>
                   <div className="text-base font-bold text-white mt-0.5">
-                    {isLeader ? "Căpitan" : "Membru"}
+                    {isLeader ? t("Căpitan") : t("Membru")}
                   </div>
                   <div className="text-xs text-amber-300 font-medium">
-                    {isLeader ? "Administrează echipa" : "Rezolvă Jocuri"}
+                    {isLeader ? t("Administrează echipa") : t("Rezolvă Jocuri")}
                   </div>
                 </div>
               </div>
@@ -221,12 +217,11 @@ export default function TeamDashboard() {
                   <Users className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="text-[10px] text-purple-300 uppercase tracking-wider font-bold">Componența echipei</div>
+                  <div className="text-[10px] text-purple-300 uppercase tracking-wider font-bold">{t("Componența echipei")}</div>
                   <div className="text-base font-bold text-white mt-0.5">
-                    {teamMembers.length} / 6 Membri
-                  </div>
+                    {teamMembers.length}  {t("/ 6 Membri")} </div>
                   <div className="text-xs text-purple-300">
-                    {6 - teamMembers.length > 0 ? `${6 - teamMembers.length} locuri libere` : "Echipă completă"}
+                    {6 - teamMembers.length > 0 ? t("{0} locuri libere", [6 - teamMembers.length]) : t("Echipă completă")}
                   </div>
                 </div>
               </div>
@@ -237,11 +232,10 @@ export default function TeamDashboard() {
                   <Trophy className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="text-[10px] text-purple-300 uppercase tracking-wider font-bold">Punctajul echipei</div>
+                  <div className="text-[10px] text-purple-300 uppercase tracking-wider font-bold">{t("Punctajul echipei")}</div>
                   <div className="text-base font-bold text-emerald-300 mt-0.5 font-mono">
-                    {team.score || 0} Puncte
-                  </div>
-                  <div className="text-xs text-purple-300 font-medium">Sezonul I</div>
+                    {team.score || 0}  {t("Puncte")} </div>
+                  <div className="text-xs text-purple-300 font-medium">{t("Sezonul I")}</div>
                 </div>
               </div>
 
@@ -252,11 +246,9 @@ export default function TeamDashboard() {
               <div className="text-left">
                 <div className="text-xs text-amber-300 font-bold uppercase tracking-wider flex items-center gap-1.5 mb-1">
                   <Sparkles className="w-4 h-4" />
-                  Invită-ți coechipierii
-                </div>
+                   {t("Invită-ți coechipierii")} </div>
                 <div className="text-sm text-purple-200">
-                  Trimite-le codul de alături pentru a intra în echipa ta.
-                </div>
+                   {t("Trimite-le codul de alături pentru a intra în echipa ta.")} </div>
               </div>
 
               <div className="flex items-center gap-3">
@@ -268,7 +260,7 @@ export default function TeamDashboard() {
                   className="gold-btn rounded-xl px-4 py-2 text-xs font-heading tracking-wider flex items-center gap-1.5"
                 >
                   {copied ? <Check className="w-4 h-4 text-purple-950" /> : <Copy className="w-4 h-4" />}
-                  {copied ? "COPIAT!" : "COPIAZĂ"}
+                  {copied ? t("COPIAT!") : t("COPIAZĂ")}
                 </Button>
                 <Button
                   onClick={copyShareLink}
@@ -276,8 +268,7 @@ export default function TeamDashboard() {
                   className="rounded-xl border-purple-500/40 text-purple-200 hover:bg-purple-900/30 text-xs flex items-center gap-1.5"
                 >
                   <Share2 className="w-4 h-4" />
-                  SHARE LINK
-                </Button>
+                   {t("DISTRIBUIE LINKUL")} </Button>
               </div>
             </div>
 
@@ -285,9 +276,9 @@ export default function TeamDashboard() {
             <div>
               <h3 className="font-heading text-lg text-white tracking-wide mb-4 text-left flex items-center gap-2">
                 <Users className="w-5 h-5 text-amber-400" />
-                Membrii Echipei ({teamMembers.length})
+                 {t("Membrii Echipei (")}{teamMembers.length})
               </h3>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {teamMembers.map((member) => (
                   <div
@@ -306,7 +297,7 @@ export default function TeamDashboard() {
 
                     <div className="flex items-center gap-2">
                       <Badge className={member.role === "TEAM_LEADER" ? "bg-amber-400 text-purple-950 text-[10px] font-bold" : "bg-purple-900/60 text-purple-200 text-[10px]"}>
-                        {member.role === "TEAM_LEADER" ? "CĂPITAN" : "MEMBRU"}
+                        {member.role === "TEAM_LEADER" ? t("CĂPITAN") : t("MEMBRU")}
                       </Badge>
                       {isLeader && member.role !== "TEAM_LEADER" && (
                         <DropdownMenu>
@@ -318,12 +309,10 @@ export default function TeamDashboard() {
                           <DropdownMenuContent align="end" className="bg-[#120722] border-purple-800/40 text-purple-200">
                             <DropdownMenuItem onClick={() => promoteMember(member.id)} className="hover:bg-amber-500/20 hover:text-amber-300 focus:bg-amber-500/20 focus:text-amber-300 cursor-pointer">
                               <ArrowUpCircle className="w-4 h-4 mr-2" />
-                              Promovează Căpitan
-                            </DropdownMenuItem>
+                               {t("Promovează Căpitan")} </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => kickMember(member.id)} className="hover:bg-red-500/20 hover:text-red-400 focus:bg-red-500/20 focus:text-red-400 cursor-pointer text-red-400">
                               <UserX className="w-4 h-4 mr-2" />
-                              Elimină din Echipă
-                            </DropdownMenuItem>
+                               {t("Elimină din Echipă")} </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
@@ -348,14 +337,14 @@ export default function TeamDashboard() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-purple-900 hover:bg-purple-800 border-none text-white">Anulează</AlertDialogCancel>
+            <AlertDialogCancel className="bg-purple-900 hover:bg-purple-800 border-none text-white">{t("Anulează")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (confirmDialog.action) confirmDialog.action();
                 setConfirmDialog(d => ({ ...d, isOpen: false }));
               }}
               className="bg-red-500 hover:bg-red-600 text-white"
-            >Confirmă</AlertDialogAction>
+            >{t("Confirmă")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

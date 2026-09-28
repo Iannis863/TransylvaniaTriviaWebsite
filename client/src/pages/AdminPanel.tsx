@@ -1,3 +1,6 @@
+import { locale } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
+import AdminEmails from "@/components/AdminEmails";
 import { useState, useEffect, useCallback } from "react";
 import {
   Gamepad2, Shield, LogOut, ChevronDown, ChevronUp, Edit2, Trash2,
@@ -23,6 +26,7 @@ interface Registration {
   phoneNumber: string | null;
   memberCount: number;
   registeredAt: string;
+  status: "CONFIRMED" | "WAITLISTED";
   teamId: string | null;
 }
 
@@ -31,7 +35,11 @@ interface Edition {
   seasonNumber: number;
   editionNumber: number;
   theme: string;
+  secretClue: string;
+  waitlistCount: number;
   formattedDate: string;
+  eventDate: string;
+  secretClueEn: string;
   maxTeams: number;
   registeredCount: number;
   registrations: Registration[];
@@ -60,7 +68,7 @@ function Toast({ msg, ok }: { msg: string; ok: boolean }) {
     <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-2xl text-sm font-medium transition-all
       ${ok ? "bg-emerald-900 border border-emerald-500/50 text-emerald-200" : "bg-red-900 border border-red-500/50 text-red-200"}`}>
       {ok ? <CheckCircle className="w-4 h-4 text-emerald-400" /> : <AlertCircle className="w-4 h-4 text-red-400" />}
-      {msg}
+      {t(msg)}
     </div>
   );
 }
@@ -83,8 +91,8 @@ export default function AdminPanel() {
   const [inputPw, setInputPw] = useState("");
   const [authError, setAuthError] = useState("");
   const [isAuthed, setIsAuthed] = useState(false);
-  const [activeTab, setActiveTab] = useState<"editions" | "teams" | "themes" | "users" | "simulator">("editions");
-  
+  const [activeTab, setActiveTab] = useState<"editions" | "teams" | "themes" | "users" | "simulator" | "emails">("editions");
+
   // Simulator state
   const [previewWeek, setPreviewWeek] = useState(
     localStorage.getItem("admin_preview_week") || ""
@@ -94,6 +102,9 @@ export default function AdminPanel() {
   const [editions, setEditions] = useState<Edition[]>([]);
   const [expandedEdition, setExpandedEdition] = useState<string | null>(null);
   const [editingCapacity, setEditingCapacity] = useState<Record<string, string>>({});
+  const [editingClue, setEditingClue] = useState<Record<string, string>>({});
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [savingClueId, setSavingClueId] = useState<string | null>(null);
   const [editingReg, setEditingReg] = useState<Registration | null>(null);
   const [regDraft, setRegDraft] = useState<Partial<Registration>>({});
 
@@ -130,8 +141,8 @@ export default function AdminPanel() {
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: "Eroare necunoscută" }));
-      throw new Error(err.message || "Eroare server");
+      const err = await res.json().catch(() => ({ message: t("Eroare necunoscută") }));
+      throw new Error(err.message || t("Eroare server"));
     }
     return res.json();
   }, [password]);
@@ -148,7 +159,7 @@ export default function AdminPanel() {
       setPassword(inputPw);
       setIsAuthed(true);
     } catch {
-      setAuthError("Parolă incorectă. Încearcă din nou.");
+      setAuthError(t("Parolă incorectă. Încearcă din nou."));
     }
   };
 
@@ -201,28 +212,45 @@ export default function AdminPanel() {
   // ─── Edition capacity ────────────────────────────────────────────────────────
   const saveCapacity = async (editionId: string) => {
     const val = parseInt(editingCapacity[editionId] ?? "", 10);
-    if (isNaN(val) || val < 1) { showToast("Valoare invalidă", false); return; }
+    if (isNaN(val) || val < 1) { showToast(t("Valoare invalidă"), false); return; }
     try {
       await api("PATCH", `/api/admin/editions/${editionId}/capacity`, { maxTeams: val });
       setEditingCapacity(c => { const n = { ...c }; delete n[editionId]; return n; });
-      showToast("Capacitate actualizată");
+      showToast(t("Capacitate actualizată"));
       loadEditions();
     } catch (e: any) { showToast(e.message, false); }
+  };
+
+  const saveClue = async (editionId: string) => {
+    setSavingClueId(editionId);
+    try {
+      const edition = editions.find(item => item.id === editionId)!;
+      await api("PATCH", `/api/admin/editions/${editionId}/clue`, { clue: editingClue[editionId] ?? edition.secretClue, clueEn: editingClue[`${editionId}:en`] ?? edition.secretClueEn });
+      setEditingClue(values => { const next = { ...values }; delete next[editionId]; delete next[`${editionId}:en`]; return next; });
+      await loadEditions(); showToast(t("Indiciul rundei 4 a fost salvat"));
+    } catch (error: any) { showToast(error.message, false); }
+    finally { setSavingClueId(null); }
+  };
+  const approveRegistration = async (id: string) => {
+    setApprovingId(id);
+    try {
+      await api("POST", `/api/admin/registrations/${id}/approve`);
+      await loadEditions(); showToast(t("Echipă acceptată. Confirmarea este în coada de emailuri."));
+    } catch (error: any) { showToast(error.message, false); }
+    finally { setApprovingId(null); }
   };
 
   // ─── Registration actions ────────────────────────────────────────────────────
   const deleteReg = async (id: string, editionId: string) => {
     setConfirmDialog({
       isOpen: true,
-      title: "Ștergi această înregistrare?",
-      description: "Echipa va fi eliminată din această ediție.",
+      title: t("Ștergi această înregistrare?"),
+      description: t("Echipa va fi eliminată din această ediție."),
       action: async () => {
         try {
           await api("DELETE", `/api/admin/registrations/${id}`);
-          showToast("Înregistrare ștearsă");
-          setEditions(eds => eds.map(ed => ed.id === editionId
-            ? { ...ed, registrations: ed.registrations.filter(r => r.id !== id), registeredCount: ed.registeredCount - 1 }
-            : ed));
+          showToast(t("Înregistrare ștearsă"));
+          await loadEditions();
         } catch (e: any) { showToast(e.message, false); }
       }
     });
@@ -232,7 +260,7 @@ export default function AdminPanel() {
     if (!editingReg) return;
     try {
       await api("PATCH", `/api/admin/registrations/${editingReg.id}`, regDraft);
-      showToast("Înregistrare actualizată");
+      showToast(t("Înregistrare actualizată"));
       setEditions(eds => eds.map(ed => ({
         ...ed,
         registrations: ed.registrations.map(r => r.id === editingReg.id ? { ...r, ...regDraft } : r),
@@ -246,7 +274,7 @@ export default function AdminPanel() {
     if (!editingTeam) return;
     try {
       await api("PATCH", `/api/admin/teams/${editingTeam.id}`, teamDraft);
-      showToast("Echipă actualizată");
+      showToast(t("Echipă actualizată"));
       setTeams(ts => ts.map(t => t.id === editingTeam.id ? { ...t, ...teamDraft } : t));
       setEditingTeam(null);
     } catch (e: any) { showToast(e.message, false); }
@@ -255,12 +283,12 @@ export default function AdminPanel() {
   const deleteTeam = async (id: string) => {
     setConfirmDialog({
       isOpen: true,
-      title: "Ștergi această echipă?",
-      description: "Toate datele echipei, membrii (vor fi eliminați din echipă) și înregistrările asociate vor fi afectate. Ești sigur?",
+      title: t("Ștergi această echipă?"),
+      description: t("Toate datele echipei, membrii (vor fi eliminați din echipă) și înregistrările asociate vor fi afectate. Ești sigur?"),
       action: async () => {
         try {
           await api("DELETE", `/api/admin/teams/${id}`);
-          showToast("Echipă ștearsă");
+          showToast(t("Echipă ștearsă"));
           setTeams(ts => ts.filter(t => t.id !== id));
         } catch (e: any) { showToast(e.message, false); }
       }
@@ -270,12 +298,12 @@ export default function AdminPanel() {
   const deleteUser = async (id: string) => {
     setConfirmDialog({
       isOpen: true,
-      title: "Ștergi acest utilizator?",
-      description: "Utilizatorul va fi șters definitiv și va fi eliminat din echipa sa (dacă are una). Ești sigur?",
+      title: t("Ștergi acest utilizator?"),
+      description: t("Utilizatorul va fi șters definitiv și va fi eliminat din echipa sa (dacă are una). Ești sigur?"),
       action: async () => {
         try {
           await api("DELETE", `/api/admin/users/${id}`);
-          showToast("Utilizator șters");
+          showToast(t("Utilizator șters"));
           setUsers(us => us.filter(u => u.id !== id));
         } catch (e: any) { showToast(e.message, false); }
       }
@@ -291,12 +319,12 @@ export default function AdminPanel() {
             <div className="w-16 h-16 rounded-full bg-amber-400/10 border border-amber-400/30 flex items-center justify-center mx-auto mb-4">
               <Shield className="w-7 h-7 text-amber-400" />
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-wide">Admin Panel</h1>
-            <p className="text-purple-300/60 text-sm mt-1">Transilvania Trivia · Acces Restricționat</p>
+            <h1 className="text-2xl font-bold text-white tracking-wide">{t("Panou de administrare")}</h1>
+            <p className="text-purple-300/60 text-sm mt-1">{t("Transilvania Trivia · Acces Restricționat")}</p>
           </div>
           <form onSubmit={handleLogin} className="bg-purple-950/40 rounded-2xl border border-purple-800/40 p-6 space-y-4">
             <div>
-              <label className="text-xs text-purple-300/70 font-medium block mb-1.5">Parolă de Administrator</label>
+              <label className="text-xs text-purple-300/70 font-medium block mb-1.5">{t("Parolă de Administrator")}</label>
               <input
                 type="password"
                 value={inputPw}
@@ -306,13 +334,12 @@ export default function AdminPanel() {
                 autoFocus
               />
             </div>
-            {authError && <p className="text-red-400 text-xs">{authError}</p>}
+            {authError && <p className="text-red-400 text-xs">{t(authError)}</p>}
             <button
               type="submit"
               className="w-full bg-amber-400 hover:bg-amber-300 text-purple-950 font-bold rounded-lg py-2.5 text-sm transition-colors"
             >
-              Autentifică-te
-            </button>
+               {t("Autentifică-te")} </button>
           </form>
         </div>
       </div>
@@ -328,20 +355,19 @@ export default function AdminPanel() {
       <header className="border-b border-purple-800/40 bg-[#0c0317]/80 backdrop-blur-xl px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Shield className="w-5 h-5 text-amber-400" />
-          <span className="font-bold text-white tracking-wide">Admin Panel</span>
+          <span className="font-bold text-white tracking-wide">{t("Panou de administrare")}</span>
           <span className="text-purple-400/60 text-xs">· Transilvania Trivia</span>
         </div>
         <button
           onClick={() => { setIsAuthed(false); setPassword(""); }}
           className="flex items-center gap-1.5 text-purple-400 hover:text-red-400 text-xs transition-colors"
         >
-          <LogOut className="w-3.5 h-3.5" /> Ieșire
-        </button>
+          <LogOut className="w-3.5 h-3.5" />  {t("Ieșire")} </button>
       </header>
 
       {/* Tabs */}
       <div className="border-b border-purple-800/30 px-6 flex gap-1 pt-4 overflow-x-auto whitespace-nowrap">
-        {(["editions", "teams", "themes", "users", "simulator"] as const).map(tab => (
+        {(["editions", "teams", "themes", "users", "emails", "simulator"] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -352,32 +378,35 @@ export default function AdminPanel() {
             }`}
           >
             {tab === "editions" ? (
-              <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />Ediții</span>
+              <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />{t("Ediții")}</span>
             ) : tab === "teams" ? (
-              <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />Echipe</span>
+              <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />{t("Echipe")}</span>
             ) : tab === "themes" ? (
-              <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />Teme Propuse</span>
+              <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />{t("Teme Propuse")}</span>
             ) : tab === "users" ? (
-              <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" />Utilizatori</span>
+              <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" />{t("Utilizatori")}</span>
+            ) : tab === "emails" ? (
+              <span>{t("Emailuri")}</span>
             ) : (
-              <span className="flex items-center gap-1.5"><Gamepad2 className="w-3.5 h-3.5" />Simulator Jocuri</span>
+              <span className="flex items-center gap-1.5"><Gamepad2 className="w-3.5 h-3.5" />{t("Simulator Jocuri")}</span>
             )}
           </button>
         ))}
-        <button
+        {activeTab !== "emails" && activeTab !== "simulator" && <button
           onClick={() => activeTab === "editions" ? loadEditions() : activeTab === "teams" ? loadTeams() : activeTab === "themes" ? loadThemes() : activeTab === "users" ? loadUsers() : undefined}
           className="ml-auto mb-1 flex items-center gap-1 text-purple-400 hover:text-white text-xs transition-colors"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> Reîncarcă
-        </button>
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />  {t("Reîncarcă")} </button>}
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-3">
 
+        {activeTab === "emails" && <AdminEmails api={api} />}
+
         {/* ── EDITIONS TAB ── */}
         {activeTab === "editions" && (
           <>
-            {loading && <p className="text-purple-400/60 text-sm text-center py-8">Se încarcă edițiile...</p>}
+            {loading && <p className="text-purple-400/60 text-sm text-center py-8">{t("Se încarcă edițiile...")}</p>}
             {editions.map(ed => {
               const isExpanded = expandedEdition === ed.id;
               const isFull = ed.registeredCount >= ed.maxTeams;
@@ -393,16 +422,15 @@ export default function AdminPanel() {
                         <span className="text-[10px] font-bold text-amber-400/80 tracking-widest uppercase">
                           S{ed.seasonNumber} · E{ed.editionNumber}
                         </span>
-                        <span className="text-sm font-medium text-white truncate">{ed.theme}</span>
+                        <span className="text-sm font-medium text-white truncate">{t("Runda 4:")} {ed.secretClue || t("Indiciu nesetat")}</span>
                       </div>
-                      <p className="text-xs text-purple-300/60 mt-0.5">{ed.formattedDate}</p>
+                      <p className="text-xs text-purple-300/60 mt-0.5">{new Date(ed.eventDate).toLocaleDateString(locale(), { timeZone: "Europe/Bucharest", weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
                       <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                         isFull ? "bg-red-900/50 text-red-300" : "bg-emerald-900/40 text-emerald-300"
                       }`}>
-                        {ed.registeredCount}/{ed.maxTeams}
-                      </span>
+                        {ed.registeredCount}/{ed.maxTeams}  {t("acceptate ·")} {ed.waitlistCount}  {t("în așteptare")} </span>
                       {isExpanded ? <ChevronUp className="w-4 h-4 text-purple-400" /> : <ChevronDown className="w-4 h-4 text-purple-400" />}
                     </div>
                   </button>
@@ -410,12 +438,25 @@ export default function AdminPanel() {
                   {/* Expanded content */}
                   {isExpanded && (
                     <div className="border-t border-purple-800/30 px-4 py-4 space-y-4">
+                      <div className="space-y-2">
+                        <label htmlFor={`clue-${ed.id}`} className="text-sm text-amber-300 font-semibold">{t("Indiciu în română")}</label>
+                        <textarea id={`clue-${ed.id}`} rows={3} maxLength={2000} value={editingClue[ed.id] ?? ed.secretClue ?? ""}
+                          onChange={event => setEditingClue(values => ({ ...values, [ed.id]: event.target.value }))}
+                          className="w-full rounded-lg bg-purple-950/60 border border-purple-700/50 p-3 text-white" />
+                        <p className="text-xs text-purple-300">{t("Acesta este textul dezvăluit după rezolvarea celor 5 jocuri în săptămâna evenimentului.")}</p>
+                        <label htmlFor={`clue-en-${ed.id}`} className="block text-sm text-amber-300 font-semibold">{t("Indiciu în engleză")}</label>
+                        <textarea id={`clue-en-${ed.id}`} rows={3} maxLength={2000} value={editingClue[`${ed.id}:en`] ?? ed.secretClueEn ?? ""} placeholder={t("Opțional. Dacă lipsește, se afișează indiciul în română.")}
+                          onChange={event => setEditingClue(values => ({ ...values, [`${ed.id}:en`]: event.target.value }))}
+                          className="w-full rounded-lg bg-purple-950/60 border border-purple-700/50 p-3 text-white" />
+                        {(editingClue[ed.id] !== undefined || editingClue[`${ed.id}:en`] !== undefined) && <button disabled={savingClueId === ed.id} onClick={() => saveClue(ed.id)} className="rounded-lg px-3 py-2 bg-amber-400 text-purple-950 font-semibold disabled:opacity-50">{savingClueId === ed.id ? t("Se salvează…") : t("Salvează indiciul")}</button>}
+                      </div>
+                      <p className="text-xs text-purple-300">{t("Capacitate automată: 10 → 12 la 9 echipe acceptate → 15 la 11. Peste 15, fiecare echipă necesită acceptarea ta. Echipele în așteptare sunt afișate în ordinea înscrierii; locurile eliberate nu le promovează automat.")}</p>
                       {/* Capacity editor */}
                       <div className="flex items-center gap-3">
-                        <span className="text-xs text-purple-300/70 font-medium">Capacitate maximă:</span>
+                        <span className="text-xs text-purple-300/70 font-medium">{t("Capacitate maximă:")}</span>
                         <input
                           type="number"
-                          min={1}
+                          min={10}
                           value={editingCapacity[ed.id] ?? ed.maxTeams}
                           onChange={e => setEditingCapacity(c => ({ ...c, [ed.id]: e.target.value }))}
                           className="w-20 bg-purple-950/60 border border-purple-700/50 rounded-lg px-2.5 py-1 text-white text-sm outline-none focus:border-amber-400/60 text-center"
@@ -423,46 +464,48 @@ export default function AdminPanel() {
                         {editingCapacity[ed.id] !== undefined && (
                           <button onClick={() => saveCapacity(ed.id)}
                             className="flex items-center gap-1 px-3 py-1 bg-amber-400 text-purple-950 rounded-lg text-xs font-bold hover:bg-amber-300 transition-colors">
-                            <Save className="w-3 h-3" /> Salvează
-                          </button>
+                            <Save className="w-3 h-3" />  {t("Salvează")} </button>
                         )}
                       </div>
 
                       {/* Registrations table */}
                       {ed.registrations.length === 0 ? (
-                        <p className="text-purple-400/50 text-sm">Nicio echipă înregistrată.</p>
+                        <p className="text-purple-400/50 text-sm">{t("Nicio echipă înregistrată.")}</p>
                       ) : (
                         <div className="overflow-x-auto rounded-lg border border-purple-800/30">
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="bg-purple-950/50 text-purple-300/60 text-xs uppercase tracking-wide">
-                                <th className="px-3 py-2 text-left">Echipă</th>
-                                <th className="px-3 py-2 text-left">Căpitan</th>
+                                <th className="px-3 py-2 text-left">{t("Echipă")}</th>
+                                <th className="px-3 py-2 text-left">{t("Căpitan")}</th>
                                 <th className="px-3 py-2 text-left">Email</th>
-                                <th className="px-3 py-2 text-center">Membri</th>
-                                <th className="px-3 py-2 text-right">Acțiuni</th>
+                                <th className="px-3 py-2 text-center">{t("Membri")}</th>
+                                <th className="px-3 py-2 text-left">Status</th>
+                                <th className="px-3 py-2 text-right">{t("Acțiuni")}</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {ed.registrations.map((reg, i) => (
+                              {[...ed.registrations].sort((a, b) => Number(b.status === "WAITLISTED") - Number(a.status === "WAITLISTED") || a.registeredAt.localeCompare(b.registeredAt)).map((reg, i) => (
                                 <tr key={reg.id} className={`border-t border-purple-800/20 ${i % 2 === 0 ? "" : "bg-purple-950/10"}`}>
                                   <td className="px-3 py-2 font-medium text-white">{reg.teamName}</td>
                                   <td className="px-3 py-2 text-purple-200/80">{reg.captainName}</td>
                                   <td className="px-3 py-2 text-purple-300/60 text-xs">{reg.email}</td>
                                   <td className="px-3 py-2 text-center text-purple-200/80">{reg.memberCount}</td>
+                                  <td className={`px-3 py-2 text-xs ${reg.status === "WAITLISTED" ? "text-amber-300" : "text-emerald-300"}`}>{reg.status === "WAITLISTED" ? t("În așteptare") : t("Acceptată")}<br /><time>{new Date(reg.registeredAt).toLocaleString(locale(), { timeZone: "Europe/Bucharest" })}</time></td>
                                   <td className="px-3 py-2 text-right">
                                     <div className="flex items-center justify-end gap-2">
+                                      {reg.status === "WAITLISTED" && <button disabled={approvingId !== null} onClick={() => approveRegistration(reg.id)} className="rounded-lg px-3 py-2 bg-emerald-700 text-white text-xs disabled:opacity-50">{approvingId === reg.id ? t("Se acceptă…") : t("Acceptă echipa")}</button>}
                                       <button
                                         onClick={() => { setEditingReg(reg); setRegDraft({ teamName: reg.teamName, captainName: reg.captainName, email: reg.email, phoneNumber: reg.phoneNumber ?? "", memberCount: reg.memberCount }); }}
                                         className="p-1 text-purple-400 hover:text-amber-400 transition-colors"
-                                        title="Editează"
+                                        title={t("Editează")}
                                       >
                                         <Edit2 className="w-3.5 h-3.5" />
                                       </button>
                                       <button
                                         onClick={() => deleteReg(reg.id, ed.id)}
                                         className="p-1 text-purple-400 hover:text-red-400 transition-colors"
-                                        title="Șterge"
+                                        title={t("Șterge")}
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
                                       </button>
@@ -485,7 +528,7 @@ export default function AdminPanel() {
         {/* ── TEAMS TAB ── */}
         {activeTab === "teams" && (
           <>
-            {loading && <p className="text-purple-400/60 text-sm text-center py-8">Se încarcă echipele...</p>}
+            {loading && <p className="text-purple-400/60 text-sm text-center py-8">{t("Se încarcă echipele...")}</p>}
             {teams.map(team => (
               <div key={team.id} className="rounded-xl border border-purple-800/40 bg-purple-950/20 px-4 py-3">
                 <div className="flex items-start justify-between gap-3">
@@ -493,7 +536,7 @@ export default function AdminPanel() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-white">{team.name}</span>
                       <span className="text-[10px] font-mono text-amber-400/70 bg-amber-400/10 px-2 py-0.5 rounded">{team.inviteCode}</span>
-                      <span className="text-xs text-purple-300/60">⭐ {team.score} pct</span>
+                      <span className="text-xs text-purple-300/60">⭐ {team.score}  {t("pct")}</span>
                     </div>
                     {team.tagline && <p className="text-xs text-purple-300/50 mt-0.5 italic">"{team.tagline}"</p>}
                     <div className="flex flex-wrap gap-1 mt-2">
@@ -509,14 +552,14 @@ export default function AdminPanel() {
                     <button
                       onClick={() => { setEditingTeam(team); setTeamDraft({ name: team.name, tagline: team.tagline ?? "", score: team.score }); }}
                       className="p-1.5 text-purple-400 hover:text-amber-400 transition-colors"
-                      title="Editează echipă"
+                      title={t("Editează echipă")}
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => deleteTeam(team.id)}
                       className="p-1.5 text-purple-400 hover:text-red-400 transition-colors"
-                      title="Șterge echipă"
+                      title={t("Șterge echipă")}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -525,7 +568,7 @@ export default function AdminPanel() {
               </div>
             ))}
             {!loading && teams.length === 0 && (
-              <p className="text-purple-400/50 text-sm text-center py-8">Nicio echipă înregistrată.</p>
+              <p className="text-purple-400/50 text-sm text-center py-8">{t("Nicio echipă înregistrată.")}</p>
             )}
           </>
         )}
@@ -548,35 +591,35 @@ export default function AdminPanel() {
                     onClick={() => {
                       setConfirmDialog({
                         isOpen: true,
-                        title: "Ștergi această propunere?",
-                        description: "Ești sigur că vrei să ștergi definitiv această temă de pe ecran?",
+                        title: t("Ștergi această propunere?"),
+                        description: t("Ești sigur că vrei să ștergi definitiv această temă de pe ecran?"),
                         action: async () => {
-                          await fetch(`/api/theme-suggestions/${theme.id}`, { method: "DELETE" });
+                          await api("DELETE", `/api/theme-suggestions/${theme.id}`);
                           loadThemes();
                         }
                       });
                     }}
                     className="absolute top-3 right-3 text-purple-400/50 hover:text-red-400 transition-colors p-1"
-                    title="Șterge propunerea"
+                    title={t("Șterge propunerea")}
                   >
                     <X className="w-4 h-4" />
                   </button>
                 )}
                 <div className="pr-8">
                   <h3 className="font-bold text-white text-lg">{theme.themeName}</h3>
-                  <div className="text-xs text-purple-400 mt-1">Propus de: <span className="text-amber-300">{theme.proposedBy}</span> {theme.createdAt ? `la ${new Date(theme.createdAt).toLocaleDateString("ro-RO")}` : ""}</div>
+                  <div className="text-xs text-purple-400 mt-1">{t("Propus de:")} <span className="text-amber-300">{theme.proposedBy}</span> {theme.createdAt ? t("la {0}", [new Date(theme.createdAt).toLocaleDateString(locale())]) : ""}</div>
                   <div className="mt-2 text-sm text-purple-200 bg-purple-950/40 p-3 rounded-lg max-w-xl">
                     {theme.description}
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2 shrink-0">
                   <div className="bg-[#0d041a] px-3 py-1.5 rounded-lg border border-purple-800/40 text-center w-full">
-                    <span className="block text-[10px] text-purple-400 uppercase tracking-widest">Scor Popularitate</span>
+                    <span className="block text-[10px] text-purple-400 uppercase tracking-widest">{t("Scor Popularitate")}</span>
                     <span className="font-bold text-amber-400 text-lg">{theme.popularityScore}</span>
                   </div>
                   {theme.status === "PENDING" ? (
                     <div className="flex gap-2 w-full mt-1">
-                      <button 
+                      <button
                         onClick={async () => {
                           await fetch(`/api/admin/theme-suggestions/${theme.id}/status`, {
                             method: "PATCH",
@@ -587,9 +630,8 @@ export default function AdminPanel() {
                         }}
                         className="flex-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 text-xs font-bold py-1.5 rounded border border-emerald-500/30 transition-colors"
                       >
-                        DA
-                      </button>
-                      <button 
+                         {t("DA")} </button>
+                      <button
                         onClick={async () => {
                           await fetch(`/api/admin/theme-suggestions/${theme.id}/status`, {
                             method: "PATCH",
@@ -600,19 +642,18 @@ export default function AdminPanel() {
                         }}
                         className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-bold py-1.5 rounded border border-red-500/30 transition-colors"
                       >
-                        NU
-                      </button>
+                         {t("NU")} </button>
                     </div>
                   ) : (
                     <span className={`w-full text-center text-[10px] uppercase font-bold px-2 py-1.5 rounded ${theme.status === "APPROVED" ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "bg-red-500/20 text-red-300 border border-red-500/30"}`}>
-                      {theme.status === "APPROVED" ? "ACCEPTAT (ELIGIBIL)" : "RESPINS"}
+                      {theme.status === "APPROVED" ? t("ACCEPTAT (ELIGIBIL)") : t("RESPINS")}
                     </span>
                   )}
                 </div>
               </div>
             ))}
             {!loading && themeSuggestions.length === 0 && (
-              <p className="text-purple-400/50 text-sm text-center py-8">Nicio temă propusă până acum.</p>
+              <p className="text-purple-400/50 text-sm text-center py-8">{t("Nicio temă propusă până acum.")}</p>
             )}
           </div>
         )}
@@ -620,7 +661,7 @@ export default function AdminPanel() {
         {/* ── USERS TAB ── */}
         {activeTab === "users" && (
           <div className="space-y-4">
-            <h2 className="text-xl font-bold text-white mb-4">Membri & Conturi</h2>
+            <h2 className="text-xl font-bold text-white mb-4">{t("Membri & Conturi")}</h2>
             <div className="grid gap-3">
               {users.map(u => (
                 <div key={u.id} className="rounded-xl border border-purple-800/40 bg-[#120722]/80 px-5 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -630,20 +671,19 @@ export default function AdminPanel() {
                       {u.role === "TEAM_LEADER" && <Crown className="w-3.5 h-3.5 text-amber-400" />}
                     </h3>
                     <div className="text-xs text-purple-300 mt-1">{u.email} {u.phoneNumber ? `• ${u.phoneNumber}` : ""}</div>
-                    <div className="text-[10px] text-purple-400/60 mt-1 font-mono">ID: {u.id} • Echipa ID: {u.teamId || "Niciuna"}</div>
+                    <div className="text-[10px] text-purple-400/60 mt-1 font-mono">ID: {u.id}  {t("• Echipa ID:")} {u.teamId || t("Niciuna")}</div>
                   </div>
                   <div className="flex gap-2 w-full md:w-auto">
                     <button
                       onClick={() => deleteUser(u.id)}
                       className="w-full md:w-auto bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs px-4 py-2 rounded-lg transition-colors border border-red-500/20 flex items-center justify-center gap-1.5"
                     >
-                      <X className="w-3.5 h-3.5" /> Șterge
-                    </button>
+                      <X className="w-3.5 h-3.5" />  {t("Șterge")} </button>
                   </div>
                 </div>
               ))}
               {!loading && users.length === 0 && (
-                <p className="text-purple-400/50 text-sm text-center py-8">Niciun utilizator înregistrat.</p>
+                <p className="text-purple-400/50 text-sm text-center py-8">{t("Niciun utilizator înregistrat.")}</p>
               )}
             </div>
           </div>
@@ -653,23 +693,23 @@ export default function AdminPanel() {
         {activeTab === "simulator" && (
           <div className="rounded-xl border border-purple-800/40 bg-purple-950/20 px-6 py-6 space-y-6">
             <div>
-              <h2 className="text-xl font-bold text-white mb-1">Simulator Jocuri Săptămânale</h2>
-              <p className="text-sm text-purple-300/70 mb-4">Testează cum vor arăta puzzle-urile și dacă este activ indiciul în oricare săptămână din viitor.</p>
-              
+              <h2 className="text-xl font-bold text-white mb-1">{t("Simulator Jocuri Săptămânale")}</h2>
+              <p className="text-sm text-purple-300/70 mb-4">{t("Testează cum vor arăta puzzle-urile și dacă este activ indiciul în oricare săptămână din viitor.")}</p>
+
               <div className="flex items-center gap-3 bg-[#0c0317] p-4 rounded-lg border border-purple-800/40 w-fit">
                 <div>
-                  <label className="text-xs text-purple-300/70 block mb-1">Săptămâna curentă în aplicație</label>
+                  <label className="text-xs text-purple-300/70 block mb-1">{t("Săptămâna curentă în aplicație")}</label>
                   <input
                     type="number"
                     min="0"
-                    placeholder="Auto (dinamic)"
+                    placeholder={t("Auto (dinamic)")}
                     value={previewWeek}
                     onChange={(e) => setPreviewWeek(e.target.value)}
                     className="w-32 bg-purple-950/60 border border-purple-700/50 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-amber-400/60 text-center font-mono"
                   />
                 </div>
                 <div className="pt-5 flex gap-2">
-                  <button 
+                  <button
                     onClick={() => {
                       if (previewWeek === "") {
                         localStorage.removeItem("admin_preview_week");
@@ -681,18 +721,16 @@ export default function AdminPanel() {
                     }}
                     className="bg-amber-400 hover:bg-amber-300 text-purple-950 font-bold px-4 py-2 rounded-lg text-sm transition-colors"
                   >
-                    Setează și Mergi la Jocuri
-                  </button>
-                  <button 
+                     {t("Setează și Mergi la Jocuri")} </button>
+                  <button
                     onClick={() => {
                       localStorage.removeItem("admin_preview_week");
                       setPreviewWeek("");
-                      setToast({ msg: "Timpul a fost resetat la prezent.", ok: true });
+                      setToast({ msg: t("Timpul a fost resetat la prezent."), ok: true });
                     }}
                     className="border border-red-500/50 text-red-400 hover:bg-red-500/10 px-4 py-2 rounded-lg text-sm transition-colors"
                   >
-                    Resetează la Prezent
-                  </button>
+                     {t("Resetează la Prezent")} </button>
                 </div>
               </div>
             </div>
@@ -706,14 +744,14 @@ export default function AdminPanel() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center px-4">
           <div className="bg-[#0f041e] border border-purple-700/50 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-white">Editează Înregistrare</h3>
+              <h3 className="font-bold text-white">{t("Editează Înregistrare")}</h3>
               <button onClick={() => setEditingReg(null)} className="text-purple-400 hover:text-white"><X className="w-4 h-4" /></button>
             </div>
             {[
-              { key: "teamName", label: "Nume echipă" },
-              { key: "captainName", label: "Căpitan" },
+              { key: "teamName", label: t("Nume echipă") },
+              { key: "captainName", label: t("Căpitan") },
               { key: "email", label: "Email" },
-              { key: "phoneNumber", label: "Telefon" },
+              { key: "phoneNumber", label: t("Telefon") },
             ].map(({ key, label }) => (
               <div key={key}>
                 <label className="text-xs text-purple-300/70 block mb-1">{label}</label>
@@ -725,7 +763,7 @@ export default function AdminPanel() {
               </div>
             ))}
             <div>
-              <label className="text-xs text-purple-300/70 block mb-1">Nr. membri</label>
+              <label className="text-xs text-purple-300/70 block mb-1">{t("Nr. membri")}</label>
               <input
                 type="number" min={1} max={10}
                 value={regDraft.memberCount ?? 1}
@@ -735,11 +773,9 @@ export default function AdminPanel() {
             </div>
             <div className="flex gap-2 pt-2">
               <button onClick={saveReg} className="flex-1 bg-amber-400 hover:bg-amber-300 text-purple-950 font-bold rounded-lg py-2 text-sm transition-colors flex items-center justify-center gap-1.5">
-                <Save className="w-3.5 h-3.5" /> Salvează
-              </button>
+                <Save className="w-3.5 h-3.5" />  {t("Salvează")} </button>
               <button onClick={() => setEditingReg(null)} className="px-4 text-purple-300 hover:text-white border border-purple-700/50 rounded-lg text-sm transition-colors">
-                Anulează
-              </button>
+                 {t("Anulează")} </button>
             </div>
           </div>
         </div>
@@ -750,12 +786,12 @@ export default function AdminPanel() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center px-4">
           <div className="bg-[#0f041e] border border-purple-700/50 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-white">Editează Echipă</h3>
+              <h3 className="font-bold text-white">{t("Editează Echipă")}</h3>
               <button onClick={() => setEditingTeam(null)} className="text-purple-400 hover:text-white"><X className="w-4 h-4" /></button>
             </div>
             {[
-              { key: "name", label: "Nume echipă" },
-              { key: "tagline", label: "Slogan" },
+              { key: "name", label: t("Nume echipă") },
+              { key: "tagline", label: t("Slogan") },
             ].map(({ key, label }) => (
               <div key={key}>
                 <label className="text-xs text-purple-300/70 block mb-1">{label}</label>
@@ -767,7 +803,7 @@ export default function AdminPanel() {
               </div>
             ))}
             <div>
-              <label className="text-xs text-purple-300/70 block mb-1">Scor</label>
+              <label className="text-xs text-purple-300/70 block mb-1">{t("Scor")}</label>
               <input
                 type="number" min={0}
                 value={teamDraft.score ?? 0}
@@ -777,11 +813,9 @@ export default function AdminPanel() {
             </div>
             <div className="flex gap-2 pt-2">
               <button onClick={saveTeam} className="flex-1 bg-amber-400 hover:bg-amber-300 text-purple-950 font-bold rounded-lg py-2 text-sm transition-colors flex items-center justify-center gap-1.5">
-                <Save className="w-3.5 h-3.5" /> Salvează
-              </button>
+                <Save className="w-3.5 h-3.5" />  {t("Salvează")} </button>
               <button onClick={() => setEditingTeam(null)} className="px-4 text-purple-300 hover:text-white border border-purple-700/50 rounded-lg text-sm transition-colors">
-                Anulează
-              </button>
+                 {t("Anulează")} </button>
             </div>
           </div>
         </div>
@@ -797,14 +831,14 @@ export default function AdminPanel() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-purple-900 hover:bg-purple-800 border-none text-white">Anulează</AlertDialogCancel>
+            <AlertDialogCancel className="bg-purple-900 hover:bg-purple-800 border-none text-white">{t("Anulează")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (confirmDialog.action) confirmDialog.action();
                 setConfirmDialog(d => ({ ...d, isOpen: false }));
               }}
               className="bg-red-500 hover:bg-red-600 text-white"
-            >Confirmă</AlertDialogAction>
+            >{t("Confirmă")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,4 +1,9 @@
+import { getTargetPuzzle, type TargetPuzzle } from "../../../shared/target-game.js";
 import { getEditionForWeek, getCurrentWeekIndex } from "./weeklyEngine";
+
+import englishGames from "./locales/games-en.json";
+
+const ENGLISH_WORDS = "GHOST BRAVE CRIME LUCKY JOKER STAGE CLUES ACTOR FEARS BRASS FIGHT TIGER WATCH FIELD FILES BRAIN SUNNY BOOKS SPIES TRAIN PARTY FILMS SCENE TRACK BOATS PLANE SCORE FINAL LEADS MAGIC POKER CLEAN BOARD SEVEN SPORT GAMES QUEST CROWN NIGHT SMART".split(" ");
 
 export interface WeeklyGameData {
   weekIndex: number;
@@ -6,47 +11,13 @@ export interface WeeklyGameData {
   globleTarget: string;
   timelineEvents: { id: string; content: string; year: number }[];
   connectionsGroups: { category: string; items: string[]; difficulty: number }[];
-  sudokuBoard: number[][];
+  targetPuzzle: TargetPuzzle;
   hasEvent: boolean;
   secretClue: string | null;
 }
 
 // ----------------------------------------------------
-// SUDOKU GENERATOR (Seed-based permutation)
-// ----------------------------------------------------
-const BASE_SUDOKU = [
-  [5, 3, 4, 6, 7, 8, 9, 1, 2],
-  [6, 7, 2, 1, 9, 5, 3, 4, 8],
-  [1, 9, 8, 3, 4, 2, 5, 6, 7],
-  [8, 5, 9, 7, 6, 1, 4, 2, 3],
-  [4, 2, 6, 8, 5, 3, 7, 9, 1],
-  [7, 1, 3, 9, 2, 4, 8, 5, 6],
-  [9, 6, 1, 5, 3, 7, 2, 8, 4],
-  [2, 8, 7, 4, 1, 9, 6, 3, 5],
-  [3, 4, 5, 2, 8, 6, 1, 7, 9],
-];
-
-// Generates an infinitely unique Sudoku board by mathematically permuting the numbers
-function getSudokuVariation(week: number): number[][] {
-  const newBoard = BASE_SUDOKU.map(row => [...row]);
-  
-  // Seeded random number mapper (1-9)
-  const map = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-  for (let i = map.length - 1; i > 0; i--) {
-    const j = (week * (i + 7) + 13) % (i + 1);
-    [map[i], map[j]] = [map[j], map[i]];
-  }
-  
-  for (let r = 0; r < 9; r++) {
-    for (let c = 0; c < 9; c++) {
-      newBoard[r][c] = map[newBoard[r][c] - 1];
-    }
-  }
-  return newBoard;
-}
-
-// ----------------------------------------------------
-// CONTENT POOLS (40 Weeks Absolutely Unique - Zero Repeats)
+// Rotating authored content pools; each advances once per puzzle week.
 // ----------------------------------------------------
 const WORDLE_WORDS = [
   "MASCA",
@@ -1221,7 +1192,7 @@ const CONNECTIONS_SETS = [
   [
     {
       "difficulty": 1,
-      "category": "Culori primare",
+      "category": "Culori de bază",
       "items": [
         "ROȘU",
         "GALBEN",
@@ -1263,12 +1234,12 @@ const CONNECTIONS_SETS = [
   [
     {
       "difficulty": 1,
-      "category": "Zodii de apă",
+      "category": "Semne zodiacale",
       "items": [
         "RAC",
         "SCORPION",
         "PEȘTI",
-        "VĂRSĂTOR (CAPCANĂ)"
+        "VĂRSĂTOR"
       ]
     },
     {
@@ -1507,8 +1478,8 @@ const CONNECTIONS_SETS = [
       "items": [
         "PLINĂ",
         "NOUĂ",
-        "SEMI",
-        "PĂTRAR"
+        "ÎN CREȘTERE",
+        "ÎN DESCREȘTERE"
       ]
     }
   ],
@@ -1562,7 +1533,7 @@ const CONNECTIONS_SETS = [
         "CLUJ",
         "BRAȘOV",
         "SIBIU",
-        "MUREȘ"
+        "ALBA"
       ]
     },
     {
@@ -1577,7 +1548,7 @@ const CONNECTIONS_SETS = [
     },
     {
       "difficulty": 3,
-      "category": "Mari inventatori",
+      "category": "Savanți și inventatori",
       "items": [
         "EDISON",
         "TESLA",
@@ -1693,7 +1664,7 @@ const CONNECTIONS_SETS = [
     },
     {
       "difficulty": 2,
-      "category": "Boli comune",
+      "category": "Probleme de sănătate",
       "items": [
         "RĂCEALĂ",
         "GRIPĂ",
@@ -1740,7 +1711,7 @@ const CONNECTIONS_SETS = [
         "TRICOU",
         "PANTALONI",
         "GEACĂ",
-        "PANTIOFI"
+        "PANTOFI"
       ]
     },
     {
@@ -2229,7 +2200,7 @@ const CONNECTIONS_SETS = [
   [
     {
       "difficulty": 1,
-      "category": "Țări scandinave",
+      "category": "Țări nordice",
       "items": [
         "SUEDIA",
         "NORVEGIA",
@@ -2318,7 +2289,7 @@ const CONNECTIONS_SETS = [
         "VILĂ",
         "BLOC",
         "CABANĂ",
-        "BORDEL"
+        "CĂSUȚĂ"
       ]
     },
     {
@@ -2758,7 +2729,7 @@ const CONNECTIONS_SETS = [
         "CUMPĂRĂ",
         "VINDE",
         "PĂSTREAZĂ",
-        "DIVIDENT"
+        "DIVIDEND"
       ]
     },
     {
@@ -2821,7 +2792,7 @@ const CONNECTIONS_SETS = [
       "items": [
         "PULBĂREASĂ",
         "ÎNGHEȚATĂ",
-        "TOPOARE",
+        "TOPITĂ",
         "UMEDĂ"
       ]
     },
@@ -2900,18 +2871,22 @@ const CONNECTIONS_SETS = [
   ]
 ];
 
-export function getWeeklyGameData(weekIndex: number): WeeklyGameData {
+export function getWeeklyGameData(weekIndex: number, language: "ro" | "en" = "ro"): WeeklyGameData {
+  if (!Number.isSafeInteger(weekIndex) || weekIndex < 0 || weekIndex > 10000) throw new RangeError("Invalid puzzle week");
   const edition = getEditionForWeek(weekIndex);
   
   return {
     weekIndex,
     hasEvent: edition !== null,
     secretClue: edition ? edition.secretClue : null,
-    wordleWord: WORDLE_WORDS[weekIndex % WORDLE_WORDS.length],
+    wordleWord: language === "en" ? ENGLISH_WORDS[weekIndex % ENGLISH_WORDS.length] : WORDLE_WORDS[weekIndex % WORDLE_WORDS.length],
     globleTarget: GLOBLE_TARGETS[weekIndex % GLOBLE_TARGETS.length],
-    timelineEvents: TIMELINE_SETS[weekIndex % TIMELINE_SETS.length],
-    connectionsGroups: CONNECTIONS_SETS[weekIndex % CONNECTIONS_SETS.length],
-    sudokuBoard: getSudokuVariation(weekIndex),
+    timelineEvents: language === "en" ? englishGames[weekIndex % englishGames.length].timelineEvents : TIMELINE_SETS[weekIndex % TIMELINE_SETS.length],
+    connectionsGroups: language === "en" ? englishGames[weekIndex % englishGames.length].connectionsGroups : CONNECTIONS_SETS[weekIndex % CONNECTIONS_SETS.length],
+    targetPuzzle: (() => {
+      const puzzle = getTargetPuzzle(weekIndex);
+      return language === "ro" ? puzzle : { ...puzzle, hint: puzzle.hint.replace("Încearcă să începi cu", "Start with").replace("Apoi folosește și", "Then use") };
+    })(),
   };
 }
 

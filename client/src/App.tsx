@@ -1,3 +1,5 @@
+import { useLanguage } from "@/lib/i18n";
+import LanguageToggle from "@/components/LanguageToggle";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -21,10 +23,12 @@ function Router() {
 }
 
 function App() {
+  useLanguage();
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
+          <LanguageToggle />
           <Toaster />
           <Router />
         </TooltipProvider>
