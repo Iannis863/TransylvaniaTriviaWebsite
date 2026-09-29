@@ -3,7 +3,7 @@ import { promisify } from "node:util";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import type { Express, Request, RequestHandler } from "express";
-import { pool } from "./db.js";
+import { pool, databaseSessionSecret } from "./db.js";
 import { storage } from "./storage.js";
 import type { User } from "../shared/schema.js";
 
@@ -74,9 +74,10 @@ export function rateLimit(limit: number, windowMs = 15 * 60 * 1000): RequestHand
 }
 
 export function setupSecurity(app: Express) {
-  const production = process.env.NODE_ENV === "production";
-  const secret = process.env.SESSION_SECRET;
-  if (production && (!secret || secret.length < 32)) throw new Error("SESSION_SECRET must contain at least 32 characters in production");
+  const production = process.env.NODE_ENV === "production" || !!process.env.VERCEL;
+  const configuredSecret = process.env.SESSION_SECRET;
+  const secret = configuredSecret && configuredSecret.length >= 32 ? configuredSecret : databaseSessionSecret;
+  if (production && !secret) throw new Error("Persistent session configuration is not initialized");
   if (production && !pool) throw new Error("DATABASE_URL is required in production");
   app.disable("x-powered-by");
   if (process.env.VERCEL) app.set("trust proxy", 1);

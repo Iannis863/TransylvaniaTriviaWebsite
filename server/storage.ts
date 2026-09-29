@@ -9,7 +9,7 @@ import {
   users, teams, registrations, weeklyPuzzleProgress, themeSuggestions, passwordResetCodes, adminCredentials
 } from "../shared/schema.js";
 import { getCurrentOrNextEdition } from "../shared/schedule.js";
-import { db } from "./db.js";
+import { db, pool } from "./db.js";
 import { randomUUID } from "crypto";
 import { eq, and, gt, sql } from "drizzle-orm";
 import { ADMIN_CREDENTIAL_ID, INITIAL_ADMIN_PASSWORD_HASH } from "./admin-credential.js";
@@ -906,4 +906,4 @@ export class DatabaseStorage implements IStorage {
 }
 
 // Fallback to MemStorage if DATABASE_URL is not set or during testing
-export const storage: IStorage = process.env.DATABASE_URL ? new DatabaseStorage() : new MemStorage();
+export const storage: IStorage = pool ? new DatabaseStorage() : new MemStorage();

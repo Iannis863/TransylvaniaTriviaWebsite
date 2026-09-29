@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast({ title: t("Eroare autentificare"), description: data.message || t("Email sau parolă greșită"), variant: "destructive" });
+        toast({ title: t("Eroare autentificare"), description: data.message ? t(data.message) : t("Email sau parolă greșită"), variant: "destructive" });
         return false;
       }
       setUser(data.user);
@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast({ title: t("Eroare înregistrare"), description: data.message, variant: "destructive" });
+        toast({ title: t("Eroare înregistrare"), description: data.message ? t(data.message) : t("Nu s-a putut realiza conexiunea"), variant: "destructive" });
         return false;
       }
       setUser(data);

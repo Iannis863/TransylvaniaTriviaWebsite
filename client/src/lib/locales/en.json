@@ -869,5 +869,9 @@
   "Numele țării": "Country name",
   "Navigare principală": "Main navigation",
   "Deschide meniul": "Open menu",
-  "Închide meniul": "Close menu"
+  "Închide meniul": "Close menu",
+  "Baza de date nu este configurată. Contactează administratorul.": "The database is not configured. Please contact the administrator.",
+  "Conexiunea bazei de date nu este configurată corect. Contactează administratorul.": "The database connection is not configured correctly. Please contact the administrator.",
+  "Conexiunea cu baza de date este temporar indisponibilă. Încearcă din nou în câteva momente.": "The database connection is temporarily unavailable. Please try again in a few moments.",
+  "Serverul nu a putut porni. Încearcă din nou în câteva momente.": "The server could not start. Please try again in a few moments."
 }

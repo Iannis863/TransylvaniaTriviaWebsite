@@ -160,9 +160,10 @@ export default function AdminPanel() {
         headers: { "X-Admin-Password": inputPw },
       });
       if (!response.ok) {
+        const failure = await response.json().catch(() => null);
         setAuthError(response.status === 401 ? "Parolă incorectă. Încearcă din nou."
           : response.status === 429 ? "Prea multe cereri. Încearcă mai târziu."
-          : "Nu s-a putut realiza conexiunea");
+          : failure?.message || "Nu s-a putut realiza conexiunea");
         return;
       }
       if ((await response.json()).ok !== true) throw new Error("Invalid login response");

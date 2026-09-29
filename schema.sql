@@ -170,3 +170,9 @@ CREATE TABLE IF NOT EXISTS app_admin_credentials (
     password_hash TEXT NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Generated server configuration shared by all instances; never sent to browsers.
+CREATE TABLE IF NOT EXISTS app_runtime_settings (
+    key VARCHAR PRIMARY KEY,
+    value TEXT NOT NULL
+);

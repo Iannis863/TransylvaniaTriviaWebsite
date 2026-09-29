@@ -39,6 +39,11 @@ export const adminCredentials = pgTable("app_admin_credentials", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const runtimeSettings = pgTable("app_runtime_settings", {
+  key: varchar("key").primaryKey(),
+  value: text("value").notNull(),
+});
+
 // ==========================================
 // 2. TEAMS
 // ==========================================
