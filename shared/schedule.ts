@@ -151,8 +151,8 @@ export function getCurrentOrNextEdition(now: Date = new Date()): ActiveEditionSt
   // Sort chronologically
   editionsWithDates.sort((a, b) => a.eventDate.getTime() - b.eventDate.getTime());
 
-  // Find the first edition whose endWindow is >= now
-  let chosen = editionsWithDates.find((item) => item.endWindow.getTime() >= now.getTime());
+  // Advance at Wednesday midnight, at the same instant as the weekly puzzle reset.
+  let chosen = editionsWithDates.find((item) => item.endWindow.getTime() > now.getTime());
 
   // If all are in the past (e.g. end of May), wrap around to Season 1 Edition 1 of next cycle
   if (!chosen) {
@@ -170,7 +170,7 @@ export function getCurrentOrNextEdition(now: Date = new Date()): ActiveEditionSt
   const { edition, eventDate } = chosen;
   const diffMs = eventDate.getTime() - now.getTime();
   const isHappeningToday = bucharestDateKey(now) === bucharestDateKey(eventDate);
-  const isHappeningNow = diffMs <= 0 && now.getTime() <= chosen.endWindow.getTime();
+  const isHappeningNow = diffMs <= 0 && now.getTime() < chosen.endWindow.getTime();
 
   const totalSecondsRemaining = Math.max(0, Math.floor(diffMs / 1000));
   const daysRemaining = Math.floor(totalSecondsRemaining / (3600 * 24));

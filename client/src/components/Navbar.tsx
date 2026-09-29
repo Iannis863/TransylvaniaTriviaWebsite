@@ -1,7 +1,7 @@
-import { t } from "@/lib/i18n";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { t, useLanguage } from "@/lib/i18n";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { useLocation } from "wouter";
-import { motion, useScroll, useMotionValue, useSpring, useMotionValueEvent } from "framer-motion";
+import { motion, useScroll, useSpring, useMotionValueEvent, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,10 +41,13 @@ export default function Navbar({
   editionLabel = t("Marți 20:00"),
 }: NavbarProps) {
   const { user, team, logout } = useAuth();
+  const language = useLanguage();
+  const shouldReduceMotion = useReducedMotion();
   const [, setLocation]                     = useLocation();
   const [isAuthOpen, setIsAuthOpen]         = useState(false);
   const [copied, setCopied]                 = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [pillReady, setPillReady] = useState(false);
 
   // ─── Refs ──────────────────────────────────────────────────────────────────
   const navRef       = useRef<HTMLElement>(null);
@@ -56,32 +59,30 @@ export default function Navbar({
   const cachedTops   = useRef<number[]>([]);
 
   // ─── Motion values ─────────────────────────────────────────────────────────
-  const rawLeft  = useMotionValue(0);
-  const rawWidth = useMotionValue(80);
-  // Spring-smoothed values — these are what the visible pill follows
-  const pillLeft  = useSpring(rawLeft,  { stiffness: 320, damping: 38 });
-  const pillWidth = useSpring(rawWidth, { stiffness: 320, damping: 38 });
+  const pillLeft  = useSpring(0, { stiffness: 320, damping: 38 });
+  const pillWidth = useSpring(0, { stiffness: 320, damping: 38 });
 
   const { scrollY } = useScroll();
 
   // ─── Cache button bounding rects ───────────────────────────────────────────
   const cacheButtonRects = useCallback(() => {
     const navEl = navRef.current;
-    if (!navEl) return;
+    if (!navEl || navEl.getClientRects().length === 0) return false;
     const navRect = navEl.getBoundingClientRect();
 
     cachedRects.current = buttonRefs.current.map((btn) => {
-      if (!btn) return { left: 0, width: 80 };
+      if (!btn) return { left: 0, width: 0 };
       const r = btn.getBoundingClientRect();
-      return { left: r.left - navRect.left, width: r.width };
+      return { left: r.left - navRect.left - navEl.clientLeft, width: r.width };
     });
+    return cachedRects.current.every(({ width }) => width > 0);
   }, []);
 
   // ─── Cache section top offsets ─────────────────────────────────────────────
   const cacheSectionTops = useCallback(() => {
     cachedTops.current = NAV_LINKS.map(({ id }) => {
       const el = document.getElementById(id);
-      return el ? el.offsetTop : 0;
+      return el ? el.getBoundingClientRect().top + window.scrollY : 0;
     });
   }, []);
 
@@ -94,7 +95,8 @@ export default function Navbar({
   // ─── Per-character clip: update each overlay's clip-path every spring tick ─
   // For each button, the dark overlay is clipped to only the region where the
   // spring pill overlaps that button — creating a per-pixel color reveal.
-  const applyClipPaths = useCallback((pLeft: number) => {
+  const applyClipPaths = useCallback(() => {
+    const pLeft = pillLeft.get();
     const pWidth = pillWidth.get();
     const pRight = pLeft + pWidth;
 
@@ -121,12 +123,13 @@ export default function Navbar({
         overlay.style.clipPath = `inset(0 ${rightClip}px 0 ${leftClip}px)`;
       }
     });
-  }, [pillWidth]);
+  }, [pillLeft, pillWidth]);
 
   // Drive clip-paths from the spring value on every animation frame
   useMotionValueEvent(pillLeft, "change", applyClipPaths);
+  useMotionValueEvent(pillWidth, "change", applyClipPaths);
 
-  const updatePillPosition = useCallback((y: number) => {
+  const updatePillPosition = useCallback((y: number, snap = false) => {
     const tops  = cachedTops.current;
     const rects = cachedRects.current;
     if (!tops.length || !rects.length) return;
@@ -138,7 +141,7 @@ export default function Navbar({
     for (let i = 0; i < tops.length - 1; i++) {
       const currentTop = tops[i]     - OFFSET;
       const nextTop    = tops[i + 1] - OFFSET;
-      const transitionStart = Math.max(currentTop, nextTop - vh);
+      const transitionStart = Math.max(0, currentTop, nextTop - vh);
       const transitionEnd   = nextTop;
 
       if (y <= transitionStart) {
@@ -152,7 +155,7 @@ export default function Navbar({
     }
 
     const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-    if (y >= maxScroll - 5) {
+    if (maxScroll > 0 && y >= maxScroll - 5) {
       navIndex = tops.length - 1;
     }
 
@@ -163,43 +166,57 @@ export default function Navbar({
     const lo = rects[lower] ?? rects[0];
     const hi = rects[upper] ?? rects[rects.length - 1];
 
-    rawLeft.set(lo.left  + (hi.left  - lo.left)  * t);
-    rawWidth.set(lo.width + (hi.width - lo.width) * t);
-  }, [rawLeft, rawWidth]);
+    const left = lo.left + (hi.left - lo.left) * t;
+    const width = lo.width + (hi.width - lo.width) * t;
+    if (snap || shouldReduceMotion) {
+      // Jump the visible springs themselves: changing only their targets still
+      // animates from the initial width and briefly splits the first label.
+      pillLeft.jump(left);
+      pillWidth.jump(width);
+      applyClipPaths();
+    } else {
+      pillLeft.set(left);
+      pillWidth.set(width);
+    }
+  }, [pillLeft, pillWidth, shouldReduceMotion, applyClipPaths]);
 
   // ─── Mount + resize ────────────────────────────────────────────────────────
-  useEffect(() => {
-    const init = () => {
-      cacheButtonRects();
+  useLayoutEffect(() => {
+    let disposed = false;
+    const measure = () => {
+      if (disposed) return;
+      const hasVisibleButtons = cacheButtonRects();
       cacheSectionTops();
-
-      // Snap pill to initial section
-      const idx = NAV_LINKS.findIndex((l) => l.id === activeSection);
-      if (idx >= 0 && cachedRects.current[idx]) {
-        rawLeft.jump(cachedRects.current[idx].left);
-        rawWidth.jump(cachedRects.current[idx].width);
-        applyClipPaths(cachedRects.current[idx].left);
+      if (hasVisibleButtons) {
+        updatePillPosition(window.scrollY, true);
       }
+      setPillReady(hasVisibleButtons);
     };
 
-    const t = setTimeout(init, 120);
-
-    const resizeObserver = new ResizeObserver(() => {
-      cacheButtonRects();
-      cacheSectionTops();
-      updatePillPosition(scrollY.get());
-    });
+    // Measure before the first paint; fonts and translated labels can change
+    // button widths without changing the body's dimensions.
+    measure();
+    const resizeObserver = new ResizeObserver(measure);
     resizeObserver.observe(document.body);
+    if (navRef.current) resizeObserver.observe(navRef.current);
+    buttonRefs.current.forEach((button) => {
+      if (button) resizeObserver.observe(button);
+    });
+    NAV_LINKS.forEach(({ id }) => {
+      const section = document.getElementById(id);
+      if (section) resizeObserver.observe(section);
+    });
 
-    window.addEventListener("resize", cacheButtonRects);
-    window.addEventListener("resize", cacheSectionTops);
+    void document.fonts.ready.then(measure);
+    document.fonts.addEventListener("loadingdone", measure);
+    window.addEventListener("resize", measure);
     return () => {
-      clearTimeout(t);
+      disposed = true;
       resizeObserver.disconnect();
-      window.removeEventListener("resize", cacheButtonRects);
-      window.removeEventListener("resize", cacheSectionTops);
+      document.fonts.removeEventListener("loadingdone", measure);
+      window.removeEventListener("resize", measure);
     };
-  }, [activeSection, cacheButtonRects, cacheSectionTops, applyClipPaths, rawLeft, rawWidth, scrollY, updatePillPosition]);
+  }, [language, cacheButtonRects, cacheSectionTops, updatePillPosition]);
 
   // ─── Drive pill position from scroll ──────────────────────────────────────
   useMotionValueEvent(scrollY, "change", updatePillPosition);
@@ -219,9 +236,10 @@ export default function Navbar({
         <header className="pointer-events-auto w-fit mx-auto mt-3 sm:mt-5 rounded-full p-1.5 sm:p-2 bg-[#0c0317]/85 backdrop-blur-2xl ring-1 ring-amber-400/30 shadow-[0_15px_40px_rgba(0,0,0,0.85)] flex items-center gap-3 transition-all duration-300">
 
           {/* Brand Mark */}
-          <div
+          <button
+            type="button"
             onClick={() => onNavigate("hero")}
-            className="flex items-center gap-2.5 pl-2 sm:pl-3 cursor-pointer group flex-shrink-0"
+            className="flex items-center gap-2.5 pl-2 sm:pl-3 text-left group flex-shrink-0"
           >
             <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden p-0.5 ring-1 ring-amber-400/50 shadow-[0_0_15px_rgba(246,184,40,0.3)] group-hover:scale-105 transition-transform">
               <img src="/logo-main.png" alt="Transilvania Trivia" className="w-full h-full object-cover rounded-full" />
@@ -231,21 +249,23 @@ export default function Navbar({
                 TRANSILVANIA TRIVIA
               </span>
               <span className="text-[10px] text-purple-300/80 font-medium tracking-wide flex items-center gap-1 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-ping" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-ping motion-reduce:animate-none" />
                 {editionLabel}
               </span>
             </div>
-          </div>
+          </button>
 
           {/* ── Desktop Nav with sliding pill + per-pixel clip-path reveal ── */}
           <nav
             ref={navRef}
+            aria-label={t("Navigare principală")}
             className="hidden lg:flex items-center gap-1 bg-purple-950/40 p-1 rounded-full border border-purple-800/40 relative"
           >
             {/* The amber sliding background pill */}
             <motion.div
               className="absolute inset-y-1 rounded-full bg-amber-400 shadow-[0_0_15px_rgba(246,184,40,0.45)] pointer-events-none"
-              style={{ left: pillLeft, width: pillWidth }}
+              aria-hidden="true"
+              style={{ left: pillLeft, width: pillWidth, visibility: pillReady ? "visible" : "hidden" }}
             />
 
             {NAV_LINKS.map((link, i) => {
@@ -255,10 +275,11 @@ export default function Navbar({
                   key={link.id}
                   ref={(el) => { buttonRefs.current[i] = el; }}
                   onClick={() => onNavigate(link.id)}
+                  aria-current={activeSection === link.id ? "location" : undefined}
                   className="relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap"
                 >
                   {/* Base layer — always light/purple (visible in un-highlighted areas) */}
-                  <Icon className="w-3.5 h-3.5 text-amber-400/80" />
+                  <Icon className="w-3.5 h-3.5 shrink-0 text-amber-400/80" />
                   <span className="text-purple-200/80">{t(link.label)}</span>
 
                   {/* Overlay layer — dark color, clipped to where the pill overlaps.
@@ -266,11 +287,11 @@ export default function Navbar({
                   <span
                     ref={(el) => { overlayRefs.current[i] = el; }}
                     aria-hidden="true"
-                    className="absolute inset-0 flex items-center gap-1.5 px-3 text-xs font-bold text-purple-950 pointer-events-none overflow-hidden rounded-full"
+                    className="absolute inset-0 flex items-center gap-1.5 px-3 text-xs font-medium text-purple-950 pointer-events-none overflow-hidden rounded-full"
                     style={{ clipPath: "inset(0 100% 0 0)" }}
                   >
-                    <Icon className="w-3.5 h-3.5 text-purple-950" />
-                    {t(link.label)}
+                    <Icon className="w-3.5 h-3.5 shrink-0 text-purple-950" />
+                    <span>{t(link.label)}</span>
                   </span>
                 </button>
               );
@@ -292,7 +313,8 @@ export default function Navbar({
                     {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-purple-400" />}
                   </button>
                 )}
-                <div
+                <button
+                  type="button"
                   onClick={() => setLocation("/cont")}
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 cursor-pointer hover:bg-amber-500/20 transition-all"
                   title={t("Contul Meu")}
@@ -303,11 +325,12 @@ export default function Navbar({
                   <span className="text-xs font-bold text-amber-300">
                     {user.name.split(" ")[0]}
                   </span>
-                </div>
+                </button>
                 <button
                   onClick={logout}
                   className="w-8 h-8 rounded-full flex items-center justify-center text-purple-400 hover:text-red-400 hover:bg-purple-900/30 transition-colors"
                   title={t("Deconectare")}
+                  aria-label={t("Deconectare")}
                 >
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
@@ -323,7 +346,10 @@ export default function Navbar({
 
             {/* Mobile Menu Toggle (Always visible on mobile) */}
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              aria-label={t(mobileMenuOpen ? "Închide meniul" : "Deschide meniul")}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation"
               className="lg:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-purple-900/60 border border-purple-700/50 text-purple-200 flex items-center justify-center shrink-0 hover:bg-purple-800/60 transition-colors"
             >
               {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -334,18 +360,19 @@ export default function Navbar({
 
         {/* Mobile Flyout Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden pointer-events-auto max-w-sm mx-auto mt-2 rounded-3xl border border-purple-700/50 bg-[#0f041e]/95 backdrop-blur-2xl p-4 shadow-2xl animate-in slide-in-from-top-3 duration-200">
+          <div id="mobile-navigation" className="lg:hidden pointer-events-auto max-w-sm mx-auto mt-2 rounded-3xl border border-purple-700/50 bg-[#0f041e]/95 backdrop-blur-2xl p-4 shadow-2xl animate-in slide-in-from-top-3 duration-200 motion-reduce:animate-none">
 
             {/* Mobile Auth / Profile Section */}
             {user ? (
               <div className="flex flex-col gap-3 p-3 bg-purple-950/40 border border-purple-800/50 rounded-2xl mb-4">
                 <div className="flex items-center justify-between gap-3">
-                  <div
+                  <button
+                    type="button"
                     onClick={() => {
                       setLocation("/cont");
                       setMobileMenuOpen(false);
                     }}
-                    className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                    className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
                   >
                     <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-purple-600 flex items-center justify-center text-lg shadow-inner ring-1 ring-amber-400/30">
                       {user.avatar || (user.role === "TEAM_LEADER" ? "👑" : "👤")}
@@ -354,13 +381,14 @@ export default function Navbar({
                       <div className="text-sm font-bold text-white leading-tight">{user.name}</div>
                       <div className="text-[10px] text-amber-300 uppercase tracking-widest font-semibold mt-0.5">{user.role === "TEAM_LEADER" ? t("Căpitan") : t("Membru")}</div>
                     </div>
-                  </div>
+                  </button>
                   <button
                     onClick={() => {
                       logout();
                       setMobileMenuOpen(false);
                     }}
                     className="p-2.5 rounded-xl text-purple-400 hover:text-red-400 bg-purple-900/40 border border-purple-700/40 transition-colors shadow-sm"
+                    aria-label={t("Deconectare")}
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
@@ -388,13 +416,14 @@ export default function Navbar({
             )}
 
             {/* Navigation Links */}
-            <div className="space-y-1">
+            <nav className="space-y-1" aria-label={t("Navigare principală")}>
               {NAV_LINKS.map((link) => {
                 const Icon     = link.icon;
                 const isActive = activeSection === link.id;
                 return (
                   <button
                     key={link.id}
+                    aria-current={isActive ? "location" : undefined}
                     onClick={() => {
                       onNavigate(link.id);
                       setMobileMenuOpen(false);
@@ -410,7 +439,7 @@ export default function Navbar({
                   </button>
                 );
               })}
-            </div>
+            </nav>
           </div>
         )}
       </div>

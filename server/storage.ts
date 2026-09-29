@@ -6,14 +6,17 @@ import {
   type WeeklyPuzzleProgress, type InsertPuzzleProgress,
   type ThemeSuggestion, type InsertThemeSuggestion,
   type PasswordResetCode,
-  users, teams, registrations, weeklyPuzzleProgress, themeSuggestions, passwordResetCodes
+  users, teams, registrations, weeklyPuzzleProgress, themeSuggestions, passwordResetCodes, adminCredentials
 } from "../shared/schema.js";
 import { getCurrentOrNextEdition } from "../shared/schedule.js";
 import { db } from "./db.js";
 import { randomUUID } from "crypto";
 import { eq, and, gt, sql } from "drizzle-orm";
+import { ADMIN_CREDENTIAL_ID, INITIAL_ADMIN_PASSWORD_HASH } from "./admin-credential.js";
 
 export interface IStorage {
+  getAdminPasswordHash(): Promise<string | undefined>;
+  setAdminPasswordHash(passwordHash: string): Promise<void>;
   withTeamMutation<T>(operation: (source: IStorage) => Promise<T>): Promise<T>;
   // User Operations
   getUser(id: string): Promise<User | undefined>;
@@ -39,6 +42,7 @@ export interface IStorage {
   approveRegistration(id: string): Promise<Registration | undefined>;
   markWaitlistQueued(id: string): Promise<void>;
   getEditionClue(editionId: string): Promise<string | undefined>;
+  getEditionClues(): Promise<Map<string, string>>;
   setEditionClue(editionId: string, clue: string): Promise<void>;
   // Registration Operations
   getRegistrations(editionId?: string): Promise<Registration[]>;
@@ -69,6 +73,7 @@ export interface IStorage {
   updateTeam(id: string, data: Partial<Pick<Team, "name" | "tagline" | "score" | "leaderId">>): Promise<Team | undefined>;
   deleteTeam(id: string): Promise<boolean>;
   getEditionCapacityOverride(editionId: string): Promise<number | undefined>;
+  getEditionCapacityOverrides(): Promise<Map<string, number>>;
   setEditionCapacityOverride(editionId: string, maxTeams: number): Promise<void>;
 
   // ── Password Reset Codes ──────────────────────────────────────────────────
@@ -80,6 +85,9 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  private adminPasswordHash = INITIAL_ADMIN_PASSWORD_HASH;
+  async getAdminPasswordHash() { return this.adminPasswordHash; }
+  async setAdminPasswordHash(passwordHash: string) { this.adminPasswordHash = passwordHash; }
   private users: Map<string, User> = new Map();
   private teams: Map<string, Team> = new Map();
   private registrations: Map<string, Registration> = new Map();
@@ -398,6 +406,7 @@ export class MemStorage implements IStorage {
     if (reg) reg.waitlistQueued = true;
   }
   async getEditionClue(id: string) { return this.editionClues.get(id); }
+  async getEditionClues() { return new Map(this.editionClues); }
   async setEditionClue(id: string, clue: string) { this.editionClues.set(id, clue); }
   async createRegistrationWithinCapacity(registration: InsertRegistration, capacity: number): Promise<Registration> {
     return this.withEditionMutation(registration.editionId, source => bookTeam(source, registration, capacity));
@@ -543,6 +552,8 @@ export class MemStorage implements IStorage {
     return this.editionCapacityOverrides.get(editionId);
   }
 
+  async getEditionCapacityOverrides() { return new Map(this.editionCapacityOverrides); }
+
   async setEditionCapacityOverride(editionId: string, maxTeams: number): Promise<void> {
     this.editionCapacityOverrides.set(editionId, maxTeams);
   }
@@ -597,6 +608,15 @@ export class MemStorage implements IStorage {
 
 export class DatabaseStorage implements IStorage {
   constructor(private database: any = db) {}
+  async getAdminPasswordHash(): Promise<string | undefined> {
+    const [credential] = await this.database.select({ passwordHash: adminCredentials.passwordHash })
+      .from(adminCredentials).where(eq(adminCredentials.id, ADMIN_CREDENTIAL_ID));
+    return credential?.passwordHash;
+  }
+  async setAdminPasswordHash(passwordHash: string): Promise<void> {
+    await this.database.insert(adminCredentials).values({ id: ADMIN_CREDENTIAL_ID, passwordHash })
+      .onConflictDoUpdate({ target: adminCredentials.id, set: { passwordHash, updatedAt: new Date() } });
+  }
   async withTeamMutation<T>(operation: (source: IStorage) => Promise<T>): Promise<T> {
     return this.database.transaction(async (tx: any) => {
       // Serializes membership/leadership changes across server instances.
@@ -711,6 +731,10 @@ export class DatabaseStorage implements IStorage {
     const result = await this.database.execute(sql`SELECT clue FROM app_edition_clues WHERE edition_id = ${id}`);
     return result.rows[0]?.clue;
   }
+  async getEditionClues(): Promise<Map<string, string>> {
+    const result = await this.database.execute(sql`SELECT edition_id, clue FROM app_edition_clues`);
+    return new Map(result.rows.map((row: { edition_id: string; clue: string }) => [row.edition_id, row.clue]));
+  }
   async setEditionClue(id: string, clue: string) {
     await this.database.execute(sql`INSERT INTO app_edition_clues (edition_id, clue) VALUES (${id}, ${clue}) ON CONFLICT (edition_id) DO UPDATE SET clue = EXCLUDED.clue`);
   }
@@ -823,6 +847,11 @@ export class DatabaseStorage implements IStorage {
   async getEditionCapacityOverride(editionId: string): Promise<number | undefined> {
     const result = await this.database.execute(sql`SELECT max_teams FROM app_edition_capacity WHERE edition_id = ${editionId}`);
     return result.rows[0]?.max_teams;
+  }
+
+  async getEditionCapacityOverrides(): Promise<Map<string, number>> {
+    const result = await this.database.execute(sql`SELECT edition_id, max_teams FROM app_edition_capacity`);
+    return new Map(result.rows.map((row: { edition_id: string; max_teams: number }) => [row.edition_id, row.max_teams]));
   }
 
   async setEditionCapacityOverride(editionId: string, maxTeams: number): Promise<void> {

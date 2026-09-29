@@ -1,0 +1,62 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import express from "express";
+import { createServer } from "node:http";
+import { getFullSchedule, getEditionDateTime } from "../shared/schedule.js";
+import { storage } from "./storage.js";
+import { hashPassword, setupSecurity } from "./security.js";
+import { registerRoutes } from "./routes.js";
+
+test("admin editions batch their reads and preserve registration counts, overrides, clues, and schedule order", async t => {
+  t.mock.timers.enable({ apis: ["Date"], now: new Date("2026-09-29T12:00:00Z") });
+  const password = "edition-admin-test-password";
+  await storage.setAdminPasswordHash(await hashPassword(password));
+  const schedule = getFullSchedule();
+  const addRegistration = (editionId: string, teamName: string, status: "CONFIRMED" | "WAITLISTED") => storage.createRegistration({
+    editionId, teamName, status, captainName: "Captain", email: "captain@example.com", memberCount: 4,
+  });
+  const first = await addRegistration(schedule[0].id, "Confirmed Team", "CONFIRMED");
+  const waiting = await addRegistration(schedule[0].id, "Waiting Team", "WAITLISTED");
+  const next = await addRegistration(schedule[1].id, "Next Edition Team", "CONFIRMED");
+  await addRegistration("2025-s1-e1", "Previous Season Team", "CONFIRMED");
+  await storage.setEditionCapacityOverride(schedule[0].id, 20);
+  await storage.setEditionClue(schedule[0].id, "Indiciu personalizat");
+  await storage.setEditionClue(`${schedule[0].id}:en`, "Custom clue");
+
+  const registrationsRead = t.mock.method(storage, "getRegistrations");
+  const capacitiesRead = t.mock.method(storage, "getEditionCapacityOverrides");
+  const cluesRead = t.mock.method(storage, "getEditionClues");
+  const individualCapacityRead = t.mock.method(storage, "getEditionCapacityOverride");
+  const individualClueRead = t.mock.method(storage, "getEditionClue");
+  const app = express();
+  setupSecurity(app);
+  app.use(express.json());
+  const server = createServer(app);
+  await registerRoutes(server, app);
+  await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => { server.closeAllConnections(); server.close(); });
+  const base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+  const response = await fetch(`${base}/api/admin/editions`, { headers: { "x-admin-password": password } });
+  assert.equal(response.status, 200);
+  const editions = await response.json();
+  assert.deepEqual(editions.map((edition: { id: string }) => edition.id), schedule.map(edition => edition.id));
+  assert.equal(editions[0].registeredCount, 1);
+  assert.equal(editions[0].waitlistCount, 1);
+  assert.equal(editions[0].maxTeams, 20);
+  assert.equal(editions[0].secretClue, "Indiciu personalizat");
+  assert.equal(editions[0].secretClueEn, "Custom clue");
+  assert.equal(editions[0].eventDate, getEditionDateTime(schedule[0]).toISOString());
+  assert.deepEqual(editions[0].registrations.map((registration: { id: string }) => registration.id), [first.id, waiting.id]);
+  assert.deepEqual(editions[1].registrations.map((registration: { id: string }) => registration.id), [next.id]);
+  assert.equal(editions[1].secretClue, schedule[1].secretClue);
+  assert.equal(editions[1].secretClueEn, "");
+  assert.equal(editions[2].registeredCount, 0);
+  assert.equal(editions[2].waitlistCount, 0);
+  assert.equal(editions[2].maxTeams, schedule[2].maxTeams);
+  assert.deepEqual(editions[2].registrations, []);
+  assert.equal(registrationsRead.mock.callCount(), 1);
+  assert.equal(capacitiesRead.mock.callCount(), 1);
+  assert.equal(cluesRead.mock.callCount(), 1);
+  assert.equal(individualCapacityRead.mock.callCount(), 0);
+  assert.equal(individualClueRead.mock.callCount(), 0);
+});

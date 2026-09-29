@@ -6,7 +6,7 @@ import { MemStorage, storage } from "./storage.js";
 import { NotificationService, notifications } from "./notifications.js";
 import { buildEventEmail, buildPasswordResetEmail, type EmailPayload } from "./email.js";
 import { reminderIsDue, runNotifications } from "./scheduler.js";
-import { setupSecurity } from "./security.js";
+import { setupSecurity, hashPassword } from "./security.js";
 import { registerRoutes } from "./routes.js";
 
 const eventDate = new Date("2026-10-06T17:00:00Z");
@@ -85,8 +85,9 @@ test("unsent waitlist mail is cancelled after acceptance; deleted registrations 
 
 test("API keeps waitlist private, protects approvals, previews real templates, and persists edited clues", async t => {
   t.mock.timers.enable({ apis: ["Date"], now: new Date("2026-09-28T10:00:00Z") });
-  process.env.ADMIN_PASSWORD = "test-admin-password";
-  t.after(() => { delete process.env.ADMIN_PASSWORD; });
+  const previousPasswordHash = await storage.getAdminPasswordHash();
+  await storage.setAdminPasswordHash(await hashPassword("test-admin-password"));
+  t.after(async () => { await storage.setAdminPasswordHash(previousPasswordHash!); });
   const app = express(); setupSecurity(app); app.use(express.json());
   const server = createServer(app); await registerRoutes(server, app);
   await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
@@ -96,7 +97,7 @@ test("API keeps waitlist private, protects approvals, previews real templates, a
     const response = await fetch(base + path, { method, headers: { "Content-Type": "application/json", ...headers }, body: body === undefined ? undefined : JSON.stringify(body) });
     return { status: response.status, body: await response.json(), cookie: response.headers.get("set-cookie")?.split(";")[0] ?? "" };
   };
-  const admin = { "x-admin-password": process.env.ADMIN_PASSWORD! };
+  const admin = { "x-admin-password": "test-admin-password" };
   for (let i = 0; i < 15; i++) await storage.createRegistrationWithinCapacity(booking(`Confirmed ${i}`), 10);
   const guest = await request("/api/registrations", "POST", { ...booking("Guest waiting"), status: "CONFIRMED", confirmationQueued: true });
   assert.equal(guest.status, 201); assert.equal(guest.body.status, "WAITLISTED"); assert.equal(guest.body.emailStatus, "pending");

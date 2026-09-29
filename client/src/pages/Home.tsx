@@ -89,7 +89,7 @@ export default function Home() {
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [scheduleState.currentEdition.id]);
 
   const handleNavigate = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -132,6 +132,7 @@ export default function Home() {
 
         {/* 2. Live Registration Section */}
         <LiveRegistrationSection
+          key={scheduleState.currentEdition.id}
           editionId={scheduleState.currentEdition.id}
           editionLabel={editionLabel}
           isFull={isWaitlistOnly}

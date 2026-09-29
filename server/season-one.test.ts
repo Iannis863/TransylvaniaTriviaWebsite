@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import express from "express";
 import { createServer } from "node:http";
-import { getFullSchedule, getEditionDateTime } from "../shared/schedule.js";
+import { getFullSchedule, getEditionDateTime, getCurrentOrNextEdition } from "../shared/schedule.js";
 import { bucharestDateKey } from "../shared/event-time.js";
 import { getPuzzleWeekId, getRealCurrentWeekIndex, getWeekDateRange } from "../shared/puzzle-week.js";
 import { getEditionForWeek } from "../client/src/lib/weeklyEngine.js";
@@ -30,6 +30,21 @@ const editions = [
   ["2027-01-19", "2027-01-13T00:00:00+02:00", "Lumi din Jocurile Video."],
   ["2027-01-26", "2027-01-20T00:00:00+02:00", "Sporturi explicate prost"],
 ] as const;
+
+test("the active edition advances exactly at Wednesday midnight with the weekly games", () => {
+  const schedule = getFullSchedule(2026, new Date("2026-09-29T12:00:00Z"));
+  for (const [index, edition] of schedule.entries()) {
+    const midnight = new Date(getEditionDateTime(edition).getTime() + 4 * 3600000);
+    const before = new Date(midnight.getTime() - 1);
+    const previous = getCurrentOrNextEdition(before);
+    assert.equal(previous.currentEdition.id, edition.id);
+    assert.equal(previous.isHappeningNow, true);
+    const next = getCurrentOrNextEdition(midnight);
+    assert.equal(next.currentEdition.id, schedule[index + 1]?.id ?? "2027-s1-e1");
+    assert.equal(next.isHappeningNow, false);
+    assert.equal(getRealCurrentWeekIndex(midnight), getRealCurrentWeekIndex(before) + 1);
+  }
+});
 
 test("all 15 Season 1 clues follow the published dates and Wednesday reset, including DST and New Year", () => {
   const schedule = getFullSchedule(2026, new Date("2026-09-29T12:00:00Z")).filter(ed => ed.seasonNumber === 1);

@@ -8,6 +8,7 @@ import VALID_WORDS from "./valid-words.json";
 import ENGLISH_WORDS from "./valid-words-en.json";
 import { getLanguage } from "@/lib/i18n";
 import type { WeeklyGameData } from "../../lib/weeklyGames";
+import { scoreWordleGuess } from "@shared/wordle";
 
 interface WordleGameProps {
   weeklyData: WeeklyGameData;
@@ -26,6 +27,10 @@ export default function WordleGame({ weeklyData, onSolve, isAlreadySolved = fals
   const [gameWon, setGameWon] = useState(isAlreadySolved);
   const [invalidShake, setInvalidShake] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const shakeTimer = useRef<ReturnType<typeof setTimeout>>();
+  const scoredGuesses = useMemo(() => guesses.map(guess => scoreWordleGuess(TARGET_WORD, guess)), [TARGET_WORD, guesses]);
+
+  useEffect(() => () => clearTimeout(shakeTimer.current), []);
 
   const keyboardRows = [
     ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
@@ -64,11 +69,10 @@ export default function WordleGame({ weeklyData, onSolve, isAlreadySolved = fals
     setGuesses(newGuesses);
 
     if (currentGuess === TARGET_WORD) {
-      setTimeout(() => {
-        setGameWon(true);
-        toast({ title: t("🎉 Felicitări!"), description: t("Ai ghicit cuvântul din dicționar!") });
-        onSolve({ solution: TARGET_WORD, attempts: newGuesses.length });
-      }, WORD_LENGTH * 300 + 500);
+      // Save before any tab switch or reset; a delayed callback could restore cleared progress.
+      setGameWon(true);
+      toast({ title: t("🎉 Felicitări!"), description: t("Ai ghicit cuvântul din dicționar!") });
+      onSolve({ solution: TARGET_WORD, attempts: newGuesses.length });
     }
 
     setCurrentGuess("");
@@ -76,7 +80,8 @@ export default function WordleGame({ weeklyData, onSolve, isAlreadySolved = fals
 
   const triggerInvalidShake = (title: string, description: string) => {
     setInvalidShake(true);
-    setTimeout(() => setInvalidShake(false), 500);
+    clearTimeout(shakeTimer.current);
+    shakeTimer.current = setTimeout(() => setInvalidShake(false), 500);
     toast({ title, description, variant: "destructive" });
   };
 
@@ -89,45 +94,35 @@ export default function WordleGame({ weeklyData, onSolve, isAlreadySolved = fals
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Prevent intercepting if user is typing in an input or textarea
-      if (
-        document.activeElement?.tagName === "INPUT" ||
-        document.activeElement?.tagName === "TEXTAREA"
-      ) {
-        return;
-      }
+      // Leave shortcuts, text entry, dialogs and other controls to their owners.
+      if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.isComposing || gameWon) return;
+      const target = e.target instanceof HTMLElement ? e.target : null;
+      if (target?.isContentEditable || target?.closest("input, textarea, select, [role='dialog'], [role='alertdialog']")) return;
+      if (target?.closest("button, a, [role='button'], [role='tab']") && !target.closest("[data-wordle-keyboard]")) return;
 
-      if (e.key === "Enter") handleCharInput("ENTER");
-      else if (e.key === "Backspace") handleCharInput("⌫");
-      else if (/^[a-zA-Z]$/.test(e.key)) handleCharInput(e.key.toUpperCase());
+      let char: string;
+      if (e.key === "Enter") char = "ENTER";
+      else if (e.key === "Backspace") char = "⌫";
+      else if (/^[a-zA-Z]$/.test(e.key)) char = e.key.toUpperCase();
+      else return;
+
+      // Prevent Enter from also clicking the focused on-screen key.
+      e.preventDefault();
+      if (!e.repeat || char === "⌫") {
+        handleCharInput(char);
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentGuess, gameWon, guesses]);
 
-  const getLetterStatus = (letter: string, index: number, guessWord: string) => {
-    if (!letter) return "empty";
-    if (TARGET_WORD[index] === letter) return "correct";
-
-    const letterCountInTarget = TARGET_WORD.split("").filter((l) => l === letter).length;
-    let priorOccurrencesInGuess = 0;
-    for (let i = 0; i <= index; i++) {
-      if (guessWord[i] === letter) priorOccurrencesInGuess++;
-    }
-    const correctOccurrences = guessWord.split("").filter((l, i) => l === letter && TARGET_WORD[i] === letter).length;
-
-    if (TARGET_WORD.includes(letter) && priorOccurrencesInGuess <= letterCountInTarget - correctOccurrences) {
-      return "present";
-    }
-    return "absent";
-  };
-
   const getKeyStatus = (key: string) => {
     let status = "unused";
-    for (const guess of guesses) {
+    for (let rowIndex = 0; rowIndex < guesses.length; rowIndex++) {
+      const guess = guesses[rowIndex];
       for (let i = 0; i < guess.length; i++) {
         if (guess[i] === key) {
-          const s = getLetterStatus(key, i, guess);
+          const s = scoredGuesses[rowIndex][i];
           if (s === "correct") return "correct";
           if (s === "present" && status !== "correct") status = "present";
           if (s === "absent" && status === "unused") status = "absent";
@@ -182,7 +177,7 @@ export default function WordleGame({ weeklyData, onSolve, isAlreadySolved = fals
               >
                 {Array.from({ length: WORD_LENGTH }).map((_, colIndex) => {
                   const letter = guess[colIndex] || "";
-                  const status = isSubmitted ? getLetterStatus(letter, colIndex, guess) : (letter ? "filled" : "empty");
+                  const status = isSubmitted ? scoredGuesses[rowIndex][colIndex] : (letter ? "filled" : "empty");
                   const colors = getStatusColors(status);
 
                   return (
@@ -222,7 +217,7 @@ export default function WordleGame({ weeklyData, onSolve, isAlreadySolved = fals
       )}
 
       {/* Virtual Keyboard */}
-      <div className="w-full space-y-2 select-none px-1">
+      <div data-wordle-keyboard className="w-full space-y-2 select-none px-1">
         {keyboardRows.map((row, rIdx) => (
           <div key={rIdx} className="flex justify-center gap-1.5">
             {row.map((key) => {
@@ -236,6 +231,7 @@ export default function WordleGame({ weeklyData, onSolve, isAlreadySolved = fals
               return (
                 <button
                   key={key}
+                  type="button"
                   onClick={() => handleCharInput(key)}
                   className={`h-14 rounded font-bold text-sm flex items-center justify-center border transition-all ${
                     isSpecial ? "px-3 bg-purple-800/60 border-purple-600/40 text-purple-100" : `w-10 ${keyBg}`

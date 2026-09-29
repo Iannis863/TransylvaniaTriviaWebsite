@@ -90,6 +90,7 @@ export default function AdminPanel() {
   const [password, setPassword] = useState("");
   const [inputPw, setInputPw] = useState("");
   const [authError, setAuthError] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
   const [activeTab, setActiveTab] = useState<"editions" | "teams" | "themes" | "users" | "simulator" | "emails">("editions");
 
@@ -150,17 +151,27 @@ export default function AdminPanel() {
   // ─── Login ───────────────────────────────────────────────────────────────────
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoggingIn || !inputPw) return;
     setAuthError("");
+    setIsLoggingIn(true);
     try {
-      await fetch("/api/admin/verify", {
+      const response = await fetch("/api/admin/verify", {
         method: "POST",
         headers: { "X-Admin-Password": inputPw },
-      }).then(r => { if (!r.ok) throw new Error(); });
+      });
+      if (!response.ok) {
+        setAuthError(response.status === 401 ? "Parolă incorectă. Încearcă din nou."
+          : response.status === 429 ? "Prea multe cereri. Încearcă mai târziu."
+          : "Nu s-a putut realiza conexiunea");
+        return;
+      }
+      if ((await response.json()).ok !== true) throw new Error("Invalid login response");
       setPassword(inputPw);
+      setInputPw("");
       setIsAuthed(true);
     } catch {
-      setAuthError(t("Parolă incorectă. Încearcă din nou."));
-    }
+      setAuthError("Nu s-a putut realiza conexiunea");
+    } finally { setIsLoggingIn(false); }
   };
 
   // ─── Load data ───────────────────────────────────────────────────────────────
@@ -324,9 +335,15 @@ export default function AdminPanel() {
           </div>
           <form onSubmit={handleLogin} className="bg-purple-950/40 rounded-2xl border border-purple-800/40 p-6 space-y-4">
             <div>
-              <label className="text-xs text-purple-300/70 font-medium block mb-1.5">{t("Parolă de Administrator")}</label>
+              <label htmlFor="admin-password" className="text-xs text-purple-300/70 font-medium block mb-1.5">{t("Parolă de Administrator")}</label>
               <input
+                id="admin-password"
+                name="password"
                 type="password"
+                autoComplete="current-password"
+                required
+                maxLength={1024}
+                disabled={isLoggingIn}
                 value={inputPw}
                 onChange={e => setInputPw(e.target.value)}
                 placeholder="••••••••••••"
@@ -334,13 +351,16 @@ export default function AdminPanel() {
                 autoFocus
               />
             </div>
-            {authError && <p className="text-red-400 text-xs">{t(authError)}</p>}
+            {authError && <p role="alert" className="text-red-400 text-xs">{t(authError)}</p>}
             <button
               type="submit"
-              className="w-full bg-amber-400 hover:bg-amber-300 text-purple-950 font-bold rounded-lg py-2.5 text-sm transition-colors"
+              disabled={isLoggingIn || !inputPw}
+              aria-busy={isLoggingIn}
+              className="w-full bg-amber-400 hover:bg-amber-300 text-purple-950 font-bold rounded-lg py-2.5 text-sm transition-colors disabled:opacity-60 disabled:cursor-wait"
             >
-               {t("Autentifică-te")} </button>
+               {isLoggingIn ? t("Se încarcă…") : t("Autentifică-te")} </button>
           </form>
+          <a href="/" className="mt-5 block text-center text-sm text-purple-300 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400">{t("Înapoi la Eveniment")}</a>
         </div>
       </div>
     );

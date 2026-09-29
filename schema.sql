@@ -163,3 +163,10 @@ ALTER TABLE app_email_deliveries ADD COLUMN IF NOT EXISTS last_error TEXT;
 
 -- Preserve the registration language for every recipient and later notification.
 ALTER TABLE app_registrations ADD COLUMN IF NOT EXISTS language text NOT NULL DEFAULT 'ro';
+
+-- The /admin login is separate from player accounts. Only a salted password hash is stored.
+CREATE TABLE IF NOT EXISTS app_admin_credentials (
+    id VARCHAR PRIMARY KEY,
+    password_hash TEXT NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

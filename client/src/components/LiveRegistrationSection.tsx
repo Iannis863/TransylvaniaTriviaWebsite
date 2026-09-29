@@ -1,5 +1,5 @@
 import { t, getLanguage } from "@/lib/i18n";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -56,10 +56,27 @@ export default function LiveRegistrationSection({
       teamName: team?.name || "",
       captainName: user?.name || "",
       email: user?.email || "",
-      phoneNumber: "",
+      phoneNumber: user?.phoneNumber || "",
       memberCount: teamMembers.length > 0 ? Math.min(6, Math.max(1, teamMembers.length)) : 4,
     },
   });
+
+  // Auth loads after the form mounts. Fill account details without replacing an edit.
+  const { dirtyFields, touchedFields } = form.formState;
+  useEffect(() => {
+    const defaults: RegistrationFormData = {
+      teamName: team?.name || "",
+      captainName: user?.name || "",
+      email: user?.email || "",
+      phoneNumber: user?.phoneNumber || "",
+      memberCount: teamMembers.length > 0 ? Math.min(6, teamMembers.length) : 4,
+    };
+    for (const field of Object.keys(defaults) as (keyof RegistrationFormData)[]) {
+      if (!dirtyFields[field] && !touchedFields[field] && form.getValues(field) !== defaults[field]) {
+        form.resetField(field, { defaultValue: defaults[field] });
+      }
+    }
+  }, [form, user?.id, user?.name, user?.email, user?.phoneNumber, team?.id, team?.name, teamMembers.length, dirtyFields, touchedFields]);
 
   const handleLeaderOneClickRegister = async () => {
     if (!user || !team) return;

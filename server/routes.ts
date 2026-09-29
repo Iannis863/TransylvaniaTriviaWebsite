@@ -1,7 +1,7 @@
 import { getPuzzleWeekId, getRealCurrentWeekIndex, getWeekDateRange } from "../shared/puzzle-week.js";
 import { bucharestParts } from "../shared/event-time.js";
 import { getTargetPuzzle, isTargetSolution } from "../shared/target-game.js";
-import type { Express, Request, Response } from "express";
+import type { Express, RequestHandler } from "express";
 import { type Server } from "http";
 import { storage } from "./storage.js";
 import { insertRegistrationSchema } from "../shared/schema.js";
@@ -17,16 +17,20 @@ import { scoreQuizzability } from "./quizzability/index.js";
 import { randomInt } from "crypto";
 import { establishSession, hashPassword, verifyPassword, publicUser, requireUser, rateLimit, safeEqual } from "./security.js";
 
-// Helper function to check the password header securely
-function checkAuth(req: Request, res: Response, next: () => void) {
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  const clientPassword = req.headers["x-admin-password"];
-
-  if (!adminPassword || typeof clientPassword !== "string" || !safeEqual(clientPassword, adminPassword)) {
-    return res.status(401).json({ message: "Neautorizat. Parolă incorectă!" });
-  }
-  next();
-}
+// Admin access uses the dedicated credential record, independently of player accounts and env settings.
+const checkAuth: RequestHandler = async (req, res, next) => {
+  try {
+    const clientPassword = req.headers["x-admin-password"];
+    if (typeof clientPassword !== "string" || !clientPassword || clientPassword.length > 1024) {
+      return void res.status(401).json({ message: "Neautorizat. Parolă incorectă!" });
+    }
+    const passwordHash = await storage.getAdminPasswordHash();
+    if (!passwordHash?.startsWith("scrypt:") || !await verifyPassword(clientPassword, passwordHash)) {
+      return void res.status(401).json({ message: "Neautorizat. Parolă incorectă!" });
+    }
+    next();
+  } catch (error) { next(error); }
+};
 
 export async function registerRoutes(
   httpServer: Server,
@@ -34,6 +38,7 @@ export async function registerRoutes(
 ): Promise<Server> {
 
   app.use("/api/admin", rateLimit(100));
+  app.post("/api/admin/verify", rateLimit(10));
   app.get("/api/registrations", rateLimit(30));
   app.delete("/api/registrations/:id", rateLimit(30));
   app.delete("/api/theme-suggestions/:id", rateLimit(30));
@@ -779,7 +784,7 @@ export async function registerRoutes(
     try {
       if (req.headers["x-admin-password"]) {
         let allowed = false;
-        checkAuth(req, res, () => { allowed = true; });
+        await checkAuth(req, res, (error?: unknown) => { if (error) throw error; allowed = true; });
         if (!allowed) return;
       } else {
         await requireUser(req, res, (error?: unknown) => { if (error) throw error; });
@@ -801,23 +806,31 @@ export async function registerRoutes(
   app.get("/api/admin/editions", checkAuth, async (_req, res) => {
     try {
       const schedule = getFullSchedule();
-      const result = await Promise.all(
-        schedule.map(async (ed) => {
-          const regs = await storage.getRegistrations(ed.id);
-          const override = await storage.getEditionCapacityOverride(ed.id);
-          return {
-            ...ed,
-            eventDate: getEditionDateTime(ed),
-            secretClueEn: await storage.getEditionClue(`${ed.id}:en`) ?? "",
-            formattedDate: getEditionDateTime(ed).toLocaleString("ro-RO", { timeZone: "Europe/Bucharest", dateStyle: "long", timeStyle: "short" }),
-            maxTeams: expandedCapacity(regs.filter(r => r.status === "CONFIRMED").length, override ?? ed.maxTeams),
-            registeredCount: regs.filter(r => r.status === "CONFIRMED").length,
-            waitlistCount: regs.filter(r => r.status === "WAITLISTED").length,
-            secretClue: await storage.getEditionClue(ed.id) ?? ed.secretClue,
-            registrations: regs,
-          };
-        })
-      );
+      const [registrations, capacities, clues] = await Promise.all([
+        storage.getRegistrations(), storage.getEditionCapacityOverrides(), storage.getEditionClues(),
+      ]);
+      const registrationsByEdition = new Map<string, typeof registrations>();
+      for (const registration of registrations) {
+        const group = registrationsByEdition.get(registration.editionId) ?? [];
+        group.push(registration);
+        registrationsByEdition.set(registration.editionId, group);
+      }
+      const result = schedule.map(ed => {
+        const regs = registrationsByEdition.get(ed.id) ?? [];
+        const registeredCount = regs.filter(r => r.status === "CONFIRMED").length;
+        const eventDate = getEditionDateTime(ed);
+        return {
+          ...ed,
+          eventDate,
+          secretClueEn: clues.get(`${ed.id}:en`) ?? "",
+          formattedDate: eventDate.toLocaleString("ro-RO", { timeZone: "Europe/Bucharest", dateStyle: "long", timeStyle: "short" }),
+          maxTeams: expandedCapacity(registeredCount, capacities.get(ed.id) ?? ed.maxTeams),
+          registeredCount,
+          waitlistCount: regs.filter(r => r.status === "WAITLISTED").length,
+          secretClue: clues.get(ed.id) ?? ed.secretClue,
+          registrations: regs,
+        };
+      });
       res.json(result);
     } catch (err) {
       if (err instanceof ZodError) return res.status(400).json({ message: fromZodError(err).message });

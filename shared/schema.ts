@@ -33,6 +33,12 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+export const adminCredentials = pgTable("app_admin_credentials", {
+  id: varchar("id").primaryKey(),
+  passwordHash: text("password_hash").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 // ==========================================
 // 2. TEAMS
 // ==========================================

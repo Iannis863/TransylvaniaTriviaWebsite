@@ -4,6 +4,7 @@ import * as schema from "../shared/schema.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { seedAdminCredential } from "./admin-credential.js";
 
 export let pool: pg.Pool | null = null;
 let dbInstance: any = null;
@@ -37,6 +38,7 @@ if (process.env.DATABASE_URL) {
           ALTER TABLE app_theme_suggestions DROP CONSTRAINT IF EXISTS app_theme_suggestions_edition_id_fkey;
         `);
       })
+      .then(() => seedAdminCredential(pool!))
       .catch((err) => { console.error("[DB Init Error] Schema initialization failed"); throw err; });
   } catch (err: any) {
     throw new Error("Failed to read database schema", { cause: err });
@@ -46,4 +48,3 @@ if (process.env.DATABASE_URL) {
 }
 
 export const db = dbInstance;
-

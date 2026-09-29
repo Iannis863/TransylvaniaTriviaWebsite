@@ -35,10 +35,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import WordleGame from "./games/WordleGame";
-import TargetGame from "./games/TargetGame";
-import TimelineGame from "./games/TimelineGame";
-import ConnectionsGame from "./games/ConnectionsGame";
+const WordleGame = lazy(() => import("./games/WordleGame"));
+const TargetGame = lazy(() => import("./games/TargetGame"));
+const TimelineGame = lazy(() => import("./games/TimelineGame"));
+const ConnectionsGame = lazy(() => import("./games/ConnectionsGame"));
 const GlobleGame = lazy(() => import("./games/GlobleGame"));
 import { getWeeklyGameData } from "@/lib/weeklyGames";
 import { getCurrentWeekIndex, getEditionForWeek, getPuzzleWeekId } from "@/lib/weeklyEngine";
@@ -384,48 +384,56 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
 
               {/* TAB 1: WORDLE */}
               <TabsContent value="wordle">
+                <Suspense fallback={<GameLoading />}>
                 <WordleGame
                   weeklyData={weeklyData}
                   key={String(solvedGames["WORDLE"])}
                   onSolve={(data) => handleGameSolved("WORDLE", data)}
                   isAlreadySolved={solvedGames["WORDLE"]}
                 />
+                </Suspense>
               </TabsContent>
 
               {/* TAB 2: TARGET */}
               <TabsContent value="target">
+                <Suspense fallback={<GameLoading />}>
                 <TargetGame
                   weeklyData={weeklyData}
                   key={String(solvedGames["TARGET"])}
                   onSolve={(data) => handleGameSolved("TARGET", data)}
                   isAlreadySolved={solvedGames["TARGET"]}
                 />
+                </Suspense>
               </TabsContent>
 
 
               {/* TAB 4: TIMELINE */}
               <TabsContent value="timeline">
+                <Suspense fallback={<GameLoading />}>
                 <TimelineGame
                   weeklyData={weeklyData}
                   key={String(solvedGames["TIMELINE"])}
                   onSolve={(data) => handleGameSolved("TIMELINE", data)}
                   isAlreadySolved={solvedGames["TIMELINE"]}
                 />
+                </Suspense>
               </TabsContent>
 
               {/* TAB 5: CONNECTIONS */}
               <TabsContent value="connections">
+                <Suspense fallback={<GameLoading />}>
                 <ConnectionsGame
                   weeklyData={weeklyData}
                   key={String(solvedGames["CONNECTIONS"])}
                   onSolve={(data) => handleGameSolved("CONNECTIONS", data)}
                   isAlreadySolved={solvedGames["CONNECTIONS"]}
                 />
+                </Suspense>
               </TabsContent>
 
               {/* TAB 6: GLOBLE MAP */}
               <TabsContent value="globle">
-                <Suspense fallback={<p className="p-8 text-center text-muted-foreground">{t("Se încarcă globul…")}</p>}>
+                <Suspense fallback={<GameLoading />}>
                 <GlobleGame
                   weeklyData={weeklyData}
                   key={String(solvedGames["GLOBLE"])}
@@ -483,4 +491,8 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
       </AlertDialog>
     </section>
   );
+}
+
+function GameLoading() {
+  return <p role="status" className="p-8 text-center text-purple-200">{t("Se încarcă…")}</p>;
 }
