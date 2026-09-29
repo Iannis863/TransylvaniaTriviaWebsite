@@ -34,7 +34,7 @@ test("API requires real sessions, protects teams, excludes passwords, and revoke
     return { status: res.status, body: await res.json(), cookie: res.headers.get("set-cookie")?.split(";")[0], rawCookie: res.headers.get("set-cookie") };
   };
   assert.equal((await request("/api/auth/me", "GET", undefined, undefined, { "x-user-id": "usr_vlad_leader" })).status, 401);
-  assert.equal((await request("/api/admin/users", "GET", undefined, undefined, { "x-admin-password": "TriviaAdmin2026!" })).status, 401);
+  assert.equal((await request("/api/admin/users", "GET", undefined, undefined, { "x-admin-password": "unconfigured-admin-password" })).status, 401);
   assert.equal((await request("/api/cron/notifications")).status, 401);
   const captain = await request("/api/auth/register", "POST", { name: "Ana", email: " ANA@test.example ", password: "secret123", role: "ADMIN", keepLoggedIn: true });
   assert.equal(captain.status, 201);
