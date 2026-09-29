@@ -16,7 +16,7 @@ export interface EventEmailDetails {
   language?: "ro" | "en";
 }
 export type EmailKind = "confirmation" | "reminder" | "waitlist";
-export const FROM_EMAIL = "Transylvania Trivia <contact@transilvaniatrivia.ro>";
+export const FROM_EMAIL = "Transilvania Trivia <contact@transilvaniatrivia.ro>";
 
 export function buildEventEmail(kind: EmailKind, details: EventEmailDetails): EmailPayload {
   const { email, name, teamName, memberCount, eventDate, isCaptain, language = "ro" } = details;
