@@ -45,14 +45,14 @@ export function buildEventEmail(kind: EmailKind, details: EventEmailDetails): Em
       title, language,
       label: kind === "waitlist" ? l("ÎN AȘTEPTAREA UNUI LOC", "WAITING FOR A PLACE") : kind === "reminder" ? l("DISEARĂ LA INSOMNIA", "TONIGHT AT INSOMNIA") : l("LOCUL VOSTRU ESTE CONFIRMAT", "YOUR PLACE IS CONFIRMED"),
       preheader: kind === "waitlist" ? l(`${teamName} este pe lista de așteptare. Așteptați confirmarea.`, `${teamName} is on the waiting list. Please wait for confirmation.`) : `${teamName} · ${dateLabel} · Insomnia Cafe & Bistro`,
-      body: `<p style="margin:12px 0 24px;">${emailText(l("Bună", "Hello") + " ")}<strong style="color:#f5c767;">${emailText(name, "#f5c767")}</strong>${emailText(", " + message)}</p>
+      body: `<p style="margin:12px 0 24px;">${emailText(l("Bună", "Hello") + " ")}<strong style="color:#ffc30b;">${emailText(name, "#ffc30b")}</strong>${emailText(", " + message)}</p>
         <table class="email-bg-1c0d2d" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#1c0d2d" style="width:100%;background-color:#1c0d2d;border:1px solid #55316c;border-radius:10px;">
           ${eventDetailRow(l("ECHIPA TA", "YOUR TEAM"), `${teamName} · ${memberCount} ${l("jucători", "players")}`)}
           ${eventDetailRow(l("CÂND", "WHEN"), dateLabel)}
           ${eventDetailRow(l("UNDE", "WHERE"), "Insomnia Cafe & Bistro")}
           ${eventDetailRow(kind === "waitlist" ? l("TAXĂ DACĂ SUNTEȚI ACCEPTAȚI", "ENTRY FEE IF ACCEPTED") : l("TAXĂ DE PARTICIPARE", "ENTRY FEE"), `10 LEI ${l("de persoană", "per person")} · ${fee} LEI ${l("pentru întreaga echipă", "for the whole team")}`)}
         </table>
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;"><tr><td class="email-bg-f5c767" bgcolor="#f5c767" style="background-color:#f5c767;border:1px solid #f5c767;border-radius:6px;mso-padding-alt:14px 20px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;"><tr><td class="email-bg-ffc30b" bgcolor="#ffc30b" style="background-color:#ffc30b;border:1px solid #ffc30b;border-radius:6px;mso-padding-alt:14px 20px;">
           <a href="${EMAIL_WEBSITE_URL}" style="display:inline-block;padding:14px 20px;font-size:14px;line-height:20px;font-weight:bold;color:#180b24;text-decoration:none;">${emailText(l("Vezi detaliile evenimentului", "View event details") + " →", "#180b24")}</a>
         </td></tr></table>`,
       footer: kind === "waitlist" ? l("Acest email confirmă înscrierea pe lista de așteptare. Masa nu este încă rezervată. Vă anunțăm pe email dacă echipa este acceptată.", "This email confirms your waiting-list entry, not a reserved table. We will email you if your team is accepted.") : l("Voi aduceți curiozitatea, noi aducem întrebările. Ne vedem la Insomnia Cafe & Bistro!", "Bring your curiosity. We'll bring the questions. See you at Insomnia Cafe & Bistro!"),
@@ -100,7 +100,7 @@ export function buildPasswordResetEmail(toEmail: string, code: string, language:
         <table class="email-bg-1c0d2d" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#1c0d2d" style="width:100%;background-color:#1c0d2d;border:1px solid #80539b;border-radius:10px;">
           <tr><td align="center" style="padding:24px 12px;">
             <p style="margin:0 0 12px;font-size:11px;line-height:18px;letter-spacing:2px;color:#d8adf4;">${emailText(l("CODUL TĂU DE RESETARE", "YOUR RESET CODE"), "#d8adf4")}</p>
-            <p style="margin:0;font-family:'Courier New',monospace;font-size:34px;line-height:44px;font-weight:bold;letter-spacing:5px;color:#f5c767;">${emailText(code, "#f5c767")}</p>
+            <p style="margin:0;font-family:'Courier New',monospace;font-size:34px;line-height:44px;font-weight:bold;letter-spacing:5px;color:#ffc30b;">${emailText(code, "#ffc30b")}</p>
           </td></tr>
         </table>
         <p style="margin:20px 0 0;color:#c4afda;">${emailText(l("Codul expiră în", "The code expires in") + " ", "#c4afda")}<strong style="color:#f5eefb;">${emailText(l("10 minute", "10 minutes"))}</strong>${emailText(". " + l("Nu îl trimite altor persoane.", "Do not share it with anyone."), "#c4afda")}</p>`,

@@ -4,7 +4,7 @@ export function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]!));
 }
 
-type EmailTextColor = "#f5eefb" | "#f5c767" | "#d8adf4" | "#c4afda" | "#180b24";
+type EmailTextColor = "#f5eefb" | "#ffc30b" | "#d8adf4" | "#c4afda" | "#180b24";
 
 // The original inline colours remain the fallback outside Gmail on iOS.
 export function emailText(value: string, color: EmailTextColor = "#f5eefb"): string {
@@ -17,10 +17,10 @@ export function emailText(value: string, color: EmailTextColor = "#f5eefb"): str
 // Gmail Android/web have an extra div parent: restore their normal rendering.
 const gmailColorStyles = `<style>
 @media only screen and (max-width:480px) {
-${["#09040e", "#12081f", "#eab54b", "#08040d", "#0d0616", "#1c0d2d", "#f5c767"].map(color => `
+${["#09040e", "#12081f", "#ffc30b", "#08040d", "#0d0616", "#1c0d2d"].map(color => `
   u + .trivia-email-body .email-bg-${color.slice(1)} { background-image:linear-gradient(${color},${color}); }
   div > u + .trivia-email-body .email-bg-${color.slice(1)} { background-image:none; }`).join("")}
-${["#f5eefb", "#f5c767", "#d8adf4", "#c4afda", "#180b24"].map(color => `
+${["#f5eefb", "#ffc30b", "#d8adf4", "#c4afda", "#180b24"].map(color => `
   u + .trivia-email-body .email-text-${color.slice(1)} { background-image:linear-gradient(${color},${color}); background-clip:text; color:transparent; }
   div > u + .trivia-email-body .email-text-${color.slice(1)} { background-image:none; background-clip:border-box; color:${color}; }`).join("")}
 }
@@ -40,17 +40,17 @@ export function brandedEmail({ title, label, preheader, body, footer, language =
     <tr><td align="center" style="padding:24px 12px;">
       <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
       <table class="email-bg-12081f" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#12081f" style="width:100%;max-width:600px;background-color:#12081f;border:1px solid #44215c;border-radius:16px;overflow:hidden;">
-        <tr><td class="email-bg-eab54b" height="4" bgcolor="#eab54b" style="height:4px;font-size:0;line-height:0;background-color:#eab54b;">&nbsp;</td></tr>
+        <tr><td class="email-bg-ffc30b" height="4" bgcolor="#ffc30b" style="height:4px;font-size:0;line-height:0;background-color:#ffc30b;">&nbsp;</td></tr>
         <tr><td class="email-bg-08040d" align="center" bgcolor="#08040d" style="padding:24px 24px 20px;background-color:#08040d;border-bottom:1px solid #44215c;">
-          <a href="${EMAIL_WEBSITE_URL}" style="text-decoration:none;"><img src="${EMAIL_LOGO_URL}" width="184" height="184" alt="Transilvania Trivia" border="0" style="display:block;width:184px;max-width:100%;height:auto;border:0;outline:none;color:#f5c767;font-size:18px;" /></a>
+          <a href="${EMAIL_WEBSITE_URL}" style="text-decoration:none;"><img src="${EMAIL_LOGO_URL}" width="184" height="184" alt="Transilvania Trivia" border="0" style="display:block;width:184px;max-width:100%;height:auto;border:0;outline:none;color:#ffc30b;font-size:18px;" /></a>
         </td></tr>
         <tr><td style="padding:28px 24px 12px;">
           <p style="margin:0 0 12px;font-size:11px;line-height:18px;font-weight:bold;letter-spacing:2px;color:#d8adf4;">${emailText(label, "#d8adf4")}</p>
-          <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:30px;line-height:38px;font-weight:bold;color:#f5c767;">${emailText(title, "#f5c767")}</h1>
+          <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:30px;line-height:38px;font-weight:bold;color:#ffc30b;">${emailText(title, "#ffc30b")}</h1>
         </td></tr>
         <tr><td style="padding:4px 24px 28px;font-size:16px;line-height:26px;color:#f5eefb;overflow-wrap:anywhere;">${body}</td></tr>
         <tr><td class="email-bg-0d0616" style="padding:20px 24px;border-top:1px solid #44215c;background-color:#0d0616;">
-          <p style="margin:0 0 8px;font-size:12px;line-height:20px;font-weight:bold;letter-spacing:1px;color:#f5c767;">${emailText("TRANSILVANIA TRIVIA", "#f5c767")}</p>
+          <p style="margin:0 0 8px;font-size:12px;line-height:20px;font-weight:bold;letter-spacing:1px;color:#ffc30b;">${emailText("TRANSILVANIA TRIVIA", "#ffc30b")}</p>
           <p style="margin:0;font-size:12px;line-height:20px;color:#c4afda;">${emailText(footer, "#c4afda")}</p>
         </td></tr>
       </table>
