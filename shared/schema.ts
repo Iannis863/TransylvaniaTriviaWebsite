@@ -15,18 +15,22 @@ export const users = pgTable("app_users", {
   avatar: text("avatar"),
   teamId: varchar("team_id"),
   phoneNumber: text("phone_number"),
+  language: text("language").notNull().default("ro"),
+  welcomeQueued: boolean("welcome_queued").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
+  welcomeQueued: true,
 }).extend({
   name: z.string().min(2, "Numele trebuie să aibă cel puțin 2 caractere"),
   email: z.string().trim().toLowerCase().max(254).email("Adresă de email invalidă"),
   password: z.string().min(6, "Parola trebuie să aibă cel puțin 6 caractere").optional(),
   phoneNumber: z.string().trim().max(30).optional(),
   role: z.enum(["TEAM_LEADER", "MEMBER", "ADMIN"]).default("MEMBER"),
+  language: z.enum(["ro", "en"]).optional(),
   teamId: z.string().min(1).max(100).optional(),
 });
 
@@ -239,7 +243,11 @@ export const editionClues = pgTable("app_edition_clues", {
 });
 export const emailDeliveries = pgTable("app_email_deliveries", {
   id: varchar("id").primaryKey(),
-  registrationId: varchar("registration_id").notNull().references(() => registrations.id, { onDelete: "cascade" }),
+  registrationId: varchar("registration_id").references(() => registrations.id, { onDelete: "cascade" }),
+  scopeKey: text("scope_key"),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+  teamId: varchar("team_id").references(() => teams.id, { onDelete: "cascade" }),
+  weekId: text("week_id"),
   kind: text("kind").notNull(),
   email: text("email").notNull(),
   payload: jsonb("payload").notNull(),
@@ -249,7 +257,10 @@ export const emailDeliveries = pgTable("app_email_deliveries", {
   cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
   lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
   lastError: text("last_error"),
-}, table => [uniqueIndex("app_email_deliveries_registration_id_kind_email_key").on(table.registrationId, table.kind, table.email)]);
+}, table => [
+  uniqueIndex("app_email_deliveries_registration_id_kind_email_key").on(table.registrationId, table.kind, table.email),
+  uniqueIndex("app_email_deliveries_scope_kind_email_key").on(table.scopeKey, table.kind, table.email),
+]);
 export const appSessions = pgTable("app_sessions", {
   sid: varchar("sid").primaryKey(),
   sess: json("sess").notNull(),

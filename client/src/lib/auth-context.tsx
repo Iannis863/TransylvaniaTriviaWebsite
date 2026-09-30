@@ -1,4 +1,4 @@
-import { t } from "@/lib/i18n";
+import { t, getLanguage } from "@/lib/i18n";
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, keepLoggedIn }),
+        body: JSON.stringify({ name, email, password, keepLoggedIn, language: getLanguage() }),
       });
       const data = await res.json();
       if (!res.ok) {

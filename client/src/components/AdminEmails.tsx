@@ -10,7 +10,7 @@ interface EmailData {
   templates: { kind: string; audience: string; payload: Payload }[];
   deliveries: Delivery[];
 }
-const labels: Record<string, string> = { confirmation: "Confirmare / acceptare", waitlist: "Listă de așteptare", reminder: "Memento", "password-reset": "Resetare parolă" };
+const labels: Record<string, string> = { confirmation: "Confirmare / acceptare", waitlist: "Listă de așteptare", reminder: "Memento", "password-reset": "Resetare parolă", welcome: "Cont creat cu succes", "games-completed": "Secret deblocat" };
 const date = (value: string | null) => value ? new Date(value).toLocaleString(locale(), { timeZone: "Europe/Bucharest" }) : "—";
 export default function AdminEmails({ api }: { api: (method: string, path: string, body?: unknown) => Promise<any> }) {
   const language = useLanguage();
@@ -28,7 +28,12 @@ export default function AdminEmails({ api }: { api: (method: string, path: strin
   const payload = selected.startsWith("template:") ? data?.templates[Number(selected.split(":")[1])]?.payload : data?.deliveries.find(item => item.id === selected)?.payload;
   // Use the identical local asset before deployment; outbound messages retain the public HTTPS URL.
   const previewLogoUrl = `${window.location.origin}${EMAIL_LOGO_PATH}`;
-  const previewHtml = payload?.html.replaceAll(`src="${EMAIL_LOGO_URL}"`, `src="${previewLogoUrl}"`);
+  const previewBody = payload?.html.replaceAll(`src="${EMAIL_LOGO_URL}"`, `src="${previewLogoUrl}"`);
+  const previewPolicy = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src ${previewLogoUrl}">`;
+  // Historical deliveries contain an HTML fragment; current templates are full documents.
+  const previewHtml = previewBody?.includes("<head>")
+    ? previewBody.replace("<head>", `<head>${previewPolicy}`)
+    : `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${previewPolicy}</head><body style="margin:0;padding:0;">${previewBody ?? ""}</body></html>`;
   return <div className="space-y-6 text-sm text-purple-200">
     <div className="flex items-center justify-between gap-4">
       <h2 className="text-xl font-heading text-amber-300">{t("Emailuri automate")}</h2>
@@ -38,7 +43,7 @@ export default function AdminEmails({ api }: { api: (method: string, path: strin
     {data && <>
       <div className="rounded-xl border border-purple-700/50 p-4 space-y-2">
         <p><strong>{t("Furnizor:")}</strong> {data.provider} · <strong>{t("Expeditor:")}</strong> {data.from}</p>
-        <p className={data.configured ? "text-purple-200" : "text-amber-300"}>{data.configured ? t("Cheia Resend este configurată. Verificarea domeniului și a DNS-ului trebuie confirmată în Resend; prezența cheii nu dovedește livrarea.") : t("Cheia Resend lipsește în acest mediu. Emailurile pentru evenimente rămân în așteptare; nimic nu este marcat ca trimis.")}</p>
+        <p className={data.configured ? "text-purple-200" : "text-amber-300"}>{data.configured ? t("Cheia Resend este configurată. Verificarea domeniului și a DNS-ului trebuie confirmată în Resend; prezența cheii nu dovedește livrarea.") : t("Cheia Resend lipsește în acest mediu. Emailurile automate rămân în așteptare; nimic nu este marcat ca trimis.")}</p>
         <p>{t("Previzualizările folosesc exact șabloanele aplicației, cu nume și cod demonstrative. Nu trimit emailuri. Afișarea finală poate varia între aplicațiile de email.")}</p>
       </div>
       <div className="overflow-x-auto rounded-xl border border-purple-800/50">
@@ -48,10 +53,13 @@ export default function AdminEmails({ api }: { api: (method: string, path: strin
             <tr><td className="p-3">{t("Listă de așteptare")}</td><td className="p-3">{t("La înscrierea fără loc disponibil. Spune explicit că locul nu este confirmat.")}</td></tr>
             <tr><td className="p-3">{t("Memento")}</td><td className="p-3">{t("Doar echipelor confirmate, în ziua evenimentului, după 12:00 și înainte de începere, ora României.")}</td></tr>
             <tr><td className="p-3">{t("Resetare parolă")}</td><td className="p-3">{t("Imediat după solicitarea utilizatorului; codul expiră în 10 minute. Nu intră în coada de retrimitere.")}</td><td className="p-3">{t("Adresei contului.")}</td></tr>
+            <tr><td className="p-3">{t("Cont creat cu succes")}</td><td className="p-3">{t("La crearea contului, cu detalii și acces la Echipa mea.")}</td><td className="p-3">{t("Titularului contului nou.")}</td></tr>
+            <tr><td className="p-3">{t("Secret deblocat")}</td><td className="p-3">{t("După rezolvarea celor cinci jocuri într-o săptămână cu eveniment, o singură dată pe săptămână și destinatar.")}</td><td className="p-3">{t("Fiecărui membru al echipei.")}</td></tr>
           </tbody>
         </table>
       </div>
       <p className="text-purple-300/80">{t("Pe Vercel Hobby, procesarea automată și reîncercările rulează zilnic prin cron la 10:00 UTC (12:00 iarna / 13:00 vara în România, cu variația de pornire a platformei). Înscrierile și acceptările verifică imediat și reminderul din acea zi. Local, verificarea rulează la 5 minute. Emailurile pentru evenimente trecute nu se mai trimit.")}</p>
+      <p className="text-purple-300/80">{t("Emailurile de bun venit și de deblocare a secretului se încearcă imediat. Retrimiterile se opresc după 7 zile pentru bun venit și la resetarea săptămânii pentru secret.")}</p>
       <label className="block space-y-2"><span className="font-semibold">{t("Șablon demonstrativ")}</span>
         <select value={selected.startsWith("template:") ? selected : ""} onChange={e => setSelected(e.target.value)} className="w-full p-3 rounded-lg bg-purple-950 border border-purple-700 text-white">
           <option value="" disabled>{t("Alege un șablon")}</option>
@@ -61,16 +69,16 @@ export default function AdminEmails({ api }: { api: (method: string, path: strin
       {payload && <div className="space-y-3 rounded-xl border border-purple-700/50 p-4">
         <p className="text-amber-300 font-semibold">{selected.startsWith("template:") ? t("Exemplu de email") : t("Conținutul exact salvat pentru acest destinatar")}</p>
         <p><strong>{t("Către:")}</strong> {payload.to}</p><p><strong>{t("Subiect:")}</strong> {payload.subject}</p>
-        <iframe title={t("Previzualizare email HTML")} sandbox="" referrerPolicy="no-referrer" className="w-full h-[640px] rounded-lg bg-[#09040e]" srcDoc={`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src ${previewLogoUrl}"></head><body style="margin:0;padding:0;">${previewHtml}</body></html>`} />
+        <iframe title={t("Previzualizare email HTML")} sandbox="" referrerPolicy="no-referrer" className="w-full h-[640px] rounded-lg bg-[#09040e]" srcDoc={previewHtml} />
         <details><summary className="cursor-pointer text-amber-300">{t("Versiunea text")}</summary><pre className="whitespace-pre-wrap break-words mt-3 text-xs">{payload.text}</pre></details>
       </div>}
       <div className="space-y-2">
-        <h3 className="font-semibold text-amber-300">{t("Ultimele 200 de emailuri pentru evenimente")}</h3>
+        <h3 className="font-semibold text-amber-300">{t("Ultimele 200 de emailuri automate")}</h3>
         <p className="text-xs text-purple-300">{t("„Acceptat de Resend” confirmă acceptarea de către furnizor, nu livrarea în inbox. Codurile reale de resetare a parolei nu sunt afișate aici. Datele sunt în ora României.")}</p>
-        {data.deliveries.length === 0 ? <p>{t("Niciun email de eveniment înregistrat încă.")}</p> : <div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr><th className="p-2">{t("Destinatar / tip")}</th><th className="p-2">Status</th><th className="p-2">{t("Ultima încercare")}</th><th className="p-2">{t("Acceptat de furnizor")}</th><th className="p-2">{t("Conținut")}</th></tr></thead><tbody>
+        {data.deliveries.length === 0 ? <p>{t("Niciun email automat înregistrat încă.")}</p> : <div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr><th className="p-2">{t("Destinatar / tip")}</th><th className="p-2">Status</th><th className="p-2">{t("Ultima încercare")}</th><th className="p-2">{t("Acceptat de furnizor")}</th><th className="p-2">{t("Conținut")}</th></tr></thead><tbody>
           {data.deliveries.map(item => <tr key={item.id} className="border-t border-purple-800/40">
             <td className="p-2">{item.payload.to}<br />{t(labels[item.kind])}</td>
-            <td className="p-2">{item.sentAt ? t("Acceptat de Resend") : item.cancelledAt ? t("Anulat (status schimbat)") : new Date(item.eventDate) <= new Date() ? t("Expirat (eveniment început)") : t("În așteptare")}{item.lastError && <p className="text-amber-300 mt-1">{item.lastError}</p>}</td>
+            <td className="p-2">{item.sentAt ? t("Acceptat de Resend") : item.cancelledAt ? t("Anulat (status schimbat)") : new Date(item.eventDate) <= new Date() ? t("Expirat") : t("În așteptare")}{item.lastError && <p className="text-amber-300 mt-1">{item.lastError}</p>}</td>
             <td className="p-2">{date(item.lastAttemptAt)}</td><td className="p-2">{date(item.sentAt)}</td>
             <td className="p-2"><button onClick={() => setSelected(item.id)} className="underline text-amber-300">{t("Vezi emailul")}</button></td>
           </tr>)}

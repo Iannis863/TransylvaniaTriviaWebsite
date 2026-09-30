@@ -32,7 +32,7 @@ export async function verifyPassword(password: string, stored: string | null): P
 const fingerprint = (user: User) => createHash("sha256").update(user.password || "").digest("hex");
 export function publicUser(user: User | undefined) {
   if (!user) return undefined;
-  const { password: _password, ...safe } = user;
+  const { password: _password, welcomeQueued: _welcomeQueued, ...safe } = user;
   return safe;
 }
 export async function establishSession(req: Request, user: User, remember: boolean) {

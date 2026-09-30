@@ -176,3 +176,19 @@ CREATE TABLE IF NOT EXISTS app_runtime_settings (
     key VARCHAR PRIMARY KEY,
     value TEXT NOT NULL
 );
+
+-- Only accounts created after this migration should receive the welcome email.
+ALTER TABLE app_users ADD COLUMN IF NOT EXISTS language TEXT NOT NULL DEFAULT 'ro';
+ALTER TABLE app_users ADD COLUMN IF NOT EXISTS welcome_queued BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE app_users ALTER COLUMN welcome_queued SET DEFAULT false;
+
+-- Share the durable delivery queue with account and weekly game notifications.
+ALTER TABLE app_email_deliveries ALTER COLUMN registration_id DROP NOT NULL;
+ALTER TABLE app_email_deliveries ADD COLUMN IF NOT EXISTS scope_key TEXT;
+UPDATE app_email_deliveries SET scope_key = registration_id WHERE scope_key IS NULL;
+-- Leave scope_key nullable so an in-flight request from the prior deployment can
+-- still enqueue registration mail; readers fall back to registration_id.
+ALTER TABLE app_email_deliveries ADD COLUMN IF NOT EXISTS user_id VARCHAR REFERENCES app_users(id) ON DELETE CASCADE;
+ALTER TABLE app_email_deliveries ADD COLUMN IF NOT EXISTS team_id VARCHAR REFERENCES app_teams(id) ON DELETE CASCADE;
+ALTER TABLE app_email_deliveries ADD COLUMN IF NOT EXISTS week_id TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS app_email_deliveries_scope_kind_email_key ON app_email_deliveries(scope_key, kind, email);

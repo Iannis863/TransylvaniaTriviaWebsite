@@ -49,7 +49,7 @@ export function brandedEmail({ title, label, preheader, body, footer, language =
           <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:30px;line-height:38px;font-weight:bold;color:#ffc30b;">${emailText(title, "#ffc30b")}</h1>
         </td></tr>
         <tr><td style="padding:4px 24px 28px;font-size:16px;line-height:26px;color:#f5eefb;overflow-wrap:anywhere;">${body}</td></tr>
-        <tr><td class="email-bg-0d0616" style="padding:20px 24px;border-top:1px solid #44215c;background-color:#0d0616;">
+        <tr><td class="email-bg-0d0616" style="padding:20px 24px;border-top:1px solid #44215c;background-color:#0d0616;border-radius:0 0 15px 15px;">
           <p style="margin:0 0 8px;font-size:12px;line-height:20px;font-weight:bold;letter-spacing:1px;color:#ffc30b;">${emailText("TRANSILVANIA TRIVIA", "#ffc30b")}</p>
           <p style="margin:0;font-size:12px;line-height:20px;color:#c4afda;">${emailText(footer, "#c4afda")}</p>
         </td></tr>
@@ -60,9 +60,15 @@ export function brandedEmail({ title, label, preheader, body, footer, language =
 </div></body></html>`;
 }
 
-export function eventDetailRow(label: string, value: string): string {
-  return `<tr><td style="padding:14px 18px;border-bottom:1px solid #38204e;">
+export function eventDetailRow(label: string, value: string, last = false): string {
+  return `<tr><td style="padding:14px 18px;${last ? "" : "border-bottom:1px solid #38204e;"}">
     <p style="margin:0 0 4px;font-size:11px;line-height:16px;font-weight:bold;letter-spacing:1px;color:#c4afda;">${emailText(label, "#c4afda")}</p>
     <p style="margin:0;font-size:15px;line-height:23px;color:#f5eefb;">${emailText(value)}</p>
   </td></tr>`;
+}
+
+export function emailButton(label: string, url: string): string {
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;"><tr><td class="email-bg-ffc30b" bgcolor="#ffc30b" style="background-color:#ffc30b;border:1px solid #ffc30b;border-radius:6px;mso-padding-alt:14px 20px;">
+    <a href="${escapeHtml(url)}" style="display:inline-block;padding:14px 20px;font-size:14px;line-height:20px;font-weight:bold;color:#180b24;text-decoration:none;">${emailText(label + " →", "#180b24")}</a>
+  </td></tr></table>`;
 }

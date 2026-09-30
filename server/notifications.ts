@@ -1,10 +1,23 @@
 import { randomUUID } from "node:crypto";
-import type { Registration } from "../shared/schema.js";
+import type { Registration, User } from "../shared/schema.js";
 import { getFullSchedule, getEditionDateTime } from "../shared/schedule.js";
 import { bucharestParts } from "../shared/event-time.js";
+import { getPuzzleWeekId, getRealCurrentWeekIndex, getWeekDateRange } from "../shared/puzzle-week.js";
 import { pool } from "./db.js";
 import { storage, type IStorage } from "./storage.js";
-import { buildEventEmail, sendEmail, type EmailKind, type EmailPayload, type EmailResult } from "./email.js";
+import { buildEventEmail, buildWelcomeEmail, buildGamesCompletedEmail, sendEmail, type EmailKind, type EmailPayload, type EmailResult } from "./email.js";
+
+const GAME_TYPES = ["WORDLE", "TARGET", "TIMELINE", "CONNECTIONS", "GLOBLE"];
+export const welcomeEmailScope = (userId: string) => `welcome:${userId}`;
+export const gamesEmailScope = (teamId: string, weekId: string) => `games:${teamId}:${weekId}`;
+
+function eventInPuzzleWeek(now: Date) {
+  const { startDate, endDate } = getWeekDateRange(getRealCurrentWeekIndex(now));
+  return getFullSchedule(bucharestParts(startDate).year, startDate).some(edition => {
+    const date = getEditionDateTime(edition);
+    return date >= startDate && date <= endDate;
+  });
+}
 
 export interface Recipient { email: string; name: string; isCaptain: boolean; }
 export async function getRegistrationRecipients(registration: Registration, source: IStorage = storage): Promise<Recipient[]> {
@@ -41,13 +54,64 @@ export function registrationEventDate(registration: Registration): Date | undefi
   return eventDate;
 }
 interface Delivery {
-  id: string; registrationId: string; kind: EmailKind; email: string; payload: EmailPayload;
+  id: string; registrationId: string | null; scopeKey: string;
+  userId: string | null; teamId: string | null; weekId: string | null;
+  kind: EmailKind | "welcome" | "games-completed"; email: string; payload: EmailPayload;
   eventDate: Date; sentAt: Date | null; lockedUntil: Date | null;
   cancelledAt: Date | null; lastAttemptAt: Date | null; lastError: string | null;
 }
 export class NotificationService {
   private deliveries = new Map<string, Delivery>();
   constructor(private source: IStorage = storage, private sender = sendEmail, private database = pool) {}
+
+  private async enqueue(delivery: Delivery) {
+    if (this.database) {
+      await this.database.query(`INSERT INTO app_email_deliveries (id, registration_id, scope_key, user_id, team_id, week_id, kind, email, payload, event_date)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT DO NOTHING`,
+      [delivery.id, delivery.registrationId, delivery.scopeKey, delivery.userId, delivery.teamId, delivery.weekId, delivery.kind, delivery.email, delivery.payload, delivery.eventDate]);
+    } else {
+      const key = `${delivery.scopeKey}:${delivery.kind}:${delivery.email}`;
+      if (!this.deliveries.has(key)) this.deliveries.set(key, delivery);
+    }
+  }
+
+  async queueWelcome(user: User) {
+    await this.enqueue({
+      id: randomUUID(), registrationId: null, scopeKey: welcomeEmailScope(user.id), userId: user.id, teamId: null, weekId: null,
+      kind: "welcome", email: user.email.trim().toLowerCase(),
+      payload: buildWelcomeEmail({ ...user, language: user.language === "en" ? "en" : "ro" }),
+      eventDate: new Date(new Date(user.createdAt).getTime() + 7 * 86400000),
+      sentAt: null, lockedUntil: null, cancelledAt: null, lastAttemptAt: null, lastError: null,
+    });
+    await this.source.markWelcomeQueued(user.id);
+  }
+
+  async queueGamesCompleted(teamId: string, weekId: string, now = new Date()) {
+    if (weekId !== getPuzzleWeekId(getRealCurrentWeekIndex(now)) || !eventInPuzzleWeek(now)) return;
+    const progress = await this.source.getPuzzleProgress(teamId, weekId);
+    if (!GAME_TYPES.every(type => progress.some(item => item.gameType === type && item.isSolved))) return;
+    const team = await this.source.getTeam(teamId);
+    if (!team) return;
+    const members = await this.source.getTeamMembers(teamId);
+    for (const member of members) {
+      const email = member.email.trim().toLowerCase();
+      await this.enqueue({
+        id: randomUUID(), registrationId: null, scopeKey: gamesEmailScope(teamId, weekId), userId: member.id, teamId, weekId,
+        kind: "games-completed", email,
+        payload: buildGamesCompletedEmail({ email, name: member.name, teamName: team.name, language: member.language === "en" ? "en" : "ro" }),
+        eventDate: getWeekDateRange(getRealCurrentWeekIndex(now)).nextResetAt,
+        sentAt: null, lockedUntil: null, cancelledAt: null, lastAttemptAt: null, lastError: null,
+      });
+    }
+  }
+
+  // Recover notifications if a request ended after saving the account or final solve.
+  async queuePendingAccountEmails(now = new Date()) {
+    for (const user of await this.source.getUsersPendingWelcome()) await this.queueWelcome(user);
+    if (!eventInPuzzleWeek(now)) return;
+    const weekId = getPuzzleWeekId(getRealCurrentWeekIndex(now));
+    for (const team of await this.source.getAllTeams()) await this.queueGamesCompleted(team.id, weekId, now);
+  }
 
   async queue(registration: Registration, kind: EmailKind) {
     if ((kind === "waitlist") !== (registration.status === "WAITLISTED")) return;
@@ -56,41 +120,33 @@ export class NotificationService {
     const recipients = await getRegistrationRecipients(registration, this.source);
     for (const recipient of recipients) {
       const delivery: Delivery = {
-        id: randomUUID(), registrationId: registration.id, kind, email: recipient.email,
+        id: randomUUID(), registrationId: registration.id, scopeKey: registration.id, userId: null, teamId: null, weekId: null, kind, email: recipient.email,
         payload: buildEventEmail(kind, { ...recipient, language: registration.language ?? "ro", teamName: registration.teamName, memberCount: registration.memberCount, eventDate }),
         eventDate, sentAt: null, lockedUntil: null, cancelledAt: null, lastAttemptAt: null, lastError: null,
       };
-      if (this.database) {
-        await this.database.query(`INSERT INTO app_email_deliveries (id, registration_id, kind, email, payload, event_date)
-          VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (registration_id,kind,email) DO NOTHING`,
-        [delivery.id, registration.id, kind, delivery.email, delivery.payload, eventDate]);
-      } else {
-        const key = `${registration.id}:${kind}:${recipient.email}`;
-        if (!this.deliveries.has(key)) this.deliveries.set(key, delivery);
-      }
+      await this.enqueue(delivery);
     }
   }
 
-  async deliver(registrationId?: string, now = new Date(), deadline = Date.now() + 240000): Promise<{ sent: number; failed: number }> {
+  async deliver(scopeKey?: string, now = new Date(), deadline = Date.now() + 240000): Promise<{ sent: number; failed: number }> {
     let pending: Delivery[];
     if (this.database) {
       // A lease prevents concurrent cron workers from sending the same recipient at once.
       const result = await this.database.query(`UPDATE app_email_deliveries SET locked_until = $1::timestamptz + interval '5 minutes'
         WHERE id IN (SELECT id FROM app_email_deliveries WHERE sent_at IS NULL AND cancelled_at IS NULL AND event_date > $1
-          AND (locked_until IS NULL OR locked_until <= $1) AND ($2::varchar IS NULL OR registration_id = $2)
+          AND (locked_until IS NULL OR locked_until <= $1) AND ($2::text IS NULL OR COALESCE(scope_key, registration_id) = $2)
           ORDER BY event_date LIMIT 100 FOR UPDATE SKIP LOCKED)
-        RETURNING id, registration_id AS "registrationId", kind, email, payload, event_date AS "eventDate"`, [now, registrationId || null]);
+        RETURNING id, registration_id AS "registrationId", scope_key AS "scopeKey", user_id AS "userId", team_id AS "teamId", week_id AS "weekId", kind, email, payload, event_date AS "eventDate"`, [now, scopeKey || null]);
       pending = result.rows;
     } else {
-      pending = Array.from(this.deliveries.values()).filter(item => !item.sentAt && !item.cancelledAt && item.eventDate > now && (!item.lockedUntil || item.lockedUntil <= now) && (!registrationId || item.registrationId === registrationId)).slice(0, 100);
+      pending = Array.from(this.deliveries.values()).filter(item => !item.sentAt && !item.cancelledAt && item.eventDate > now && (!item.lockedUntil || item.lockedUntil <= now) && (!scopeKey || item.scopeKey === scopeKey)).slice(0, 100);
       for (const item of pending) item.lockedUntil = new Date(now.getTime() + 5 * 60000);
     }
     const result = { sent: 0, failed: 0 };
     for (const item of pending) {
-      const registration = await this.source.getRegistration(item.registrationId);
-      if (!registration || ((item.kind === "waitlist") !== (registration.status === "WAITLISTED"))) {
-        if (this.database) await this.database.query("UPDATE app_email_deliveries SET cancelled_at = $2, locked_until = NULL, last_error = 'Registration removed or status changed' WHERE id = $1", [item.id, now]);
-        else { item.cancelledAt = now; item.lockedUntil = null; item.lastError = "Registration removed or status changed"; }
+      if (!await this.deliveryIsRelevant(item, now)) {
+        if (this.database) await this.database.query("UPDATE app_email_deliveries SET cancelled_at = $2, locked_until = NULL, last_error = 'Recipient or notification status changed' WHERE id = $1", [item.id, now]);
+        else { item.cancelledAt = now; item.lockedUntil = null; item.lastError = "Recipient or notification status changed"; }
         continue;
       }
       if (Date.now() + 16000 >= deadline) {
@@ -114,9 +170,22 @@ export class NotificationService {
     }
     return result;
   }
+  private async deliveryIsRelevant(item: Delivery, now: Date): Promise<boolean> {
+    if (item.registrationId) {
+      const registration = await this.source.getRegistration(item.registrationId);
+      return !!registration && ((item.kind === "waitlist") === (registration.status === "WAITLISTED"));
+    }
+    const user = item.userId ? await this.source.getUser(item.userId) : undefined;
+    if (!user || user.email.trim().toLowerCase() !== item.email) return false;
+    if (item.kind === "welcome") return true;
+    if (!item.teamId || user.teamId !== item.teamId || item.weekId !== getPuzzleWeekId(getRealCurrentWeekIndex(now))) return false;
+    if (!eventInPuzzleWeek(now) || !await this.source.getTeam(item.teamId)) return false;
+    const progress = await this.source.getPuzzleProgress(item.teamId, item.weekId);
+    return GAME_TYPES.every(type => progress.some(game => game.gameType === type && game.isSolved));
+  }
   async listDeliveries() {
     if (this.database) {
-      const result = await this.database.query(`SELECT id, registration_id AS "registrationId", kind, email, payload,
+      const result = await this.database.query(`SELECT id, registration_id AS "registrationId", scope_key AS "scopeKey", user_id AS "userId", team_id AS "teamId", week_id AS "weekId", kind, email, payload,
         event_date AS "eventDate", sent_at AS "sentAt", cancelled_at AS "cancelledAt", last_attempt_at AS "lastAttemptAt", last_error AS "lastError"
         FROM app_email_deliveries ORDER BY COALESCE(last_attempt_at, event_date) DESC, id LIMIT 200`);
       return result.rows;

@@ -28,6 +28,8 @@ export interface IStorage {
   upgradeLegacyPassword(id: string, previous: string, hashed: string): Promise<User | undefined>;
   updateUserTeam(userId: string, teamId: string | null, role?: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
+  getUsersPendingWelcome(): Promise<User[]>;
+  markWelcomeQueued(id: string): Promise<void>;
 
   // Team Operations
   getTeam(id: string): Promise<Team | undefined>;
@@ -114,6 +116,7 @@ export class MemStorage implements IStorage {
 
     // Seed Demo Users
     const leaderUser: User = {
+      language: "ro", welcomeQueued: true,
       id: "usr_vlad_leader",
       name: "Vlad Dracul (Captain)",
       email: "vlad@transilvaniatrivia.ro",
@@ -125,6 +128,7 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
     };
     const memberUser: User = {
+      language: "ro", welcomeQueued: true,
       id: "usr_elena_member",
       name: "Elena Carpatina",
       email: "elena@transilvaniatrivia.ro",
@@ -136,6 +140,7 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
     };
     const adminUser: User = {
+      language: "ro", welcomeQueued: true,
       id: "usr_admin",
       name: "Quizmaster Admin",
       email: "admin@transilvaniatrivia.ro",
@@ -271,6 +276,7 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
     const user: User = {
+      language: insertUser.language ?? "ro", welcomeQueued: false,
       id,
       name: insertUser.name,
       email: insertUser.email,
@@ -294,6 +300,13 @@ export class MemStorage implements IStorage {
   }
   async getAllUsers(): Promise<User[]> {
     return Array.from(this.users.values());
+  }
+  async getUsersPendingWelcome(): Promise<User[]> {
+    return Array.from(this.users.values()).filter(user => !user.welcomeQueued);
+  }
+  async markWelcomeQueued(id: string): Promise<void> {
+    const user = this.users.get(id);
+    if (user) user.welcomeQueued = true;
   }
 
   async upgradeLegacyPassword(id: string, previous: string, hashed: string): Promise<User | undefined> {
@@ -650,6 +663,12 @@ export class DatabaseStorage implements IStorage {
   }
   async getAllUsers(): Promise<User[]> {
     return await this.database.select().from(users);
+  }
+  async getUsersPendingWelcome(): Promise<User[]> {
+    return await this.database.select().from(users).where(eq(users.welcomeQueued, false));
+  }
+  async markWelcomeQueued(id: string): Promise<void> {
+    await this.database.update(users).set({ welcomeQueued: true }).where(eq(users.id, id));
   }
 
   async upgradeLegacyPassword(id: string, previous: string, hashed: string): Promise<User | undefined> {

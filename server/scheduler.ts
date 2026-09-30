@@ -27,6 +27,7 @@ export function runNotifications(now = new Date()) {
     }
     const due = registrations.filter(registration => reminderIsDue(registration, now));
     for (const registration of due) await notifications.queue(registration, "reminder");
+    await notifications.queuePendingAccountEmails(now);
     const result = await notifications.deliver(undefined, now);
     for (const registration of due) {
       if (await notifications.reminderComplete(registration.id)) await storage.markReminderSent(registration.id);

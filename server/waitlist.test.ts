@@ -123,7 +123,7 @@ test("API keeps waitlist private, protects approvals, previews real templates, a
   assert.equal(late.body.status, "WAITLISTED");
   assert.equal((await request("/api/admin/emails")).status, 401);
   const emails = await request("/api/admin/emails", "GET", undefined, admin);
-  assert.equal(emails.body.configured, false); assert.equal(emails.body.templates.length, 7);
+  assert.equal(emails.body.configured, false); assert.equal(emails.body.templates.length, 9);
   assert.deepEqual(emails.body.templates[0].payload, buildEventEmail("confirmation", { name: "Ana", email: "ana@example.com", teamName: "Echipa Exemplu", memberCount: 4, eventDate, isCaptain: true }));
   assert.deepEqual(emails.body.templates[6].payload, buildPasswordResetEmail("ana@example.com", "123456"));
   assert.equal(emails.body.deliveries.filter((d: any) => d.registrationId === linked.body.id && d.kind === "confirmation").length, 1);

@@ -1,5 +1,6 @@
 import { t, locale } from "@/lib/i18n";
 import { useState, useEffect, useRef } from "react";
+import { useAuth } from "@/lib/auth-context";
 import { getCurrentOrNextEdition, type ActiveEditionState } from "@shared/schedule";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
@@ -15,6 +16,7 @@ import FooterSection from "@/components/FooterSection";
 const SECTION_IDS = ["hero", "registration", "games", "rulebook", "team", "prizes"];
 
 export default function Home() {
+  const { isLoading: isAuthLoading } = useAuth();
   const [activeSection, setActiveSection] = useState("hero");
   const [scheduleState, setScheduleState] = useState<ActiveEditionState>(getCurrentOrNextEdition());
   const [isWaitlistOnly, setIsWaitlistOnly] = useState(false);
@@ -22,6 +24,23 @@ export default function Home() {
   const [isLoadingTeams, setIsLoadingTeams] = useState(false);
   // Suppress the observer briefly after a nav click so scroll animation doesn't fight it
   const isNavigatingRef = useRef(false);
+
+  // Email links can open the app directly at a section before React has mounted it.
+  useEffect(() => {
+    if (isAuthLoading) return;
+    const navigateToHash = () => {
+      const sectionId = window.location.hash.slice(1);
+      if (!SECTION_IDS.includes(sectionId)) return;
+      document.getElementById(sectionId)?.scrollIntoView({ behavior: "instant", block: "start" });
+      setActiveSection(sectionId);
+    };
+    const frame = requestAnimationFrame(navigateToHash);
+    window.addEventListener("hashchange", navigateToHash);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("hashchange", navigateToHash);
+    };
+  }, [isAuthLoading]);
 
   // Fetch active registered teams for the upcoming edition
   const fetchRegistrations = async () => {

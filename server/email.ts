@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { formatEventDate } from "../shared/event-time.js";
 import { EMAIL_WEBSITE_URL } from "../shared/email-brand.js";
-import { brandedEmail, emailText, eventDetailRow } from "./email-layout.js";
+import { brandedEmail, emailButton, emailText, eventDetailRow } from "./email-layout.js";
 export { escapeHtml } from "./email-layout.js";
 
 export interface EmailPayload { to: string; subject: string; html: string; text: string; }
@@ -50,11 +50,9 @@ export function buildEventEmail(kind: EmailKind, details: EventEmailDetails): Em
           ${eventDetailRow(l("ECHIPA TA", "YOUR TEAM"), `${teamName} · ${memberCount} ${l("jucători", "players")}`)}
           ${eventDetailRow(l("CÂND", "WHEN"), dateLabel)}
           ${eventDetailRow(l("UNDE", "WHERE"), "Insomnia Cafe & Bistro")}
-          ${eventDetailRow(kind === "waitlist" ? l("TAXĂ DACĂ SUNTEȚI ACCEPTAȚI", "ENTRY FEE IF ACCEPTED") : l("TAXĂ DE PARTICIPARE", "ENTRY FEE"), `10 LEI ${l("de persoană", "per person")} · ${fee} LEI ${l("pentru întreaga echipă", "for the whole team")}`)}
+          ${eventDetailRow(kind === "waitlist" ? l("TAXĂ DACĂ SUNTEȚI ACCEPTAȚI", "ENTRY FEE IF ACCEPTED") : l("TAXĂ DE PARTICIPARE", "ENTRY FEE"), `10 LEI ${l("de persoană", "per person")} · ${fee} LEI ${l("pentru întreaga echipă", "for the whole team")}`, true)}
         </table>
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;"><tr><td class="email-bg-ffc30b" bgcolor="#ffc30b" style="background-color:#ffc30b;border:1px solid #ffc30b;border-radius:6px;mso-padding-alt:14px 20px;">
-          <a href="${EMAIL_WEBSITE_URL}" style="display:inline-block;padding:14px 20px;font-size:14px;line-height:20px;font-weight:bold;color:#180b24;text-decoration:none;">${emailText(l("Vezi detaliile evenimentului", "View event details") + " →", "#180b24")}</a>
-        </td></tr></table>`,
+        ${emailButton(l("Vezi detaliile evenimentului", "View event details"), EMAIL_WEBSITE_URL)}`,
       footer: kind === "waitlist" ? l("Acest email confirmă înscrierea pe lista de așteptare. Masa nu este încă rezervată. Vă anunțăm pe email dacă echipa este acceptată.", "This email confirms your waiting-list entry, not a reserved table. We will email you if your team is accepted.") : l("Voi aduceți curiozitatea, noi aducem întrebările. Ne vedem la Insomnia Cafe & Bistro!", "Bring your curiosity. We'll bring the questions. See you at Insomnia Cafe & Bistro!"),
     }),
   };
@@ -110,4 +108,52 @@ export function buildPasswordResetEmail(toEmail: string, code: string, language:
 }
 export async function sendPasswordResetCode(toEmail: string, code: string, language: "ro" | "en" = "ro"): Promise<EmailResult> {
   return sendEmail(buildPasswordResetEmail(toEmail, code, language));
+}
+
+export function buildWelcomeEmail(details: { email: string; name: string; createdAt: Date; language?: "ro" | "en" }): EmailPayload {
+  const { email, name, createdAt, language = "ro" } = details;
+  const l = (ro: string, en: string) => language === "ro" ? ro : en;
+  const title = l("Cont creat cu succes!", "Your account is ready!");
+  const greeting = l(`Bună, ${name}! Bine ai venit la Transilvania Trivia. Contul tău este pregătit pentru următoarea provocare.`, `Hello, ${name}! Welcome to Transilvania Trivia. Your account is ready for the next challenge.`);
+  const nextStep = l("Intră în „Echipa mea” pentru a crea o echipă sau pentru a te alătura uneia folosind codul de invitație primit de la căpitan. Apoi puteți rezolva împreună jocurile săptămânii.", "Go to “My team” to create a team or join one using the invitation code from your captain. Then you can solve the weekly games together.");
+  const date = `${formatEventDate(createdAt, language)} (${l("ora României", "Romania time")})`;
+  const url = `${EMAIL_WEBSITE_URL}/#team`;
+  return {
+    to: email, subject: `${title} — Transilvania Trivia`,
+    text: `${greeting}\n\n${l("Email", "Email")}: ${email}\n${l("Cont creat la", "Account created on")}: ${date}\n${l("Platformă", "Website")}: ${EMAIL_WEBSITE_URL}\n\n${nextStep}\n${l("Mergi la Echipa mea", "Go to My team")}: ${url}`,
+    html: brandedEmail({
+      language, title, label: l("BINE AI VENIT ÎN JOC", "WELCOME TO THE GAME"),
+      preheader: l("Contul tău este gata. Creează o echipă sau alătură-te prietenilor cu un cod de invitație.", "Your account is ready. Create a team or join your friends with an invitation code."),
+      body: `<p style="margin:12px 0 24px;">${emailText(greeting)}</p>
+        <table class="email-bg-1c0d2d" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#1c0d2d" style="width:100%;background-color:#1c0d2d;border:1px solid #55316c;border-radius:10px;">
+          ${eventDetailRow("EMAIL", email)}
+          ${eventDetailRow(l("CONT CREAT LA", "ACCOUNT CREATED ON"), date)}
+          ${eventDetailRow(l("PLATFORMĂ", "WEBSITE"), "transilvaniatrivia.ro", true)}
+        </table>
+        <p style="margin:24px 0 0;">${emailText(nextStep)}</p>
+        ${emailButton(l("Mergi la Echipa mea", "Go to My team"), url)}`,
+      footer: l("Curiozitatea se joacă în echipă. Ne bucurăm că ești alături de noi!", "Curiosity is a team sport. We're glad you're here!"),
+    }),
+  };
+}
+
+export function buildGamesCompletedEmail(details: { email: string; name: string; teamName: string; language?: "ro" | "en" }): EmailPayload {
+  const { email, name, teamName, language = "ro" } = details;
+  const l = (ro: string, en: string) => language === "ro" ? ro : en;
+  const title = l("Toate jocurile, rezolvate!", "All games completed!");
+  const message = l(`Felicitări, ${name}! Echipa ta, ${teamName}, a rezolvat toate cele cinci jocuri ale săptămânii.`, `Congratulations, ${name}! Your team, ${teamName}, has solved all five of this week's games.`);
+  const nextStep = l("Secretul ediției este acum deblocat. Intră în secțiunea Jocuri și descoperă-l alături de echipă!", "The edition's secret is now unlocked. Head to the Games section and discover it with your team!");
+  const url = `${EMAIL_WEBSITE_URL}/#games`;
+  return {
+    to: email, subject: l("Ați deblocat secretul ediției! — Transilvania Trivia", "You've unlocked the edition's secret! — Transilvania Trivia"),
+    text: `${message}\n\n${nextStep}\n${l("Descoperă secretul", "Discover the secret")}: ${url}`,
+    html: brandedEmail({
+      language, title, label: l("5 DIN 5 · SECRET DEBLOCAT", "5 OUT OF 5 · SECRET UNLOCKED"),
+      preheader: nextStep,
+      body: `<p style="margin:12px 0 20px;">${emailText(message)}</p>
+        <p style="margin:0;">${emailText(nextStep)}</p>
+        ${emailButton(l("Descoperă secretul", "Discover the secret"), url)}`,
+      footer: l("Un efort de echipă, un secret câștigat. Ne vedem la quiz!", "A team effort, a secret earned. See you at the quiz!"),
+    }),
+  };
 }

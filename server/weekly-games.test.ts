@@ -9,6 +9,7 @@ import { getWeeklyGameData } from "../client/src/lib/weeklyGames.js";
 import { setupSecurity } from "./security.js";
 import { registerRoutes } from "./routes.js";
 import { storage } from "./storage.js";
+import { notifications } from "./notifications.js";
 
 // Romania is UTC+3 in summer and UTC+2 in winter; the reset must remain local midnight.
 test("all weekly content rolls over at Wednesday 00:00 Romania time, never Thursday", () => {
@@ -134,6 +135,7 @@ test("API starts all five games fresh at midnight and rejects stale-week writes"
   const completedWithoutEvent = await request(`/api/games/progress/${previousWeek}`);
   assert.equal(completedWithoutEvent.body.solvedCount, 5);
   assert.equal(completedWithoutEvent.body.secretClueUnlocked, false, "Practice weeks never unlock an event clue");
+  assert.equal((await notifications.listDeliveries()).filter(item => item.teamId === team.id && item.kind === "games-completed").length, 0);
   t.mock.timers.setTime(new Date("2026-09-22T21:00:00Z").getTime());
   const currentWeek = getPuzzleWeekId();
   const fresh = await request(`/api/games/progress/${currentWeek}`);
@@ -155,4 +157,9 @@ test("API starts all five games fresh at midnight and rejects stale-week writes"
     assert.equal((await request("/api/games/progress", "POST", { teamId: team.id, weekId: eventWeekId, gameType, isSolved: true, data: gameType === "TARGET" ? { moves: getTargetPuzzle(getRealCurrentWeekIndex()).solution } : undefined })).status, 200);
   }
   assert.equal((await request(`/api/games/progress/${eventWeekId}`)).body.secretClueUnlocked, true, "Event weeks unlock the clue after all five games");
+  const completionEmails = () => notifications.listDeliveries().then(items => items.filter(item => item.teamId === team.id && item.kind === "games-completed"));
+  assert.equal((await completionEmails()).length, 1, "The final solve queues a completion email");
+  assert.match((await completionEmails())[0].payload.html, /href="https:\/\/transilvaniatrivia.ro\/#games"/);
+  assert.equal((await request("/api/games/progress", "POST", { teamId: team.id, weekId: eventWeekId, gameType: "WORDLE", isSolved: true })).status, 200);
+  assert.equal((await completionEmails()).length, 1, "A repeated solve cannot queue another email");
 });

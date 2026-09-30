@@ -9,9 +9,9 @@ import { getCurrentOrNextEdition, getFullSchedule, getEditionDateTime } from "..
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { expandedCapacity } from "../shared/booking.js";
-import { buildEventEmail, buildPasswordResetEmail, FROM_EMAIL, sendPasswordResetCode } from "./email.js";
+import { buildEventEmail, buildPasswordResetEmail, buildWelcomeEmail, buildGamesCompletedEmail, FROM_EMAIL, sendPasswordResetCode } from "./email.js";
 import { teamService, TeamError } from "./team-service.js";
-import { notifications } from "./notifications.js";
+import { notifications, welcomeEmailScope, gamesEmailScope } from "./notifications.js";
 import { reminderIsDue, runNotifications } from "./scheduler.js";
 import { scoreQuizzability } from "./quizzability/index.js";
 import { randomInt } from "crypto";
@@ -252,6 +252,7 @@ export async function registerRoutes(
         email: z.string().trim().toLowerCase().email("Adresă de email invalidă").max(254),
         password: z.string().min(6, "Parola trebuie să aibă cel puțin 6 caractere").max(256),
         keepLoggedIn: z.boolean().optional(),
+        language: z.enum(["ro", "en"]).default("ro"),
       });
 
       const data = schema.parse(req.body);
@@ -260,8 +261,14 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Există deja un cont cu această adresă de email!" });
       }
 
-      const user = await storage.createUser({ name: data.name, email: data.email, role: "MEMBER", password: await hashPassword(data.password) });
+      const user = await storage.createUser({ name: data.name, email: data.email, language: data.language, role: "MEMBER", password: await hashPassword(data.password) });
       await establishSession(req, user, data.keepLoggedIn === true);
+      try {
+        await notifications.queueWelcome(user);
+        await notifications.deliver(welcomeEmailScope(user.id));
+      } catch {
+        console.error("[Email] Welcome email remains pending for retry.");
+      }
       res.status(201).json({
         id: user.id,
         name: user.name,
@@ -619,6 +626,14 @@ export async function registerRoutes(
         solvedAt: isSolved ? new Date() : undefined,
       });
 
+      if (result.isSolved) {
+        try {
+          await notifications.queueGamesCompleted(teamId, weekId);
+          await notifications.deliver(gamesEmailScope(teamId, weekId));
+        } catch {
+          console.error("[Email] Game completion email remains pending for retry.");
+        }
+      }
       res.json(result);
     } catch (error) {
       if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
@@ -918,7 +933,11 @@ export async function registerRoutes(
       })));
       res.set("Cache-Control", "no-store");
       res.json({ from: FROM_EMAIL, provider: "Resend", configured: !!process.env.RESEND_API_KEY,
-        templates: [...templates, { kind: "password-reset", audience: "Titularul contului (cod demonstrativ)", payload: buildPasswordResetEmail("ana@example.com", "123456", language) }],
+        templates: [...templates,
+          { kind: "password-reset", audience: "Titularul contului (cod demonstrativ)", payload: buildPasswordResetEmail("ana@example.com", "123456", language) },
+          { kind: "welcome", audience: "Titularul contului nou", payload: buildWelcomeEmail({ ...details, createdAt: new Date() }) },
+          { kind: "games-completed", audience: "Fiecare membru al echipei", payload: buildGamesCompletedEmail(details) },
+        ],
         deliveries: await notifications.listDeliveries(),
       });
     } catch { res.status(500).json({ message: "Emailurile nu au putut fi încărcate." }); }

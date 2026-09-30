@@ -873,5 +873,18 @@
   "Baza de date nu este configurată. Contactează administratorul.": "The database is not configured. Please contact the administrator.",
   "Conexiunea bazei de date nu este configurată corect. Contactează administratorul.": "The database connection is not configured correctly. Please contact the administrator.",
   "Conexiunea cu baza de date este temporar indisponibilă. Încearcă din nou în câteva momente.": "The database connection is temporarily unavailable. Please try again in a few moments.",
-  "Serverul nu a putut porni. Încearcă din nou în câteva momente.": "The server could not start. Please try again in a few moments."
+  "Serverul nu a putut porni. Încearcă din nou în câteva momente.": "The server could not start. Please try again in a few moments.",
+  "Cont creat cu succes": "Account created successfully",
+  "Secret deblocat": "Secret unlocked",
+  "La crearea contului, cu detalii și acces la Echipa mea.": "When an account is created, with account details and a link to My team.",
+  "Titularului contului nou.": "The new account holder.",
+  "Titularul contului nou": "New account holder",
+  "După rezolvarea celor cinci jocuri într-o săptămână cu eveniment, o singură dată pe săptămână și destinatar.": "After solving all five games during an event week, once per week and recipient.",
+  "Fiecărui membru al echipei.": "Every team member.",
+  "Fiecare membru al echipei": "Every team member",
+  "Ultimele 200 de emailuri automate": "Last 200 automatic emails",
+  "Niciun email automat înregistrat încă.": "No automatic emails recorded yet.",
+  "Expirat": "Expired",
+  "Emailurile de bun venit și de deblocare a secretului se încearcă imediat. Retrimiterile se opresc după 7 zile pentru bun venit și la resetarea săptămânii pentru secret.": "Welcome and secret-unlocked emails are attempted immediately. Retries stop after 7 days for welcome emails and at the weekly reset for secret notifications.",
+  "Cheia Resend lipsește în acest mediu. Emailurile automate rămân în așteptare; nimic nu este marcat ca trimis.": "The Resend key is missing in this environment. Automatic emails remain pending; nothing is marked as sent."
 }
