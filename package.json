@@ -10,7 +10,8 @@
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "test": "node script/test.mjs",
-    "passwords:migrate": "node --import tsx script/hash-legacy-passwords.ts"
+    "passwords:migrate": "node --import tsx script/hash-legacy-passwords.ts",
+    "test:browser": "node --import tsx script/build.ts && playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -84,6 +85,7 @@
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@replit/vite-plugin-cartographer": "^0.4.4",
     "@replit/vite-plugin-dev-banner": "^0.1.1",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",

@@ -20,7 +20,9 @@ export default function PrizesSection() {
       place: t("LOCUL I"),
       title: t("Sticlă de Vin"),
       desc: t("Sărbătoriți victoria cu vinul preferat: alb, roșu sau rosé."),
-      image: "/prize_wine.png",
+      image: "/prize_wine.webp",
+      width: 103,
+      height: 480,
       badgeColor: "bg-amber-400 text-purple-950",
       borderColor: "ring-2 ring-amber-400/80 shadow-[0_0_35px_rgba(246,184,40,0.4)]",
       bgGradient: "from-amber-500/20 via-purple-900/20 to-[#0e041d]",
@@ -31,7 +33,9 @@ export default function PrizesSection() {
       place: t("LOCUL II"),
       title: t("Găleată de Bere"),
       desc: t("O găleată cu beri reci pentru toți membrii echipei de pe locul secund."),
-      image: "/prize_beer.png",
+      image: "/prize_beer.webp",
+      width: 382,
+      height: 480,
       badgeColor: "bg-gray-300 text-purple-950",
       borderColor: "ring-2 ring-gray-400/70 shadow-[0_0_30px_rgba(156,163,175,0.4)]",
       bgGradient: "from-gray-500/20 via-purple-900/15 to-[#0e041d]",
@@ -40,9 +44,11 @@ export default function PrizesSection() {
     },
     {
       place: t("LOCUL III"),
-      title: t("Rând de Shot-uri"),
-      desc: t("Un rând de shot-uri la barul Insomnia pentru a sărbători bronzul."),
-      image: "/prize_shots.png",
+      title: t("Rând de shoturi"),
+      desc: t("Un rând de shoturi la barul Insomnia pentru a sărbători bronzul."),
+      image: "/prize_shots.webp",
+      width: 320,
+      height: 480,
       badgeColor: "bg-[#CD7F32] text-white",
       borderColor: "ring-2 ring-[#CD7F32]/70 shadow-[0_0_30px_rgba(205,127,50,0.4)]",
       bgGradient: "from-[#CD7F32]/20 via-purple-950/15 to-[#0e041d]",
@@ -87,6 +93,10 @@ export default function PrizesSection() {
                     <div className="absolute inset-0 bg-amber-400/10 rounded-full blur-xl group-hover:bg-amber-400/20 transition-all duration-500" />
                     <img
                       src={p.image}
+                      width={p.width}
+                      height={p.height}
+                      loading="lazy"
+                      decoding="async"
                       alt={p.title}
                       className="relative w-full h-full object-contain filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] group-hover:scale-105 transition-transform duration-300"
                     />
@@ -114,7 +124,7 @@ export default function PrizesSection() {
             <div className="space-y-2">
               <div className="inline-flex items-center justify-center sm:justify-start gap-2 text-amber-400 text-sm font-bold uppercase tracking-widest w-full">
                 <Crown className="w-5 h-5" />
-                 {t("Jackpot-ul Sezonului")} </div>
+                 {t("Jackpotul sezonului")} </div>
               <p className="text-purple-200 font-light max-w-md mx-auto sm:mx-0">
                  {t("Marele premiu pentru câștigătorii sezonului, acordat echipei cu cel mai mare punctaj adunat.")} </p>
             </div>

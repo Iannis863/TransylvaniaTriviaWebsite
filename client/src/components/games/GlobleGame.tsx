@@ -31,6 +31,7 @@ interface GlobleGameProps {
   weeklyData: WeeklyGameData;
   onSolve: (data: any) => void;
   isAlreadySolved?: boolean;
+  isActive?: boolean;
 }
 
 // Haversine formula
@@ -103,7 +104,7 @@ const getCentroid = (geometry: any) => {
   return { lat: latSum / pts, lng: lonSum / pts };
 };
 
-export default function GlobleGame({ weeklyData, onSolve, isAlreadySolved = false }: GlobleGameProps) {
+export default function GlobleGame({ weeklyData, onSolve, isAlreadySolved = false, isActive = true }: GlobleGameProps) {
   const { toast } = useToast();
   const [countries, setCountries] = useState<any[]>([]);
   const [guesses, setGuesses] = useState<any[]>([]);
@@ -119,10 +120,15 @@ export default function GlobleGame({ weeklyData, onSolve, isAlreadySolved = fals
   useEffect(() => {
     const element = globeContainer.current;
     if (!element) return;
-    const observer = new ResizeObserver(([entry]) => setGlobeSize({ width: entry.contentRect.width, height: entry.contentRect.height }));
+    const observer = new ResizeObserver(([entry]) => { if (entry.contentRect.width > 0 && entry.contentRect.height > 0) setGlobeSize({ width: entry.contentRect.width, height: entry.contentRect.height }); });
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (isActive) globeRef.current?.resumeAnimation();
+    else globeRef.current?.pauseAnimation();
+  }, [isActive]);
 
   // Target Country: based on current week
   const targetIso = weeklyData.globleTarget;
@@ -172,12 +178,10 @@ export default function GlobleGame({ weeklyData, onSolve, isAlreadySolved = fals
       return;
     }
 
-    const centerDist = getDistance(country.centroid.lat, country.centroid.lng, targetCountry.centroid.lat, targetCountry.centroid.lng);
     const dist = getMinPolygonDistance(country.geometry, targetCountry.geometry);
-    country.distance = dist; // store it
     const heading = getHeading(country.centroid.lat, country.centroid.lng, targetCountry.centroid.lat, targetCountry.centroid.lng);
 
-    const newGuess = { ...country, dist, heading };
+    const newGuess = { ...country, distance: dist, dist, heading };
     const newGuesses = [newGuess, ...guesses];
     setGuesses(newGuesses);
     setCurrentGuess("");

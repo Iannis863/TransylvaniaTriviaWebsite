@@ -92,7 +92,7 @@ export default function SecretClueModal({
             <div className="flex items-start gap-2.5 text-xs text-emerald-400 bg-emerald-950/40 p-3 rounded-lg border border-emerald-500/30">
               <ShieldCheck className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>
-                <strong>{t("Avantaj Strategic la Quiz:")}</strong>  {t("Prin acest indiciu știi tema Rundei IV de la Quiz-ul următor.")} </span>
+                <strong>{t("Avantaj Strategic la Quiz:")}</strong>  {t("Acest indiciu îți dezvăluie tema rundei a IV-a de la următorul quiz.")} </span>
             </div>
           </div>
         ) : (

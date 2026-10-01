@@ -18,14 +18,15 @@ async function fixture() {
   return { source, captain, member, team, registration };
 }
 
-test("guest registrations only notify the contact; linked teams include captain and members once", async () => {
+test("guest registrations only notify the contact; linked teams include captain and members once", async t => {
   const { source, registration } = await fixture();
   assert.deepEqual((await getRegistrationRecipients(registration, source)).map(x => [x.email, x.name, x.isCaptain]), [
     ["ana@example.com", "Ana Captain", true], ["dan@example.com", "Dan Member", false],
   ]);
   assert.equal((await getRegistrationRecipients({ ...registration, teamId: null }, source)).length, 1);
-  const duplicate = await source.createUser({ name: "Duplicate", email: " ANA@example.com ", role: "MEMBER" });
-  await source.updateUserTeam(duplicate.id, registration.teamId);
+  const members = await source.getTeamMembers(registration.teamId!);
+  // Existing installations may contain duplicate addresses from before normalization.
+  t.mock.method(source, "getTeamMembers", async () => [...members, { ...members[0], id: "legacy-duplicate", email: " ANA@example.com " }]);
   assert.equal((await getRegistrationRecipients(registration, source)).length, 2);
 });
 
@@ -150,4 +151,24 @@ test("completed puzzle progress keeps the original solver when a stale save arri
   assert.equal(updated.isSolved, true);
   assert.equal(updated.solvedByUserId, "solver");
   assert.deepEqual(updated.data, { answer: "solved" });
+});
+
+test("queued reminders cancel departed recipients and use the current contact before retrying", async () => {
+  const { source, registration, member, team } = await fixture();
+  const sent: EmailPayload[] = [];
+  const service = new NotificationService(source, async payload => { sent.push(payload); return { success: true }; }, null);
+  await service.queue(registration, "reminder");
+  await source.updateUserTeam(member.id, null, "MEMBER");
+  await service.deliver(registration.id, new Date("2026-10-06T10:00:00Z"));
+  assert.deepEqual(sent.map(payload => payload.to), ["ana@example.com"]);
+  assert.equal(await service.reminderComplete(registration.id), true, "Cancelled former members cannot keep a reminder pending forever");
+  assert.ok((await service.listDeliveries()).find(item => item.email === member.email)?.cancelledAt);
+
+  const guest = await source.createRegistration({ ...registration, teamId: undefined, teamName: "Guest contact", email: "old@example.com" });
+  await service.queue(guest, "confirmation");
+  const updated = (await source.updateRegistration(guest.id, { email: "new@example.com" }))!;
+  await service.queue(updated, "confirmation");
+  await service.deliver(guest.id, new Date("2026-10-06T10:00:00Z"));
+  assert.deepEqual(sent.map(payload => payload.to), ["ana@example.com", "new@example.com"]);
+  assert.ok((await service.listDeliveries()).find(item => item.email === "old@example.com")?.cancelledAt);
 });

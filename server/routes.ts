@@ -3,7 +3,7 @@ import { bucharestParts } from "../shared/event-time.js";
 import { getTargetPuzzle, isTargetSolution } from "../shared/target-game.js";
 import type { Express, RequestHandler } from "express";
 import { type Server } from "http";
-import { storage } from "./storage.js";
+import { storage, DuplicateEmailError } from "./storage.js";
 import { insertRegistrationSchema } from "../shared/schema.js";
 import { getCurrentOrNextEdition, getFullSchedule, getEditionDateTime } from "../shared/schedule.js";
 import { ZodError, z } from "zod";
@@ -258,7 +258,7 @@ export async function registerRoutes(
       const data = schema.parse(req.body);
       const existing = await storage.getUserByEmail(data.email);
       if (existing) {
-        return res.status(400).json({ message: "Există deja un cont cu această adresă de email!" });
+        return res.status(409).json({ message: "Există deja un cont cu această adresă de email!" });
       }
 
       const user = await storage.createUser({ name: data.name, email: data.email, language: data.language, role: "MEMBER", password: await hashPassword(data.password) });
@@ -279,6 +279,7 @@ export async function registerRoutes(
       });
     } catch (error: any) {
       if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
+      if (error instanceof DuplicateEmailError) return res.status(409).json({ message: "Există deja un cont cu această adresă de email!" });
       console.error("Register Error:", error);
       res.status(500).json({ message: "Eroare la crearea contului" });
     }
@@ -348,10 +349,11 @@ export async function registerRoutes(
 
       const code = String(randomInt(100000, 1000000));
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-      await storage.createResetCode(email, code, expiresAt);
+      const created = await storage.createResetCode(email, code, expiresAt, user.id);
+      if (!created) return res.json({ message: "Dacă există un cont cu acest email, vei primi un cod de resetare." });
 
       const delivery = await sendPasswordResetCode(email, code, language);
-      if (!delivery.success) await storage.deleteResetCodes(email);
+      if (!delivery.success) await storage.deleteResetCodes(email, code);
 
       res.json({ message: "Dacă există un cont cu acest email, vei primi un cod de resetare." });
     } catch (error: any) {
@@ -371,17 +373,10 @@ export async function registerRoutes(
       });
 
       const { email, code, newPassword } = schema.parse(req.body);
-      if (!await storage.consumeResetCode(email, code)) {
+      const passwordHash = await hashPassword(newPassword);
+      if (!await storage.resetUserPassword(email, code, passwordHash)) {
         return res.status(400).json({ message: "Cod invalid, expirat sau prea multe încercări. Solicită un cod nou." });
       }
-
-      // Code is valid — update password
-      const user = await storage.getUserByEmail(email);
-      if (!user) {
-        return res.status(400).json({ message: "Contul nu a fost găsit." });
-      }
-
-      await storage.updateUser(user.id, { password: await hashPassword(newPassword) });
 
       res.json({ message: "Parola a fost schimbată cu succes!" });
     } catch (error: any) {
@@ -422,6 +417,7 @@ export async function registerRoutes(
       res.json(publicUser(updatedUser));
     } catch (error: any) {
       if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
+      if (error instanceof DuplicateEmailError) return res.status(409).json({ message: "Email deja utilizat" });
       console.error("Update user error:", error);
       res.status(500).json({ message: "Eroare la actualizarea contului" });
     }

@@ -146,7 +146,8 @@ export default function ConnectionsGame({ weeklyData, onSolve, isAlreadySolved =
                 key={word}
                 type="button"
                 onClick={() => toggleWord(word)}
-                className={`h-16 rounded-xl border font-heading text-xs sm:text-xs md:text-sm font-bold transition-all flex items-center justify-center p-1 text-center leading-tight shadow ${
+                aria-pressed={isSelected}
+                className={`min-w-0 break-words hyphens-auto h-16 rounded-xl border font-heading text-xs sm:text-xs md:text-sm font-bold transition-all flex items-center justify-center p-1 text-center leading-tight shadow ${
                   isSelected
                     ? "bg-amber-400 text-purple-950 border-amber-300 scale-102 shadow-md"
                     : "bg-purple-950/60 border-purple-700/50 text-purple-200 hover:bg-purple-900/40 hover:border-amber-400/50"
@@ -161,7 +162,7 @@ export default function ConnectionsGame({ weeklyData, onSolve, isAlreadySolved =
 
       {/* Actions */}
       {!isWon && (
-        <div className="w-full flex items-center justify-between gap-4 mt-2">
+        <div className="w-full flex flex-wrap items-center justify-center sm:justify-between gap-3 mt-2">
           <Button
             variant="ghost"
             size="sm"

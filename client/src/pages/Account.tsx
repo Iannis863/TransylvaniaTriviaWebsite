@@ -2,6 +2,7 @@ import { locale } from "@/lib/i18n";
 import { t } from "@/lib/i18n";
 import TeamRegistrationStatus from "@/components/TeamRegistrationStatus";
 import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -30,20 +31,19 @@ export default function Account() {
   const [email, setEmail] = useState(user?.email || "");
   const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [themeSuggestions, setThemeSuggestions] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (user?.teamId) {
-      fetch("/api/auth/me/theme-suggestions", {
-        credentials: "same-origin"
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) setThemeSuggestions(data);
-      })
-      .catch(console.error);
-    }
-  }, [user]);
+  const queryClient = useQueryClient();
+  const themesKey = ["account-theme-suggestions", user?.id, user?.teamId];
+  const themesQuery = useQuery<Array<{ id: string; themeName: string; popularityScore: number; status: string; createdAt: string | null }>>({
+    queryKey: themesKey,
+    enabled: !!user?.teamId,
+    staleTime: 0,
+    queryFn: async ({ signal }) => {
+      const response = await fetch("/api/auth/me/theme-suggestions", { signal });
+      if (!response.ok) throw new Error(t("Eroare la obținerea sugestiilor"));
+      return response.json();
+    },
+  });
+  const themeSuggestions = user?.teamId ? themesQuery.data ?? [] : [];
 
   useEffect(() => {
     if (!isLoading && !user) setLocation("/");
@@ -58,6 +58,7 @@ export default function Account() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true);
     try {
       const res = await fetch("/api/auth/me", {
@@ -69,16 +70,19 @@ export default function Account() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
+      setName(data.name); setEmail(data.email); setPhoneNumber(data.phoneNumber || "");
       toast({ title: t("Cont actualizat cu succes!") });
       await refreshAuth();
     } catch (err: any) {
-      toast({ title: t("Eroare"), description: err.message, variant: "destructive" });
+      toast({ title: t("Eroare"), description: t(err.message), variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleLeaveTeam = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const res = await fetch("/api/teams/leave", {
         method: "POST",
@@ -89,11 +93,15 @@ export default function Account() {
       toast({ title: t("Ai părăsit echipa.") });
       await refreshAuth();
     } catch (err: any) {
-      toast({ title: t("Eroare"), description: err.message, variant: "destructive" });
+      toast({ title: t("Eroare"), description: t(err.message), variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDeleteAccount = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const res = await fetch("/api/auth/me", {
         method: "DELETE",
@@ -102,9 +110,12 @@ export default function Account() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
       toast({ title: t("Cont șters definitiv.") });
-      logout();
+      // Deletion already destroys the server session.
+      await refreshAuth();
     } catch (err: any) {
-      toast({ title: t("Eroare"), description: err.message, variant: "destructive" });
+      toast({ title: t("Eroare"), description: t(err.message), variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -127,6 +138,9 @@ export default function Account() {
                 <Label htmlFor="name">{t("Nume")}</Label>
                 <Input
                   id="name"
+                  autoComplete="nickname"
+                  minLength={2}
+                  maxLength={100}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="bg-gray-950 border-gray-800 focus:border-amber-500"
@@ -138,6 +152,8 @@ export default function Account() {
                 <Label htmlFor="email">{t("Adresă de email")}</Label>
                 <Input
                   id="email"
+                  autoComplete="email"
+                  maxLength={254}
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -150,6 +166,8 @@ export default function Account() {
                 <Label htmlFor="phone">{t("Număr de telefon (Opțional)")}</Label>
                 <Input
                   id="phone"
+                  autoComplete="tel"
+                  maxLength={30}
                   type="tel"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
@@ -183,7 +201,7 @@ export default function Account() {
                 </div>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" className="border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-400 shrink-0">
+                    <Button disabled={isSubmitting} variant="outline" className="border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-400 shrink-0">
                       <UserMinus className="w-4 h-4 mr-2" />
                        {t("Părăsește Echipa")} </Button>
                   </AlertDialogTrigger>
@@ -213,7 +231,7 @@ export default function Account() {
 
           <div className="space-y-4">
             <h3 className="text-xl font-semibold">{t("Propuneri Teme (Echipă)")}</h3>
-            {themeSuggestions.length > 0 ? (
+            {user.teamId && themesQuery.isLoading ? <p role="status" className="text-gray-400 text-sm">{t("Se încarcă…")}</p> : user.teamId && themesQuery.isError ? <p role="alert" className="text-amber-200 text-sm">{t("Eroare la obținerea sugestiilor")} <button className="underline" onClick={() => void themesQuery.refetch()}>{t("Reîncearcă")}</button></p> : themeSuggestions.length > 0 ? (
               <div className="space-y-3">
                 {[...themeSuggestions]
                   .sort((a: any, b: any) => {
@@ -230,6 +248,8 @@ export default function Account() {
                         <AlertDialogTrigger asChild>
                           <button
                             className="absolute top-2 right-2 text-gray-500 hover:text-red-400 transition-colors"
+                            disabled={isSubmitting}
+                            aria-label={t("Șterge din istoric")}
                             title={t("Șterge din istoric")}
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -245,8 +265,18 @@ export default function Account() {
                             <AlertDialogCancel className="bg-gray-800 hover:bg-gray-700 text-white border-none">{t("Anulează")}</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={async () => {
-                                await fetch(`/api/theme-suggestions/${theme.id}`, { method: "DELETE" });
-                                setThemeSuggestions(prev => prev.filter(t => t.id !== theme.id));
+                                if (isSubmitting) return;
+                                setIsSubmitting(true);
+                                try {
+                                  const response = await fetch(`/api/theme-suggestions/${theme.id}`, { method: "DELETE" });
+                                  const data = await response.json();
+                                  if (!response.ok) throw new Error(data.message || "Eroare la obținerea sugestiilor");
+                                  queryClient.setQueryData(themesKey, themeSuggestions.filter(item => item.id !== theme.id));
+                                } catch (error) {
+                                  toast({ title: t("Eroare"), description: error instanceof Error ? t(error.message) : t("Eroare de conexiune"), variant: "destructive" });
+                                } finally {
+                                  setIsSubmitting(false);
+                                }
                               }}
                               className="bg-red-500 hover:bg-red-600 text-white"
                             >
@@ -286,7 +316,7 @@ export default function Account() {
             <h3 className="text-xl font-semibold">{t("Deconectare")}</h3>
             <p className="text-sm text-gray-400">
                {t("Ieși din contul tău de pe acest dispozitiv.")} </p>
-            <Button variant="outline" onClick={() => { logout(); setLocation("/"); }} className="w-full sm:w-auto text-white border-gray-700 hover:bg-gray-800">
+            <Button variant="outline" disabled={isSubmitting} onClick={async () => { setIsSubmitting(true); if (await logout()) setLocation("/"); setIsSubmitting(false); }} className="w-full sm:w-auto text-white border-gray-700 hover:bg-gray-800">
               <LogOut className="w-4 h-4 mr-2" />
                {t("Deconectare")} </Button>
           </div>
@@ -299,7 +329,7 @@ export default function Account() {
                {t("Vei părăsi automat echipa, iar contul tău va fi șters definitiv.")} </p>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="w-full sm:w-auto">
+                <Button disabled={isSubmitting} variant="destructive" className="w-full sm:w-auto">
                   <Trash2 className="w-4 h-4 mr-2" />
                    {t("Șterge Contul")} </Button>
               </AlertDialogTrigger>

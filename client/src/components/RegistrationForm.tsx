@@ -32,7 +32,7 @@ const registrationSchema = z.object({
   captainName: z.string().min(2, "Numele căpitanului trebuie să aibă cel puțin 2 caractere"),
   email: z.string().email("Te rugăm să introduci o adresă de email validă"),
   phoneNumber: z.string().optional(),
-  memberCount: z.number().min(1, "Este necesar cel puțin 1 membru").max(6, "Sunt允许ți maximum 6 membri"),
+  memberCount: z.number().min(1, "Este necesar cel puțin 1 membru").max(6, "Sunt permiși maximum 6 membri"),
 });
 
 type RegistrationFormData = z.infer<typeof registrationSchema>;

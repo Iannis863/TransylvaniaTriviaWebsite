@@ -1,5 +1,5 @@
 import { t, getLanguage } from "@/lib/i18n";
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export interface AuthUser {
@@ -28,7 +28,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password?: string, keepLoggedIn?: boolean) => Promise<boolean>;
   register: (name: string, email: string, password?: string, keepLoggedIn?: boolean) => Promise<boolean>;
-  logout: () => Promise<void>;
+  logout: () => Promise<boolean>;
   createTeam: (name: string, tagline?: string) => Promise<boolean>;
   joinTeam: (inviteCode: string) => Promise<boolean>;
   refreshAuth: () => Promise<void>;
@@ -42,16 +42,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [teamMembers, setTeamMembers] = useState<AuthUser[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { toast } = useToast();
+  const authRequest = useRef(0);
+  const joiningInvitation = useRef(false);
 
-  const refreshAuth = async () => {
+  const refreshAuth = useCallback(async () => {
+    const request = ++authRequest.current;
     try {
       const res = await fetch("/api/auth/me", { credentials: "same-origin" });
       if (res.ok) {
         const data = await res.json();
+        if (request !== authRequest.current) return;
         setUser(data.user);
         setTeam(data.team);
         setTeamMembers(data.members || []);
-      } else {
+      } else if ((res.status === 401 || res.status === 404) && request === authRequest.current) {
         setUser(null);
         setTeam(null);
         setTeamMembers([]);
@@ -59,15 +63,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error("Auth refresh error:", err);
     } finally {
-      setIsLoading(false);
+      if (request === authRequest.current) setIsLoading(false);
     }
-  };
-
-  useEffect(() => {
-    refreshAuth();
   }, []);
 
+  useEffect(() => {
+    void refreshAuth();
+    const refreshOnFocus = () => { void refreshAuth(); };
+    window.addEventListener("focus", refreshOnFocus);
+    return () => window.removeEventListener("focus", refreshOnFocus);
+  }, [refreshAuth]);
+
   const login = async (email: string, password: string = "", keepLoggedIn: boolean = false): Promise<boolean> => {
+    ++authRequest.current;
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -81,17 +89,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(data.user);
       setTeam(data.team);
+      setTeamMembers([]);
       toast({ title: t("Bine ai revenit, {0}!", [data.user.name]), description: t("Te-ai autentificat cu succes.") });
       await refreshAuth();
       return true;
     } catch (err) {
       toast({ title: t("Eroare"), description: t("Nu s-a putut realiza conexiunea"), variant: "destructive" });
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
 
   const register = async (name: string, email: string, password?: string, keepLoggedIn: boolean = false): Promise<boolean> => {
+    ++authRequest.current;
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -104,12 +116,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
       setUser(data);
+      setTeam(null);
+      setTeamMembers([]);
       toast({ title: t("Cont creat cu succes!"), description: t("Bine ai venit în Transilvania Trivia.") });
       await refreshAuth();
       return true;
     } catch (err) {
       toast({ title: t("Eroare"), description: t("Eroare la crearea contului"), variant: "destructive" });
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -117,14 +133,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const response = await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
     if (!response?.ok) {
       toast({ title: t("Deconectarea a eșuat"), variant: "destructive" });
-      return;
+      return false;
     }
+    ++authRequest.current;
     setUser(null);
     setTeam(null);
     setTeamMembers([]);
     localStorage.removeItem("tt_user_id");
     sessionStorage.removeItem("tt_user_id");
     toast({ title: t("Deconectat"), description: t("Ai ieșit din cont.") });
+    return true;
   };
 
   const createTeam = async (name: string, tagline?: string): Promise<boolean> => {
@@ -140,7 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast({ title: t("Eroare creare echipă"), description: data.message, variant: "destructive" });
+        toast({ title: t("Eroare creare echipă"), description: t(data.message || "Nu s-a putut crea echipa"), variant: "destructive" });
         return false;
       }
       setTeam(data);
@@ -166,10 +184,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast({ title: t("Nu s-a putut intra în echipă"), description: data.message, variant: "destructive" });
+        toast({ title: t("Nu s-a putut intra în echipă"), description: t(data.message || "Eroare la procesarea codului de invitație"), variant: "destructive" });
         return false;
       }
       setTeam(data.team);
+      if (data.user) setUser(data.user);
       setTeamMembers(data.members || []);
       toast({ title: t("Te-ai alăturat echipei \"{0}\"!", [data.team.name]), description: t("Acum poți participa împreună cu coechipierii tăi.") });
       await refreshAuth();
@@ -184,34 +203,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isLoading) return;
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const joinCode = urlParams.get("join");
+    const url = new URL(window.location.href);
+    const joinCode = url.searchParams.get("join");
+    const clearJoinParameter = () => {
+      url.searchParams.delete("join");
+      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    };
+    const consumeInvitation = (code: string) => {
+      if (joiningInvitation.current) return;
+      joiningInvitation.current = true;
+      sessionStorage.removeItem("pending_join_code");
+      void joinTeam(code).finally(() => { joiningInvitation.current = false; });
+    };
 
     if (joinCode) {
+      // Consume the URL before changing auth state, so refreshes cannot join twice.
+      clearJoinParameter();
       if (!user) {
         // User not logged in, save intent
         sessionStorage.setItem("pending_join_code", joinCode);
         toast({ title: t("Autentificare Necesară"), description: t("Creează un cont sau loghează-te pentru a intra în echipă.") });
         window.dispatchEvent(new CustomEvent("open-auth-modal"));
-        // Clean URL
-        window.history.replaceState({}, document.title, window.location.pathname);
       } else if (!user.teamId) {
         // User logged in and not in a team, join automatically!
-        joinTeam(joinCode).then(() => {
-          window.history.replaceState({}, document.title, window.location.pathname);
-        });
+        consumeInvitation(joinCode);
       } else {
         // User already in a team
         toast({ title: t("Ești deja într-o echipă"), description: t("Nu poți folosi link-ul de invitație, ești deja membru al unei echipe.") });
-        window.history.replaceState({}, document.title, window.location.pathname);
+        sessionStorage.removeItem("pending_join_code");
       }
     } else if (user && !user.teamId) {
       // Check for pending join code after login
       const pendingJoin = sessionStorage.getItem("pending_join_code");
       if (pendingJoin) {
-        sessionStorage.removeItem("pending_join_code");
-        joinTeam(pendingJoin);
+        consumeInvitation(pendingJoin);
       }
+    } else if (user?.teamId) {
+      sessionStorage.removeItem("pending_join_code");
     }
   }, [user, isLoading]);
 

@@ -1,6 +1,7 @@
 import { t } from "@/lib/i18n";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
+import { Link } from "wouter";
 
 export default function NotFound() {
   return (
@@ -15,6 +16,7 @@ export default function NotFound() {
           <p className="mt-4 text-sm text-gray-600">
             {t("Această pagină nu există. Revino la eveniment.")}
           </p>
+          <Link href="/" className="mt-6 inline-block rounded-lg bg-purple-900 px-4 py-3 text-white">{t("Eveniment")}</Link>
         </CardContent>
       </Card>
     </div>

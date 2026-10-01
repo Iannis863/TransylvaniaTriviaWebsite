@@ -505,7 +505,7 @@
       },
       {
         "id": "t7_1",
-        "year": 1906,
+        "year": 1910,
         "content": "Constanța Casino opens"
       },
       {
@@ -729,7 +729,7 @@
       {
         "id": "t10_3",
         "year": 1983,
-        "content": "TCP/IP protocol introduced"
+        "content": "ARPANET switches to TCP/IP"
       },
       {
         "id": "t10_4",
@@ -946,8 +946,8 @@
       },
       {
         "id": "t13_4",
-        "year": 1919,
-        "content": "Brașov uprising"
+        "year": 1987,
+        "content": "Brașov workers' uprising"
       }
     ],
     "connectionsGroups": [
@@ -1073,7 +1073,7 @@
       },
       {
         "id": "t15_1",
-        "year": 1967,
+        "year": 1968,
         "content": "Dacia begins production at Mioveni"
       },
       {
@@ -1114,7 +1114,7 @@
         "difficulty": 2
       },
       {
-        "category": "Flower parts",
+        "category": "Plant structures and products",
         "items": [
           "PETAL",
           "STEM",
@@ -1779,7 +1779,7 @@
       {
         "id": "t25_0",
         "year": 1912,
-        "content": "First successful frameless parachute descent"
+        "content": "Albert Berry parachutes from an aeroplane"
       },
       {
         "id": "t25_1",
@@ -1997,7 +1997,7 @@
       {
         "id": "t28_1",
         "year": 2004,
-        "content": "Romania wins 3 gymnastics golds in Athens"
+        "content": "Romania wins 4 gymnastics gold medals in Athens"
       },
       {
         "id": "t28_2",
@@ -2286,7 +2286,7 @@
       {
         "id": "t32_2",
         "year": 2002,
-        "content": "Euro currency introduced"
+        "content": "Euro banknotes and coins enter circulation"
       },
       {
         "id": "t32_3",
@@ -2455,7 +2455,7 @@
       {
         "category": "Romanian actors",
         "items": [
-          "PINTILIE",
+          "REBENGIUC",
           "CARAMITRU",
           "MĂLĂELE",
           "MORARU"
@@ -2631,7 +2631,7 @@
       {
         "id": "t37_0",
         "year": 1439,
-        "content": "Gutenberg develops the printing press"
+        "content": "Strasbourg court records document Gutenberg's work"
       },
       {
         "id": "t37_1",

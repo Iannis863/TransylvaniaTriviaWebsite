@@ -173,7 +173,9 @@ export class NotificationService {
   private async deliveryIsRelevant(item: Delivery, now: Date): Promise<boolean> {
     if (item.registrationId) {
       const registration = await this.source.getRegistration(item.registrationId);
-      return !!registration && ((item.kind === "waitlist") === (registration.status === "WAITLISTED"));
+      if (!registration || ((item.kind === "waitlist") !== (registration.status === "WAITLISTED"))) return false;
+      // A retry must not contact a removed member or the previous account/contact address.
+      return (await getRegistrationRecipients(registration, this.source)).some(recipient => recipient.email === item.email);
     }
     const user = item.userId ? await this.source.getUser(item.userId) : undefined;
     if (!user || user.email.trim().toLowerCase() !== item.email) return false;
@@ -194,11 +196,11 @@ export class NotificationService {
   }
   async reminderComplete(registrationId: string): Promise<boolean> {
     if (this.database) {
-      const result = await this.database.query("SELECT count(*)::int AS total, count(*) FILTER (WHERE sent_at IS NULL)::int AS pending FROM app_email_deliveries WHERE registration_id = $1 AND kind = 'reminder'", [registrationId]);
+      const result = await this.database.query("SELECT count(*)::int AS total, count(*) FILTER (WHERE sent_at IS NULL AND cancelled_at IS NULL)::int AS pending FROM app_email_deliveries WHERE registration_id = $1 AND kind = 'reminder'", [registrationId]);
       return result.rows[0].total > 0 && result.rows[0].pending === 0;
     }
     const entries = Array.from(this.deliveries.values()).filter(item => item.registrationId === registrationId && item.kind === "reminder");
-    return entries.length > 0 && entries.every(item => item.sentAt);
+    return entries.length > 0 && entries.every(item => item.sentAt || item.cancelledAt);
   }
 }
 export const notifications = new NotificationService();

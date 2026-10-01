@@ -77,6 +77,12 @@ test("locale defaults to Romanian and translates dynamic feedback without changi
     assert.equal(t("Bine ai revenit, {0}!", ["Ana"]), "Welcome back, Ana!");
     assert.equal(t("A team name outside the catalog"), "A team name outside the catalog");
     assert.equal(translateFeedback('Nu a fost găsit niciun articol sau categorie Wikipedia pentru „Tema Mea". Fără o sursă de conținut verificabilă, tema nu poate susține o rundă de trivia.'), 'No Wikipedia article or category was found for “Tema Mea”. Without verifiable source material, the theme cannot support a trivia round.');
+    for (const theme of ["Jocuri", "Cultură Generală", "profunzimea conținutului"]) {
+      assert.equal(
+        translateFeedback(`„${theme}" este recunoscut ca un domeniu academic/cultural larg — excelent pentru trivia, cu o bază vastă de material verificabil. Punctul forte principal: profunzimea conținutului (95/100).`),
+        `“${theme}” is a broad academic or cultural field, excellent for trivia with plenty of verifiable material. Main strength: content depth (95/100).`,
+      );
+    }
     assert.equal(translateFeedback('Tema are un potențial excelent de quizzabilitate. Punctul forte principal: profunzimea conținutului (95/100).'), 'The theme has excellent trivia potential. Main strength: content depth (95/100).');
     setLanguage("ro");
     assert.equal(t("Echipa Mea"), "Echipa Mea");

@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function TeamDashboard() {
-  const { user, team, teamMembers } = useAuth();
+  const { user, team, teamMembers, refreshAuth } = useAuth();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -51,26 +51,35 @@ export default function TeamDashboard() {
     description: string;
   }>({ isOpen: false, action: null, title: "", description: "" });
 
-  const copyInviteCode = () => {
+  const copyInviteCode = async () => {
     if (team?.inviteCode) {
-      navigator.clipboard.writeText(team.inviteCode);
+      try {
+        await navigator.clipboard.writeText(team.inviteCode);
+      } catch {
+        toast({ title: t("Eroare"), description: t("Nu am putut copia. Selectează și copiază manual codul."), variant: "destructive" });
+        return;
+      }
       setCopied(true);
       toast({ title: t("Cod copiat!"), description: t("Codul {0} a fost copiat în clipboard.", [team.inviteCode]) });
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  const copyShareLink = () => {
+  const copyShareLink = async () => {
     if (team?.inviteCode) {
       const link = `${window.location.origin}/?join=${team.inviteCode}`;
-      navigator.clipboard.writeText(link);
+      try {
+        await navigator.clipboard.writeText(link);
+      } catch {
+        toast({ title: t("Eroare"), description: t("Nu am putut copia. Selectează și copiază manual codul."), variant: "destructive" });
+        return;
+      }
       setCopied(true);
       toast({ title: t("Link de invitație copiat!"), description: t("Trimite linkul prietenilor tăi.") });
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  const { refreshAuth } = useAuth();
   const [isKicking, setIsKicking] = useState(false);
 
   const kickMember = async (memberId: string) => {
@@ -90,7 +99,7 @@ export default function TeamDashboard() {
           toast({ title: t("Membru eliminat cu succes") });
           await refreshAuth();
         } catch (err: any) {
-          toast({ title: t("Eroare"), description: err.message, variant: "destructive" });
+          toast({ title: t("Eroare"), description: t(err.message), variant: "destructive" });
         } finally {
           setIsKicking(false);
         }
@@ -117,7 +126,7 @@ export default function TeamDashboard() {
           toast({ title: t("Transfer reușit"), description: t("Ai cedat titlul de Căpitan cu succes.") });
           await refreshAuth();
         } catch (err: any) {
-          toast({ title: t("Eroare"), description: err.message, variant: "destructive" });
+          toast({ title: t("Eroare"), description: t(err.message), variant: "destructive" });
         } finally {
           setIsKicking(false);
         }
@@ -178,7 +187,7 @@ export default function TeamDashboard() {
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-400/40 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-amber-300 mb-3 shadow-[0_0_15px_rgba(246,184,40,0.15)]">
             <Crown className="w-3.5 h-3.5 text-amber-400" />
              {t("Panoul de Comandă al Echipei")} </div>
-          <h2 className="text-3xl sm:text-5xl font-heading tracking-widest text-gold-gradient">
+          <h2 className="text-3xl sm:text-5xl break-words font-heading tracking-widest text-gold-gradient">
             {team.name.toUpperCase()}
           </h2>
           {team.tagline && (
@@ -221,7 +230,7 @@ export default function TeamDashboard() {
                   <div className="text-base font-bold text-white mt-0.5">
                     {teamMembers.length}  {t("/ 6 Membri")} </div>
                   <div className="text-xs text-purple-300">
-                    {6 - teamMembers.length > 0 ? t("{0} locuri libere", [6 - teamMembers.length]) : t("Echipă completă")}
+                    {teamMembers.length === 5 ? t("1 loc liber") : 6 - teamMembers.length > 0 ? t("{0} locuri libere", [6 - teamMembers.length]) : t("Echipă completă")}
                   </div>
                 </div>
               </div>
@@ -251,8 +260,8 @@ export default function TeamDashboard() {
                    {t("Trimite-le codul de alături pentru a intra în echipa ta.")} </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="px-5 py-2.5 rounded-xl bg-black/60 border border-amber-400/60 font-mono text-lg font-bold text-amber-300 tracking-widest shadow-inner">
+              <div className="flex flex-wrap justify-center items-center gap-3 min-w-0">
+                <div className="select-all px-5 py-2.5 rounded-xl bg-black/60 border border-amber-400/60 font-mono text-lg font-bold text-amber-300 tracking-widest shadow-inner">
                   {team.inviteCode}
                 </div>
                 <Button
@@ -285,24 +294,24 @@ export default function TeamDashboard() {
                     key={member.id}
                     className="group p-3.5 rounded-xl bg-[#130626] border border-purple-800/40 flex items-center justify-between shadow"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-700 to-amber-500 flex items-center justify-center text-sm shadow">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="w-9 h-9 shrink-0 rounded-full bg-gradient-to-tr from-purple-700 to-amber-500 flex items-center justify-center text-sm shadow">
                         {member.avatar || (member.role === "TEAM_LEADER" ? "👑" : "👤")}
                       </div>
-                      <div className="text-left">
+                      <div className="text-left min-w-0">
                         <div className="text-xs font-bold text-white truncate max-w-[120px]">{member.name}</div>
                         <div className="text-[10px] text-purple-300/70 font-mono truncate max-w-[120px]">{member.email}</div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex shrink-0 items-center gap-2">
                       <Badge className={member.role === "TEAM_LEADER" ? "bg-amber-400 text-purple-950 text-[10px] font-bold" : "bg-purple-900/60 text-purple-200 text-[10px]"}>
                         {member.role === "TEAM_LEADER" ? t("CĂPITAN") : t("MEMBRU")}
                       </Badge>
                       {isLeader && member.role !== "TEAM_LEADER" && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-purple-400 hover:text-white bg-purple-900/40 rounded-full">
+                            <button disabled={isKicking} aria-label={t("Administrează membrul {0}", [member.name])} className="transition-opacity p-1 text-purple-400 hover:text-white bg-purple-900/40 rounded-full">
                               <MoreHorizontal className="w-4 h-4" />
                             </button>
                           </DropdownMenuTrigger>
@@ -343,6 +352,7 @@ export default function TeamDashboard() {
                 if (confirmDialog.action) confirmDialog.action();
                 setConfirmDialog(d => ({ ...d, isOpen: false }));
               }}
+              disabled={isKicking}
               className="bg-red-500 hover:bg-red-600 text-white"
             >{t("Confirmă")}</AlertDialogAction>
           </AlertDialogFooter>

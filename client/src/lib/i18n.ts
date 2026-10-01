@@ -26,6 +26,8 @@ export function t(key: string, values: readonly unknown[] = []): string {
 // Translate those sentences without modifying a user's suggested theme.
 const notePatterns = Object.entries(englishNotes).map(([key, value]) => ({
   expression: new RegExp("^" + key.split(/\{\d+\}/).map(part => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("(.+?)")), value,
+  // Quoted theme names are user content, even when they match a catalog key.
+  preservesTheme: key.includes('„{0}"'),
 }));
 export function translateFeedback(notes: string): string {
   if (language === "ro") return notes;
@@ -34,7 +36,10 @@ export function translateFeedback(notes: string): string {
     const pattern = notePatterns.find(item => item.expression.test(remaining));
     if (!pattern) return output + remaining;
     const match = remaining.match(pattern.expression)!;
-    output += pattern.value.replace(/\{(\d+)\}/g, (_, index) => t(match[Number(index) + 1])) + " ";
+    output += pattern.value.replace(/\{(\d+)\}/g, (_, index) => {
+      const content = match[Number(index) + 1];
+      return pattern.preservesTheme && index === "0" ? content : t(content);
+    }) + " ";
     remaining = remaining.slice(match[0].length).trimStart();
   }
   return output.trimEnd();

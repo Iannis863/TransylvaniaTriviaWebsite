@@ -1,6 +1,6 @@
 import { locale } from "@/lib/i18n";
 import { t, useLanguage } from "@/lib/i18n";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { EMAIL_LOGO_PATH, EMAIL_LOGO_URL } from "@shared/email-brand";
 
 interface Payload { to: string; subject: string; html: string; text: string }
@@ -18,13 +18,32 @@ export default function AdminEmails({ api }: { api: (method: string, path: strin
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState("template:0");
-  const load = async () => {
+  const latestRequest = useRef(0);
+  const load = useCallback(async () => {
+    const request = ++latestRequest.current;
     setLoading(true); setError("");
-    try { setData(await api("GET", `/api/admin/emails?language=${language}`)); }
-    catch (error) { setError(error instanceof Error ? error.message : t("Emailurile nu au putut fi încărcate.")); }
-    finally { setLoading(false); }
-  };
-  useEffect(() => { void load(); }, [api, language]);
+    try {
+      const next: EmailData = await api("GET", `/api/admin/emails?language=${language}`);
+      if (request !== latestRequest.current) return;
+      setData(next);
+      setSelected(previous => {
+        const exists = previous.startsWith("template:")
+          ? !!next.templates[Number(previous.split(":")[1])]
+          : next.deliveries.some(item => item.id === previous);
+        return exists ? previous : "template:0";
+      });
+    } catch (error) {
+      if (request === latestRequest.current) setError(error instanceof Error ? error.message : t("Emailurile nu au putut fi încărcate."));
+    } finally {
+      if (request === latestRequest.current) setLoading(false);
+    }
+  }, [api, language]);
+  useEffect(() => {
+    // Never display a previous language's preview while its replacement is loading.
+    setData(null);
+    void load();
+    return () => { ++latestRequest.current; };
+  }, [load]);
   const payload = selected.startsWith("template:") ? data?.templates[Number(selected.split(":")[1])]?.payload : data?.deliveries.find(item => item.id === selected)?.payload;
   // Use the identical local asset before deployment; outbound messages retain the public HTTPS URL.
   const previewLogoUrl = `${window.location.origin}${EMAIL_LOGO_PATH}`;
@@ -63,7 +82,7 @@ export default function AdminEmails({ api }: { api: (method: string, path: strin
       <label className="block space-y-2"><span className="font-semibold">{t("Șablon demonstrativ")}</span>
         <select value={selected.startsWith("template:") ? selected : ""} onChange={e => setSelected(e.target.value)} className="w-full p-3 rounded-lg bg-purple-950 border border-purple-700 text-white">
           <option value="" disabled>{t("Alege un șablon")}</option>
-          {data.templates.map((item, index) => <option key={index} value={`template:${index}`}>{t(labels[item.kind])} · {t(item.audience)}</option>)}
+          {data.templates.map((item, index) => <option key={index} value={`template:${index}`}>{t(labels[item.kind] ?? item.kind)} · {t(item.audience)}</option>)}
         </select>
       </label>
       {payload && <div className="space-y-3 rounded-xl border border-purple-700/50 p-4">
@@ -77,7 +96,7 @@ export default function AdminEmails({ api }: { api: (method: string, path: strin
         <p className="text-xs text-purple-300">{t("„Acceptat de Resend” confirmă acceptarea de către furnizor, nu livrarea în inbox. Codurile reale de resetare a parolei nu sunt afișate aici. Datele sunt în ora României.")}</p>
         {data.deliveries.length === 0 ? <p>{t("Niciun email automat înregistrat încă.")}</p> : <div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr><th className="p-2">{t("Destinatar / tip")}</th><th className="p-2">Status</th><th className="p-2">{t("Ultima încercare")}</th><th className="p-2">{t("Acceptat de furnizor")}</th><th className="p-2">{t("Conținut")}</th></tr></thead><tbody>
           {data.deliveries.map(item => <tr key={item.id} className="border-t border-purple-800/40">
-            <td className="p-2">{item.payload.to}<br />{t(labels[item.kind])}</td>
+            <td className="p-2">{item.payload.to}<br />{t(labels[item.kind] ?? item.kind)}</td>
             <td className="p-2">{item.sentAt ? t("Acceptat de Resend") : item.cancelledAt ? t("Anulat (status schimbat)") : new Date(item.eventDate) <= new Date() ? t("Expirat") : t("În așteptare")}{item.lastError && <p className="text-amber-300 mt-1">{item.lastError}</p>}</td>
             <td className="p-2">{date(item.lastAttemptAt)}</td><td className="p-2">{date(item.sentAt)}</td>
             <td className="p-2"><button onClick={() => setSelected(item.id)} className="underline text-amber-300">{t("Vezi emailul")}</button></td>

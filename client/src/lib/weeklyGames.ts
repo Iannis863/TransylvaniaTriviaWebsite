@@ -191,7 +191,7 @@ const TIMELINE_SETS = [
     {
       "id": "t3_0",
       "year": 1927,
-      "content": "Primul film cu sunet (The Jazz Singer)"
+      "content": "Premiera filmului The Jazz Singer"
     },
     {
       "id": "t3_1",
@@ -303,7 +303,7 @@ const TIMELINE_SETS = [
     },
     {
       "id": "t7_1",
-      "year": 1906,
+      "year": 1910,
       "content": "Inaugurarea Cazinoului din Constanța"
     },
     {
@@ -395,7 +395,7 @@ const TIMELINE_SETS = [
     {
       "id": "t10_3",
       "year": 1983,
-      "content": "Apariția protocolului TCP/IP"
+      "content": "ARPANET trece la protocolul TCP/IP"
     },
     {
       "id": "t10_4",
@@ -471,7 +471,7 @@ const TIMELINE_SETS = [
     {
       "id": "t13_2",
       "year": 1993,
-      "content": "Lansarea primului browser (Mosaic)"
+      "content": "Lansarea browserului Mosaic"
     },
     {
       "id": "t13_3",
@@ -480,8 +480,8 @@ const TIMELINE_SETS = [
     },
     {
       "id": "t13_4",
-      "year": 1919,
-      "content": "Revolta de la Brașov"
+      "year": 1987,
+      "content": "Revolta muncitorilor din Brașov"
     }
   ],
   [
@@ -519,7 +519,7 @@ const TIMELINE_SETS = [
     },
     {
       "id": "t15_1",
-      "year": 1967,
+      "year": 1968,
       "content": "Dacia începe producția la Mioveni"
     },
     {
@@ -785,7 +785,7 @@ const TIMELINE_SETS = [
     {
       "id": "t25_0",
       "year": 1912,
-      "content": "Inventarea parașutei"
+      "content": "Saltul cu parașuta din avion al lui Albert Berry"
     },
     {
       "id": "t25_1",
@@ -871,7 +871,7 @@ const TIMELINE_SETS = [
     {
       "id": "t28_1",
       "year": 2004,
-      "content": "România ia 3 aur la gimnastică (Atena)"
+      "content": "România câștigă 4 medalii de aur la gimnastică (Atena)"
     },
     {
       "id": "t28_2",
@@ -984,7 +984,7 @@ const TIMELINE_SETS = [
     {
       "id": "t32_2",
       "year": 2002,
-      "content": "Introducerea monedei Euro"
+      "content": "Introducerea bancnotelor și monedelor euro"
     },
     {
       "id": "t32_3",
@@ -1109,7 +1109,7 @@ const TIMELINE_SETS = [
     {
       "id": "t37_0",
       "year": 1439,
-      "content": "Invenția tiparului (Gutenberg)"
+      "content": "Procesul de la Strasbourg privind activitatea lui Gutenberg"
     },
     {
       "id": "t37_1",
@@ -1254,12 +1254,12 @@ const CONNECTIONS_SETS = [
     },
     {
       "difficulty": 3,
-      "category": "Elemente chimice nobile",
+      "category": "Gaze nobile",
       "items": [
-        "HELIUM",
+        "HELIU",
         "NEON",
         "ARGON",
-        "KRYPTON"
+        "CRIPTON"
       ]
     },
     {
@@ -1333,7 +1333,7 @@ const CONNECTIONS_SETS = [
         "ZEUS",
         "POSEIDON",
         "ARES",
-        "APOLLO"
+        "APOLON"
       ]
     },
     {
@@ -1516,7 +1516,7 @@ const CONNECTIONS_SETS = [
     },
     {
       "difficulty": 4,
-      "category": "Metal prețios",
+      "category": "Metale prețioase",
       "items": [
         "AUR",
         "ARGINT",
@@ -1748,7 +1748,7 @@ const CONNECTIONS_SETS = [
     },
     {
       "difficulty": 2,
-      "category": "Funcții matematice",
+      "category": "Operații aritmetice",
       "items": [
         "ADUNARE",
         "SCĂDERE",
@@ -1842,7 +1842,7 @@ const CONNECTIONS_SETS = [
     },
     {
       "difficulty": 3,
-      "category": "Părți ale florii",
+      "category": "Elemente ale plantelor",
       "items": [
         "PETALĂ",
         "TULPINĂ",
@@ -1897,7 +1897,7 @@ const CONNECTIONS_SETS = [
       "category": "Produse de patiserie",
       "items": [
         "CROISSANT",
-        "STRUDEL",
+        "ȘTRUDEL",
         "MERDENELE",
         "COVRIGI"
       ]
@@ -2108,7 +2108,7 @@ const CONNECTIONS_SETS = [
       "items": [
         "FRIGIDER",
         "CUPTOR",
-        "MAȘINĂ",
+        "MAȘINĂ DE SPĂLAT",
         "ASPIRATOR"
       ]
     }
@@ -2246,8 +2246,8 @@ const CONNECTIONS_SETS = [
       "items": [
         "BEATLES",
         "QUEEN",
-        "ROLLING",
-        "ZEPPELIN"
+        "ROLLING STONES",
+        "LED ZEPPELIN"
       ]
     },
     {
@@ -2331,7 +2331,7 @@ const CONNECTIONS_SETS = [
         "ÎNOT",
         "POLO",
         "SURFING",
-        "KAYAK"
+        "CAIAC"
       ]
     },
     {
@@ -2452,7 +2452,7 @@ const CONNECTIONS_SETS = [
   [
     {
       "difficulty": 1,
-      "category": "Măsuri de greutate",
+      "category": "Unități de masă",
       "items": [
         "GRAM",
         "KILOGRAM",
@@ -2506,7 +2506,7 @@ const CONNECTIONS_SETS = [
       "difficulty": 2,
       "category": "Tipuri de zbor",
       "items": [
-        "COMMERCIAL",
+        "COMERCIAL",
         "CARGO",
         "CHARTER",
         "MILITAR"
@@ -2598,7 +2598,7 @@ const CONNECTIONS_SETS = [
     },
     {
       "difficulty": 3,
-      "category": "Zboruri spațiale",
+      "category": "Programe spațiale",
       "items": [
         "APOLLO",
         "GEMINI",
@@ -2632,7 +2632,7 @@ const CONNECTIONS_SETS = [
       "difficulty": 2,
       "category": "Actori români",
       "items": [
-        "PINTILIE",
+        "REBENGIUC",
         "CARAMITRU",
         "MĂLĂELE",
         "MORARU"
@@ -2724,7 +2724,7 @@ const CONNECTIONS_SETS = [
     },
     {
       "difficulty": 3,
-      "category": "Acțiuni la bursă",
+      "category": "Termeni bursieri",
       "items": [
         "CUMPĂRĂ",
         "VINDE",
@@ -2790,7 +2790,7 @@ const CONNECTIONS_SETS = [
       "difficulty": 1,
       "category": "Tipuri de zăpadă",
       "items": [
-        "PULBĂREASĂ",
+        "PULBERE",
         "ÎNGHEȚATĂ",
         "TOPITĂ",
         "UMEDĂ"
@@ -2823,7 +2823,7 @@ const CONNECTIONS_SETS = [
         "CPU",
         "RAM",
         "GPU",
-        "PLACA DE BAZĂ"
+        "PLACĂ DE BAZĂ"
       ]
     }
   ],

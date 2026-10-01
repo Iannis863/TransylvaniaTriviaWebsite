@@ -1,12 +1,12 @@
 import { t, getLanguage } from "@/lib/i18n";
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Shield, UserCheck, KeyRound, Users } from "lucide-react";
+import { Sparkles, Shield, KeyRound } from "lucide-react";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -16,7 +16,12 @@ interface AuthModalProps {
 
 export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) {
   const { login, register, createTeam, joinTeam, user, team } = useAuth();
+  const formId = useId();
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
+
+  useEffect(() => {
+    if (isOpen) setActiveTab(defaultTab);
+  }, [isOpen, defaultTab]);
 
   // Form states
   const [loginEmail, setLoginEmail] = useState("");
@@ -31,7 +36,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
   const [keepLoggedIn, setKeepLoggedIn] = useState(false);
 
   // Password reset states
-  const [resetStep, setResetStep] = useState<"idle" | "email" | "code" | "newPassword">("idle");
+  const [resetStep, setResetStep] = useState<"idle" | "email" | "code">("idle");
   const [resetEmail, setResetEmail] = useState("");
   const [resetCode, setResetCode] = useState("");
   const [resetNewPassword, setResetNewPassword] = useState("");
@@ -41,6 +46,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true);
     const success = await login(loginEmail, loginPassword, keepLoggedIn);
     setIsSubmitting(false);
@@ -49,6 +55,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true);
     const success = await register(regName, regEmail, regPassword, keepLoggedIn);
     setIsSubmitting(false);
@@ -58,6 +65,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
 
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true);
     const success = await createTeam(teamName, teamTagline);
     setIsSubmitting(false);
@@ -66,6 +74,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
 
   const handleJoinTeam = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true);
     const success = await joinTeam(inviteCodeInput);
     setIsSubmitting(false);
@@ -75,6 +84,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
   // ── Password Reset Handlers ────────────────────────────────────────────────
   const handleForgotSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true);
     setResetError("");
     setResetMessage("");
@@ -99,6 +109,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
 
   const handleForgotVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setResetError("");
     setResetMessage("");
     if (resetNewPassword !== resetConfirmPassword) {
@@ -147,7 +158,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[480px] bg-[#120722] border border-amber-400/30 text-foreground p-6 shadow-[0_0_50px_rgba(168,85,247,0.3)]">
+      <DialogContent className="sm:max-w-[480px] max-h-[90dvh] overflow-y-auto bg-[#120722] border border-amber-400/30 text-foreground p-6 shadow-[0_0_50px_rgba(168,85,247,0.3)]">
         <DialogHeader className="text-center pb-2">
           <div className="flex justify-center mb-2">
             <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-500/20 to-purple-500/30 border border-amber-400/40 flex items-center justify-center shadow-[0_0_20px_rgba(246,184,40,0.3)]">
@@ -161,17 +172,17 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
         </DialogHeader>
 
 
-        <Tabs value={user ? "team" : activeTab} onValueChange={user ? undefined : setActiveTab} className="w-full">
+        <Tabs value={user ? "team" : activeTab} onValueChange={user || isSubmitting ? undefined : setActiveTab} className="w-full">
           <TabsList className={`grid ${user ? "grid-cols-1" : "grid-cols-3"} bg-purple-950/60 border border-purple-800/40`}>
             {!user && (
               <>
-                <TabsTrigger value="login" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 font-heading tracking-wider">
+                <TabsTrigger disabled={isSubmitting} value="login" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 font-heading tracking-wider">
                    {t("Conectare")} </TabsTrigger>
-                <TabsTrigger value="register" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 font-heading tracking-wider">
+                <TabsTrigger disabled={isSubmitting} value="register" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 font-heading tracking-wider">
                    {t("Cont Nou")} </TabsTrigger>
               </>
             )}
-            <TabsTrigger value="team" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 font-heading tracking-wider">
+            <TabsTrigger disabled={isSubmitting} value="team" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 font-heading tracking-wider">
               {user ? t("Alege o Echipă") : t("Echipă")}
             </TabsTrigger>
           </TabsList>
@@ -182,10 +193,13 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
               <>
                 <form onSubmit={handleLogin} className="space-y-3">
                   <div>
-                    <Label className="text-xs text-muted-foreground">Email</Label>
+                    <Label htmlFor={`${formId}-auth-login-email`} className="text-xs text-muted-foreground">Email</Label>
                     <Input
                       type="email"
                       placeholder="vlad@transilvaniatrivia.ro"
+                      id={`${formId}-auth-login-email`}
+                      autoComplete="email"
+                      maxLength={254}
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
@@ -193,10 +207,13 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                     />
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">{t("Parolă")}</Label>
+                    <Label htmlFor={`${formId}-auth-login-password`} className="text-xs text-muted-foreground">{t("Parolă")}</Label>
                     <Input
                       type="password"
                       placeholder="••••••••"
+                      id={`${formId}-auth-login-password`}
+                      autoComplete="current-password"
+                      maxLength={256}
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
@@ -207,23 +224,24 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                     <div className="flex items-center gap-2">
                       <input
                         type="checkbox"
-                        id="keepLoggedInLogin"
+                        id={`${formId}-keep-login`}
                         checked={keepLoggedIn}
                         onChange={(e) => setKeepLoggedIn(e.target.checked)}
                         className="w-3.5 h-3.5 rounded border-purple-700/50 bg-purple-950/30 text-amber-500"
                       />
-                      <Label htmlFor="keepLoggedInLogin" className="text-xs text-muted-foreground cursor-pointer">
+                      <Label htmlFor={`${formId}-keep-login`} className="text-xs text-muted-foreground cursor-pointer">
                          {t("Ține-mă conectat")} </Label>
                     </div>
                     <button
                       type="button"
+                      disabled={isSubmitting}
                       onClick={() => { setResetStep("email"); setResetMessage(""); setResetError(""); }}
                       className="text-xs text-amber-400/80 hover:text-amber-300 hover:underline transition-colors cursor-pointer"
                     >
                        {t("Ai uitat parola?")} </button>
                   </div>
                   <Button type="submit" disabled={isSubmitting} className="w-full gold-btn font-heading tracking-widest text-base">
-                    {isSubmitting ? "CONECTARE..." : t("INTRĂ ÎN CONT")}
+                    {isSubmitting ? t("CONECTARE...") : t("INTRĂ ÎN CONT")}
                   </Button>
                 </form>
                 {resetMessage && (
@@ -240,10 +258,13 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                 </div>
                 <form onSubmit={handleForgotSendCode} className="space-y-3">
                   <div>
-                    <Label className="text-xs text-muted-foreground">Email</Label>
+                    <Label htmlFor={`${formId}-auth-reset-email`} className="text-xs text-muted-foreground">Email</Label>
                     <Input
                       type="email"
                       placeholder="vlad@transilvaniatrivia.ro"
+                      id={`${formId}-auth-reset-email`}
+                      autoComplete="email"
+                      maxLength={254}
                       value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)}
                       className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
@@ -252,7 +273,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                     />
                   </div>
                   {resetError && (
-                    <p className="text-xs text-red-400 text-center bg-red-400/10 rounded p-2 border border-red-400/20">{t(resetError)}</p>
+                    <p role="alert" className="text-xs text-red-400 text-center bg-red-400/10 rounded p-2 border border-red-400/20">{t(resetError)}</p>
                   )}
                   <Button type="submit" disabled={isSubmitting} className="w-full gold-btn font-heading tracking-widest text-sm">
                     {isSubmitting ? t("SE TRIMITE...") : t("TRIMITE CODUL")}
@@ -260,6 +281,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                 </form>
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={exitResetFlow}
                   className="w-full text-xs text-muted-foreground hover:text-amber-300 transition-colors cursor-pointer"
                 >
@@ -275,11 +297,14 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                 </div>
                 <form onSubmit={handleForgotVerifyCode} className="space-y-3">
                   <div>
-                    <Label className="text-xs text-muted-foreground">{t("Cod de verificare")}</Label>
+                    <Label htmlFor={`${formId}-auth-reset-code`} className="text-xs text-muted-foreground">{t("Cod de verificare")}</Label>
                     <Input
                       type="text"
                       inputMode="numeric"
                       placeholder="000000"
+                      id={`${formId}-auth-reset-code`}
+                      autoComplete="one-time-code"
+                      minLength={6}
                       value={resetCode}
                       onChange={(e) => setResetCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                       className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm font-mono text-center tracking-[0.5em] text-lg"
@@ -289,10 +314,14 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                     />
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">{t("Parola nouă")}</Label>
+                    <Label htmlFor={`${formId}-auth-reset-password`} className="text-xs text-muted-foreground">{t("Parola nouă")}</Label>
                     <Input
                       type="password"
                       placeholder={t("Cel puțin 6 caractere")}
+                      id={`${formId}-auth-reset-password`}
+                      autoComplete="new-password"
+                      minLength={6}
+                      maxLength={256}
                       value={resetNewPassword}
                       onChange={(e) => setResetNewPassword(e.target.value)}
                       className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
@@ -300,10 +329,14 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                     />
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">{t("Confirmă parola nouă")}</Label>
+                    <Label htmlFor={`${formId}-auth-confirm-password`} className="text-xs text-muted-foreground">{t("Confirmă parola nouă")}</Label>
                     <Input
                       type="password"
                       placeholder={t("Repetă parola")}
+                      id={`${formId}-auth-confirm-password`}
+                      autoComplete="new-password"
+                      minLength={6}
+                      maxLength={256}
                       value={resetConfirmPassword}
                       onChange={(e) => setResetConfirmPassword(e.target.value)}
                       className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
@@ -311,7 +344,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                     />
                   </div>
                   {resetError && (
-                    <p className="text-xs text-red-400 text-center bg-red-400/10 rounded p-2 border border-red-400/20">{t(resetError)}</p>
+                    <p role="alert" className="text-xs text-red-400 text-center bg-red-400/10 rounded p-2 border border-red-400/20">{t(resetError)}</p>
                   )}
                   <Button type="submit" disabled={isSubmitting || resetCode.length !== 6} className="w-full gold-btn font-heading tracking-widest text-sm">
                     {isSubmitting ? t("SE PROCESEAZĂ...") : t("SCHIMBĂ PAROLA")}
@@ -319,6 +352,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                 </form>
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={exitResetFlow}
                   className="w-full text-xs text-muted-foreground hover:text-amber-300 transition-colors cursor-pointer"
                 >
@@ -331,10 +365,14 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
           <TabsContent value="register" className="space-y-4 pt-3">
             <form onSubmit={handleRegister} className="space-y-3">
               <div>
-                <Label className="text-xs text-muted-foreground">{t("Nume / Nickname")}</Label>
+                <Label htmlFor={`${formId}-auth-register-name`} className="text-xs text-muted-foreground">{t("Nume / Nickname")}</Label>
                 <Input
                   type="text"
                   placeholder={t("Ex: Alexandru Cavalerul")}
+                  id={`${formId}-auth-register-name`}
+                  autoComplete="nickname"
+                  minLength={2}
+                  maxLength={100}
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
                   className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
@@ -342,10 +380,13 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Email</Label>
+                <Label htmlFor={`${formId}-auth-register-email`} className="text-xs text-muted-foreground">Email</Label>
                 <Input
                   type="email"
                   placeholder="alex@exemplu.ro"
+                  id={`${formId}-auth-register-email`}
+                  autoComplete="email"
+                  maxLength={254}
                   value={regEmail}
                   onChange={(e) => setRegEmail(e.target.value)}
                   className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
@@ -353,10 +394,14 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">{t("Parolă")}</Label>
+                <Label htmlFor={`${formId}-auth-register-password`} className="text-xs text-muted-foreground">{t("Parolă")}</Label>
                 <Input
                   type="password"
                   placeholder={t("Cel puțin 6 caractere")}
+                  id={`${formId}-auth-register-password`}
+                  autoComplete="new-password"
+                  minLength={6}
+                  maxLength={256}
                   value={regPassword}
                   onChange={(e) => setRegPassword(e.target.value)}
                   className="bg-purple-950/30 border-purple-700/50 focus:border-amber-400 text-sm"
@@ -366,12 +411,12 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
               <div className="flex items-center gap-2 pb-1 pt-1">
                 <input
                   type="checkbox"
-                  id="keepLoggedInReg"
+                  id={`${formId}-keep-register`}
                   checked={keepLoggedIn}
                   onChange={(e) => setKeepLoggedIn(e.target.checked)}
                   className="w-3.5 h-3.5 rounded border-purple-700/50 bg-purple-950/30 text-amber-500"
                 />
-                <Label htmlFor="keepLoggedInReg" className="text-xs text-muted-foreground cursor-pointer">
+                <Label htmlFor={`${formId}-keep-register`} className="text-xs text-muted-foreground cursor-pointer">
                    {t("Ține-mă conectat")} </Label>
               </div>
               <Button type="submit" disabled={isSubmitting} className="w-full gold-btn font-heading tracking-widest text-base">
@@ -401,6 +446,9 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                       <form onSubmit={handleCreateTeam} className="space-y-2">
                         <Input
                           placeholder={t("Numele Echipei (ex: Dragonii din Cluj)")}
+                          aria-label={t("Nume Echipă")}
+                          maxLength={100}
+                          minLength={2}
                           value={teamName}
                           onChange={(e) => setTeamName(e.target.value)}
                           className="bg-purple-950/50 border-purple-700/50 text-sm"
@@ -408,11 +456,13 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                         />
                         <Input
                           placeholder={t("Motto / Tagline (opțional)")}
+                          aria-label={t("Motto / Tagline (opțional)")}
+                          maxLength={300}
                           value={teamTagline}
                           onChange={(e) => setTeamTagline(e.target.value)}
                           className="bg-purple-950/50 border-purple-700/50 text-sm"
                         />
-                        <Button type="submit" className="w-full gold-btn text-xs font-heading">
+                        <Button type="submit" disabled={isSubmitting} className="w-full gold-btn text-xs font-heading">
                            {t("FORMEAZĂ ECHIPA & GENEREAZĂ COD")} </Button>
                       </form>
                     </div>
@@ -424,12 +474,15 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
                       <form onSubmit={handleJoinTeam} className="space-y-2">
                         <Input
                           placeholder={t("Introdu Codul de Invitație (ex: NOCT-77)")}
+                          aria-label={t("Cod de invitație")}
+                          maxLength={12}
+                          minLength={4}
                           value={inviteCodeInput}
                           onChange={(e) => setInviteCodeInput(e.target.value.toUpperCase())}
                           className="bg-purple-950/50 border-purple-700/50 text-sm font-mono"
                           required
                         />
-                        <Button type="submit" className="w-full purple-btn text-xs font-heading">
+                        <Button type="submit" disabled={isSubmitting} className="w-full purple-btn text-xs font-heading">
                            {t("INTRĂ ÎN ECHIPĂ")} </Button>
                       </form>
                     </div>

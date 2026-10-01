@@ -41,7 +41,7 @@ export default function ThemeValidator() {
 
   const handleValidateTheme = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!themeInput.trim()) return;
+    if (isValidating || !themeInput.trim()) return;
 
     setIsValidating(true);
     setResult(null);
@@ -70,7 +70,7 @@ export default function ThemeValidator() {
   };
 
   const handleProposeTheme = async () => {
-    if (!result) return;
+    if (!result || isSubmitting) return;
     setIsSubmitting(true);
 
     try {
@@ -79,7 +79,7 @@ export default function ThemeValidator() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           themeName: result.themeName,
-          description: t("Generat automat fără sub-teme"),
+          description: t("Generat automat fără subteme"),
           popularityScore: result.popularityScore,
           teamId: team?.id || null,
           proposedBy: user?.name || t("Echipă Participantă"),
@@ -134,12 +134,15 @@ export default function ThemeValidator() {
         {/* Form */}
         <form onSubmit={handleValidateTheme} className="space-y-4 my-6">
           <div>
-            <label className="text-xs font-bold text-purple-200 uppercase tracking-wider block mb-1.5">
+            <label htmlFor="proposed-theme" className="text-xs font-bold text-purple-200 uppercase tracking-wider block mb-1.5">
                {t("Tema Propusă *")} </label>
             <Input
+              id="proposed-theme"
+              maxLength={200}
+              disabled={isValidating || isSubmitting}
               placeholder={t("Ex: Mitologia Nordică, Fizică Cuantică, Filme Tarantino...")}
               value={themeInput}
-              onChange={(e) => setThemeInput(e.target.value)}
+              onChange={(e) => { setThemeInput(e.target.value); setResult(null); }}
               className="bg-purple-950/40 border-purple-700/50 focus:border-amber-400 text-sm h-12 rounded-xl text-white placeholder:text-purple-400/60"
             />
           </div>
@@ -191,7 +194,7 @@ export default function ThemeValidator() {
             </div>
 
             <div className="p-4 rounded-xl bg-purple-950/60 border border-purple-800/40 my-4 text-xs text-purple-200 leading-relaxed text-left">
-              <strong>{t("Evaluare Quizmaster AI:")}</strong> {translateFeedback(result.feedback)}
+              <strong>{t("Evaluare automată a temei:")}</strong> {translateFeedback(result.feedback)}
             </div>
 
             {/* Score Legend */}

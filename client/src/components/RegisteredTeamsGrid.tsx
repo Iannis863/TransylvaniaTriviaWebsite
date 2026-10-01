@@ -28,12 +28,16 @@ export interface RegisteredTeamsGridProps {
   editionLabel: string;
   onRefresh?: () => void;
   isLoading?: boolean;
+  hasError?: boolean;
 }
 
 export default function RegisteredTeamsGrid({
   teams,
   maxTeams = 25,
   editionLabel,
+  isLoading = false,
+  hasError = false,
+  onRefresh,
 }: RegisteredTeamsGridProps) {
   const percentageOccupied = Math.min(100, Math.round((teams.length / maxTeams) * 100));
 
@@ -76,12 +80,16 @@ export default function RegisteredTeamsGrid({
         </div>
 
         {/* Squad Cards Grid */}
-        {teams.length === 0 ? (
+        {hasError && <div role="alert" className="mb-4 rounded-xl border border-amber-400/40 p-4 text-sm text-amber-200">
+          <p>{t("Lista echipelor nu a putut fi actualizată. Încearcă din nou.")}</p>
+          <button type="button" onClick={onRefresh} disabled={isLoading} className="mt-2 underline disabled:opacity-50">{t("Reîncearcă")}</button>
+        </div>}
+        {teams.length === 0 && isLoading ? <p role="status" className="py-12 text-center text-purple-200">{t("Se încarcă…")}</p> : teams.length === 0 && !hasError ? (
           <div className="text-center py-12 p-6 rounded-2xl bg-purple-950/20 border border-purple-800/40">
             <Users className="w-10 h-10 text-purple-500/50 mx-auto mb-2" />
             <p className="text-sm text-purple-300/70">{t("Încă nu s-a înregistrat nicio echipă.")}</p>
           </div>
-        ) : (
+        ) : teams.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {teams.map((team, idx) => (
               <div
@@ -121,7 +129,7 @@ export default function RegisteredTeamsGrid({
               </div>
             ))}
           </div>
-        )}
+        ) : null}
 
       </div>
     </section>

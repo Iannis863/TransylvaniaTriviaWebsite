@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react
 import { useLocation } from "wouter";
 import { motion, useScroll, useSpring, useMotionValueEvent, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import {
   Sparkles,
@@ -41,6 +42,7 @@ export default function Navbar({
   editionLabel = t("Marți 20:00"),
 }: NavbarProps) {
   const { user, team, logout } = useAuth();
+  const { toast } = useToast();
   const language = useLanguage();
   const shouldReduceMotion = useReducedMotion();
   const [, setLocation]                     = useLocation();
@@ -222,11 +224,15 @@ export default function Navbar({
   useMotionValueEvent(scrollY, "change", updatePillPosition);
 
   // ─── Invite-code copy ─────────────────────────────────────────────────────
-  const copyInviteCode = () => {
+  const copyInviteCode = async () => {
     if (team?.inviteCode) {
-      navigator.clipboard.writeText(team.inviteCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      try {
+        await navigator.clipboard.writeText(team.inviteCode);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        toast({ title: t("Eroare"), description: t("Nu am putut copia. Selectează și copiază manual codul."), variant: "destructive" });
+      }
     }
   };
 
@@ -242,7 +248,7 @@ export default function Navbar({
             className="flex items-center gap-2.5 pl-2 sm:pl-3 text-left group flex-shrink-0"
           >
             <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden p-0.5 ring-1 ring-amber-400/50 shadow-[0_0_15px_rgba(246,184,40,0.3)] group-hover:scale-105 transition-transform">
-              <img src="/logo-main.png" alt="Transilvania Trivia" className="w-full h-full object-cover rounded-full" />
+              <img src="/logo-main.webp" width={880} height={880} alt="Transilvania Trivia" className="w-full h-full object-cover rounded-full" />
             </div>
             <div className="flex flex-col">
               <span className="font-heading text-lg sm:text-xl text-gold-gradient tracking-widest leading-none drop-shadow">

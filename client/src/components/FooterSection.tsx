@@ -9,7 +9,7 @@ export default function FooterSection() {
         {/* Brand Column */}
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-full overflow-hidden p-0.5 ring-1 ring-amber-400/40 shadow">
-            <img src="/logo-main.png" alt="Transilvania Trivia" className="w-full h-full object-cover" />
+            <img src="/logo-main.webp" width={880} height={880} loading="lazy" decoding="async" alt="Transilvania Trivia" className="w-full h-full object-cover" />
           </div>
           <div>
             <div className="font-heading text-2xl text-gold-gradient tracking-widest leading-none">

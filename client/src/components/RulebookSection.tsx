@@ -44,7 +44,7 @@ export default function RulebookSection() {
       number: "3",
       name: t("Ghicește Melodia"),
       questions: t("10 melodii"),
-      points: t("0.5/melodie & 0.5/artist"),
+      points: t("0,5/melodie & 0,5/artist"),
       desc: t("Recunoaște numele melodiei și artistul pentru 10 piese din genuri și perioade muzicale variate."),
       jokerEligible: true,
       hasJokerBadge: true,
@@ -172,10 +172,10 @@ export default function RulebookSection() {
                     <h3 className="text-xl font-heading text-gold-gradient tracking-wide mb-2">
                        {t("CARDUL JOKER")} </h3>
                     <p className="text-xs text-purple-200/80 leading-relaxed space-y-2">
-                       {t("Poți folosi cardul Joker la începutul oricărei din cele 5 runde (dar")} <strong className="text-amber-300">{t("înainte ca întrebările să înceapă")}</strong>{t("). Pe Joker, alegi runda și prezici câte puncte vei face (de ex. 7 puncte).")} </p>
+                       {t("Poți folosi cardul Joker la începutul oricăreia dintre cele 5 runde (dar")} <strong className="text-amber-300">{t("înainte ca întrebările să înceapă")}</strong>{t("). Pe Joker, alegi runda și prezici câte puncte vei face (de ex. 7 puncte).")} </p>
                     <div className="mt-4 p-3 rounded-xl bg-purple-950/60 border border-purple-800/40 text-[11px] text-amber-300 font-medium space-y-2">
                       <p>{t("⚡ Dacă faci cel puțin numărul prezis (x), mai primești încă x puncte. Dacă nu atingi numărul de puncte prezis, nu primești niciun punct bonus.")}</p>
-                      <p className="text-emerald-400 font-bold">{t("✨ Dacă prezici 10 și reușești să aduni 10 puncte, punctajul se triplează (primești 20 puncte bonus)!")}</p>
+                      <p className="text-emerald-400 font-bold">{t("✨ Dacă prezici 10 și reușești să aduni 10 puncte, punctajul se triplează (primești 20 de puncte bonus)!")}</p>
                     </div>
                   </div>
                 </div>
@@ -212,10 +212,10 @@ export default function RulebookSection() {
                   <ul className="mt-5 space-y-3 text-purple-200/80 text-sm sm:text-base list-disc list-inside">
                     <li><strong className="text-purple-100">{t("Runda 1 - Cultură Generală:")}</strong>  {t("Începem cu 10 întrebări diverse de încălzire.")}</li>
                     <li><strong className="text-purple-100">{t("Runda 2 - Ghicește Legătura:")}</strong>  {t("Veți primi 3 imagini pe ecran, iar voi trebuie să ghiciți legătura dintre ele. Uneori o serie de imagini poate avea mai multe legături valide. Dacă echipa ta găsește o variantă inedită care s-ar putea potrivi, vom recurge la un vot democratic. Dacă cel puțin jumătate din echipe sunt de acord, veți primi punctul.")}</li>
-                    <li><strong className="text-purple-100">{t("Runda 3 - Ghicește Melodia:")}</strong>  {t("Se acordă 0.5 puncte pentru numele piesei și 0.5 puncte pentru artist. Dacă melodia are mai mulți artiști asociați, este suficient să menționezi doar unul dintre ei pentru punctajul maxim.")}</li>
-                    <li><strong className="text-purple-100">{t("Runda 4 - Surpriza:")}</strong>  {t("Dacă dorești să afli categoria din avans, rezolvă toate cele 5 jocuri de pe platformă.")}</li>
+                    <li><strong className="text-purple-100">{t("Runda 3 - Ghicește Melodia:")}</strong>  {t("Se acordă 0,5 puncte pentru numele piesei și 0,5 puncte pentru artist. Dacă melodia are mai mulți artiști asociați, este suficient să menționezi doar unul dintre ei pentru punctajul maxim.")}</li>
+                    <li><strong className="text-purple-100">{t("Runda 4 - Surpriza:")}</strong>  {t("Dacă dorești să afli categoria în avans, rezolvă toate cele 5 jocuri de pe platformă.")}</li>
                     <li><strong className="text-purple-100">{t("Runda 5 - Runda Aleasă:")}</strong>  {t("Tema este mereu aleasă de echipa care s-a clasat pe ultimul loc la ediția precedentă.")}</li>
-                    <li><strong className="text-purple-100">{t("Evaluare & Răspunsuri Parțiale:")}</strong>  {t("De regulă se acordă 1 punct pentru răspuns corect și 0 pentru greșit. Totuși, se pot acorda și fracțiuni de punct pentru răspunsurile parțial corecte!")}</li>
+                    <li><strong className="text-purple-100">{t("Evaluare & Răspunsuri Parțiale:")}</strong>  {t("De regulă, se acordă 1 punct pentru un răspuns corect și 0 pentru unul greșit. Totuși, se pot acorda și fracțiuni de punct pentru răspunsurile parțial corecte!")}</li>
                     <li><strong className="text-purple-100">{t("Verificarea Răspunsurilor:")}</strong>  {t("La finalul fiecărei runde, echipele fac schimb de foi în sensul acelor de ceasornic. Colegii de la masa alăturată vor verifica răspunsurile și vor calcula punctajul rundei, după care foile se returnează la echipa inițială.")}</li>
                   </ul>
                 </div>
@@ -227,7 +227,7 @@ export default function RulebookSection() {
                   <ul className="mt-5 space-y-3 text-purple-200/80 text-sm sm:text-base list-disc list-inside">
                     <li><strong className="text-purple-100">{t("Avantajul Ultimului Loc:")}</strong>  {t("Tema pentru Runda 5 este mereu decisă de echipa care s-a clasat pe ultimul loc la ediția precedentă.")}</li>
                     <li><strong className="text-purple-100">{t("Regula Validatorului:")}</strong>  {t("Nu ești obligat să o treci prin")} <strong>{t("Validatorul de Teme")}</strong>  {t("de pe platformă, dar te ajută să-ți dai seama dacă ar fi eligibilă sau nu. Un scor de ≥50 înseamnă că tema este fezabilă; un scor sub 50 înseamnă că e probabil prea dificilă, prea de nișă sau necunoscută.")}</li>
-                    <li><strong className="text-purple-100">{t("Aprobarea Finală:")}</strong>  {t("Indiferent de scorul Validatorului, Quizmaster-ul are întotdeauna ultimul cuvânt. Trebuie să fii logat în contul tău pentru a trimite tema la validare, de unde îi vei putea urmări statusul:")} <em>{t("În Așteptare (Pending)")}</em>, <em>{t("Aprobată")}</em>  {t("sau")} <em>{t("Respinsă")}</em>.</li>
+                    <li><strong className="text-purple-100">{t("Aprobarea Finală:")}</strong>  {t("Indiferent de scorul validatorului, quizmasterul are întotdeauna ultimul cuvânt. Trebuie să fii autentificat pentru a trimite tema la validare. Îi poți urmări apoi starea în contul tău:")} <em>{t("În așteptare")}</em>, <em>{t("Aprobată")}</em>  {t("sau")} <em>{t("Respinsă")}</em>.</li>
                   </ul>
                 </div>
 
@@ -238,10 +238,10 @@ export default function RulebookSection() {
                   <ul className="mt-5 space-y-3 text-purple-200/80 text-sm sm:text-base list-disc list-inside">
                     <li><strong className="text-purple-100">{t("Pauzele:")}</strong>  {t("Avem două pauze de realimentare. Prima este de 15 minute, imediat după Runda 3. A doua pauză este de 10 minute, fix înaintea Pariului. La revenirea din pauze vom afișa mereu clasamentul parțial la zi, astfel încât să știți exact cum stați (și cât puteți paria).")}</li>
                     <li><strong className="text-purple-100">{t("Egalitate:")}</strong>  {t("În caz de egalitate pentru podium sau pentru stabilirea ultimului loc, vom avea o întrebare numerică de departajare (ex: „În ce an a fost construit Turnul Eiffel?”). Echipa cu răspunsul cel mai apropiat câștigă!")}</li>
-                    <li><strong className="text-amber-400">{t("Locul 3:")}</strong>  {t("Shot-uri. Opțiunea non-alcoolică: Shot-uri fără alcool sau pahare de suc.")}</li>
-                    <li><strong className="text-amber-400">{t("Locul 2:")}</strong>  {t("O găleată de beri. Opțiunea non-alcoolică: Beri fără alcool.")}</li>
-                    <li><strong className="text-amber-400">{t("Locul 1:")}</strong>  {t("O sticlă de vin. Opțiunea non-alcoolică: Limonade.")} <em>{t("Atenție!")}</em>  {t("Dacă unii membri optează pentru limonadă, restul membrilor (care preferă varianta cu alcool) vor primi câte un pahar de vin în loc de sticla întreagă.")}</li>
-                    <li><strong className="text-purple-100">{t("Detalii Premii:")}</strong>  {t("Echipele mai bine clasate au libertatea de a revendica premiile non-alcoolice specifice locurilor inferioare (ex: Locul 1 poate lua sucul de la Locul 3). Echipele pot oricând să schimbe premiile între ele de comun acord!")}</li>
+                    <li><strong className="text-amber-400">{t("Locul 3:")}</strong>  {t("Shoturi. Opțiunea fără alcool: shoturi fără alcool sau pahare de suc.")}</li>
+                    <li><strong className="text-amber-400">{t("Locul 2:")}</strong>  {t("O găleată de beri. Opțiunea fără alcool: beri fără alcool.")}</li>
+                    <li><strong className="text-amber-400">{t("Locul 1:")}</strong>  {t("O sticlă de vin. Opțiunea fără alcool: limonade.")} <em>{t("Atenție!")}</em>  {t("Dacă unii membri optează pentru limonadă, restul membrilor (care preferă varianta cu alcool) vor primi câte un pahar de vin în loc de sticla întreagă.")}</li>
+                    <li><strong className="text-purple-100">{t("Detalii Premii:")}</strong>  {t("Echipele mai bine clasate pot alege premiile fără alcool oferite pentru locurile inferioare (de exemplu, echipa de pe locul 1 poate alege sucul oferit pentru locul 3). Echipele pot oricând să schimbe premiile între ele, de comun acord!")}</li>
                   </ul>
                 </div>
 
@@ -250,12 +250,12 @@ export default function RulebookSection() {
                     <Zap className="text-red-500 w-6 h-6" />
                      {t("4. Fără Telefoane!")} </h3>
                   <p className="mt-3 text-purple-200/80 text-sm sm:text-base">
-                     {t("Ne place fair-play-ul. Utilizarea telefoanelor, ceasurilor smart, Shazam-ului sau a oricărui dispozitiv de inspirație externă în timpul rundelor este")} <strong>{t("strict interzisă")}</strong>{t(". Regulamentul funcționează astfel:")} </p>
+                     {t("Susținem jocul corect. Utilizarea telefoanelor, a ceasurilor inteligente, a aplicației Shazam sau a oricărei surse externe de informații în timpul rundelor este")} <strong>{t("strict interzisă")}</strong>{t(". Regulamentul funcționează astfel:")} </p>
                   <ul className="mt-4 space-y-3 text-purple-200/80 text-sm sm:text-base list-disc list-inside">
                     <li><strong className="text-purple-100">{t("Prima abatere:")}</strong>  {t("Echipa primește un avertisment clar.")}</li>
                     <li><strong className="text-purple-100">{t("A doua abatere:")}</strong>  {t("Echipa este penalizată cu pierderea")} <span className="text-red-400 font-bold">{t("tuturor punctelor")}</span>  {t("din runda curentă.")}</li>
                     <li><strong className="text-purple-100">{t("A treia abatere:")}</strong>  {t("Pierderea")} <span className="text-red-400 font-bold">{t("tuturor punctelor adunate în acel quiz")}</span>  {t("(descalificare de facto).")}</li>
-                    <li><strong className="text-red-300">{t("Cheating la Pariu:")}</strong>  {t("Dacă sunteți prinși trișând la Pariu, pierdeți toate punctele din acea ediție. Deși veți avea 0 puncte și ați fi teoretic pe ultimul loc, NU veți primi dreptul de a alege tema pentru ediția viitoare; în schimb, penultima echipă o va alege!")}</li>
+                    <li><strong className="text-red-300">{t("Trișatul la Pariu:")}</strong>  {t("Dacă sunteți prinși trișând la Pariu, pierdeți toate punctele din acea ediție. Deși veți avea 0 puncte și ați fi teoretic pe ultimul loc, NU veți primi dreptul de a alege tema pentru ediția viitoare; în schimb, penultima echipă o va alege!")}</li>
                   </ul>
                 </div>
 

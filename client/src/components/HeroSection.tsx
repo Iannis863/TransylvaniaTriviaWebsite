@@ -105,8 +105,11 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
         <div className="relative group my-2">
           <div className="absolute -inset-6 bg-gradient-to-r from-purple-600/30 via-amber-500/25 to-purple-600/30 rounded-full blur-2xl opacity-75 group-hover:opacity-100 transition duration-700 animate-lightning" />
           <img
-            src="/logo-main.png"
-            alt="Transilvania Trivia Logo"
+            src="/logo-main.webp"
+            width={880}
+            height={880}
+            fetchPriority="high"
+            alt="Transilvania Trivia"
             className="relative w-[282px] sm:w-[352px] md:w-[422px] lg:w-[440px] h-auto object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.9)] filter hover:scale-102 transition-transform duration-500"
           />
         </div>
@@ -249,7 +252,7 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
             <DialogTitle className="text-2xl sm:text-3xl font-heading tracking-widest text-gold-gradient">
                {t("CALENDARUL SEZOANELOR 1 & 2")} </DialogTitle>
             <DialogDescription className="text-purple-300/70 text-xs">
-               {t("Toate cele 30 de ediții programate în fiecare zi de Marți la ora 20:00 la Insomnia Cafe & Bistro")} </DialogDescription>
+               {t("Cele 30 de ediții sunt programate marțea, la ora 20:00, la Insomnia Cafe & Bistro. Consultă datele de mai jos pentru pauzele dintre ediții.")} </DialogDescription>
           </DialogHeader>
 
           {/* Season Switcher Tabs */}
@@ -262,7 +265,7 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
                   : "bg-purple-950/60 border border-purple-700/50 text-purple-300 hover:text-white"
               }`}
             >
-               {t("Sezonul 1: Octombrie - Ianuarie (15 Ediții)")} </button>
+               {t("Sezonul 1: octombrie – ianuarie (15 ediții)")} </button>
             <button
               onClick={() => setSelectedSeasonTab(2)}
               className={`px-5 py-2.5 rounded-full font-heading text-sm tracking-wider transition-all ${
@@ -271,7 +274,7 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
                   : "bg-purple-950/60 border border-purple-700/50 text-purple-300 hover:text-white"
               }`}
             >
-               {t("Sezonul 2: Februarie - Mai (15 Ediții)")} </button>
+               {t("Sezonul 2: februarie – mai (15 ediții)")} </button>
           </div>
 
           {/* Editions Grid */}

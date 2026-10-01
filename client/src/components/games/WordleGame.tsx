@@ -14,12 +14,13 @@ interface WordleGameProps {
   weeklyData: WeeklyGameData;
   onSolve: (data: any) => void;
   isAlreadySolved?: boolean;
+  isActive?: boolean;
 }
 
 const WORD_LENGTH = 5;
 
 
-export default function WordleGame({ weeklyData, onSolve, isAlreadySolved = false }: WordleGameProps) {
+export default function WordleGame({ weeklyData, onSolve, isAlreadySolved = false, isActive = true }: WordleGameProps) {
   const TARGET_WORD = weeklyData.wordleWord;
   const { toast } = useToast();
   const [guesses, setGuesses] = useState<string[]>(isAlreadySolved ? [TARGET_WORD] : []);
@@ -93,6 +94,7 @@ export default function WordleGame({ weeklyData, onSolve, isAlreadySolved = fals
   }, [guesses, currentGuess]);
 
   useEffect(() => {
+    if (!isActive) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       // Leave shortcuts, text entry, dialogs and other controls to their owners.
       if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.isComposing || gameWon) return;
@@ -114,7 +116,7 @@ export default function WordleGame({ weeklyData, onSolve, isAlreadySolved = fals
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentGuess, gameWon, guesses]);
+  }, [currentGuess, gameWon, guesses, isActive]);
 
   const getKeyStatus = (key: string) => {
     let status = "unused";
@@ -171,7 +173,7 @@ export default function WordleGame({ weeklyData, onSolve, isAlreadySolved = fals
             return (
               <motion.div
                 key={rowIndex}
-                className="grid grid-cols-5 gap-2"
+                className="grid grid-cols-5 gap-1 sm:gap-2"
                 animate={isCurrentRow && invalidShake ? { x: [-5, 5, -5, 5, 0] } : {}}
                 transition={{ duration: 0.4 }}
               >
@@ -196,7 +198,7 @@ export default function WordleGame({ weeklyData, onSolve, isAlreadySolved = fals
                           ? { duration: 0.6, delay: colIndex * 0.3 }
                           : { duration: 0.1 }
                       }
-                      className={`w-14 h-14 rounded border-2 flex items-center justify-center font-heading text-3xl font-bold shadow ${colors}`}
+                      className={`w-11 h-11 sm:w-14 sm:h-14 rounded border-2 flex items-center justify-center font-heading text-3xl font-bold shadow ${colors}`}
                       style={isSubmitted ? { transformOrigin: "center center" } : {}}
                     >
                       {letter}
@@ -213,7 +215,7 @@ export default function WordleGame({ weeklyData, onSolve, isAlreadySolved = fals
       {gameWon && (
         <div className="w-full p-3 rounded-lg bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-center text-sm font-semibold mb-4 flex items-center justify-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-           {t("Rezolvat pentru Echipă din")} {guesses.length}  {t("încercări!")} </div>
+           {isAlreadySolved ? t("Cuvântul a fost rezolvat pentru echipă.") : <>{t("Rezolvat pentru Echipă din")} {guesses.length} {t("încercări!")}</>} </div>
       )}
 
       {/* Virtual Keyboard */}
@@ -233,8 +235,9 @@ export default function WordleGame({ weeklyData, onSolve, isAlreadySolved = fals
                   key={key}
                   type="button"
                   onClick={() => handleCharInput(key)}
+                  aria-label={key === "⌫" ? t("Șterge litera") : key === "ENTER" ? t("Trimite cuvântul") : key}
                   className={`h-14 rounded font-bold text-sm flex items-center justify-center border transition-all ${
-                    isSpecial ? "px-3 bg-purple-800/60 border-purple-600/40 text-purple-100" : `w-10 ${keyBg}`
+                    isSpecial ? "px-1.5 sm:px-3 bg-purple-800/60 border-purple-600/40 text-purple-100" : `min-w-0 flex-1 max-w-10 ${keyBg}`
                   }`}
                 >
                   {key}

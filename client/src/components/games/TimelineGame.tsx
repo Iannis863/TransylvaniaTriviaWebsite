@@ -54,9 +54,12 @@ export default function TimelineGame({ weeklyData, onSolve, isAlreadySolved = fa
 
     // Determine correct insertion index mathematically
     const sortedWithNew = [...placedEvents, activeEvent].sort((a, b) => a.year - b.year);
-    const correctIndex = sortedWithNew.findIndex(e => e.id === activeEvent.id);
+    const previous = placedEvents[insertIndex - 1];
+    const next = placedEvents[insertIndex];
+    const isCorrect = (!previous || previous.year <= activeEvent.year) && (!next || activeEvent.year <= next.year);
+    const remainingLives = lives - (isCorrect ? 0 : 1);
 
-    if (insertIndex === correctIndex) {
+    if (isCorrect) {
       // Correct guess!
       toast({ title: t("Corect!"), description: t("Ai plasat evenimentul corect la anul {0}.", [activeEvent.year]) });
       setPlacedEvents(sortedWithNew);
@@ -68,7 +71,7 @@ export default function TimelineGame({ weeklyData, onSolve, isAlreadySolved = fa
 
       if (newLives <= 0) {
         setIsLost(true);
-        toast({ title: t("Joc Pierdut"), description: t("Ai rămas fără vieți! Încearcă din nou echipa ta."), variant: "destructive" });
+        toast({ title: t("Joc Pierdut"), description: t("Ai rămas fără vieți! Încearcă din nou pentru echipa ta."), variant: "destructive" });
         return;
       } else {
         // Still have lives, place it correctly anyway (like Timdle)
@@ -79,10 +82,10 @@ export default function TimelineGame({ weeklyData, onSolve, isAlreadySolved = fa
     const nextUpcoming = upcomingEvents.slice(1);
     setUpcomingEvents(nextUpcoming);
 
-    if (nextUpcoming.length === 0 && lives > 0) {
+    if (nextUpcoming.length === 0 && remainingLives > 0) {
       setIsWon(true);
       toast({ title: t("🎉 Cronologie Completă!"), description: t("Ai reconstruit linia temporală istorică!") });
-      onSolve({ completed: true, livesLeft: lives });
+      onSolve({ completed: true, livesLeft: remainingLives });
     }
   };
 
@@ -133,8 +136,9 @@ export default function TimelineGame({ weeklyData, onSolve, isAlreadySolved = fa
             <div key={item.id}>
               {/* Insert Gap Above */}
               {!isWon && !isLost && (
-                <div className="w-full flex justify-center my-2 opacity-0 hover:opacity-100 transition-opacity">
+                <div className="w-full flex justify-center my-2">
                   <button
+                    type="button"
                     onClick={() => handlePlaceEvent(idx)}
                     className="flex items-center justify-center w-full max-w-[200px] h-8 rounded-full bg-amber-500 text-purple-950 font-bold hover:scale-105 transition-transform"
                   >
@@ -170,8 +174,9 @@ export default function TimelineGame({ weeklyData, onSolve, isAlreadySolved = fa
 
               {/* Insert Gap Below Last Element */}
               {!isWon && !isLost && idx === placedEvents.length - 1 && (
-                <div className="w-full flex justify-center my-2 opacity-0 hover:opacity-100 transition-opacity">
+                <div className="w-full flex justify-center my-2">
                   <button
+                    type="button"
                     onClick={() => handlePlaceEvent(idx + 1)}
                     className="flex items-center justify-center w-full max-w-[200px] h-8 rounded-full bg-amber-500 text-purple-950 font-bold hover:scale-105 transition-transform"
                   >

@@ -169,7 +169,7 @@ test("account registration queues a localized welcome and succeeds even when del
   assert.equal(deliveries[0].kind, "welcome");
   assert.equal(deliveries[0].sentAt, null);
   assert.match(deliveries[0].payload.html, /lang="en"/);
-  assert.equal((await register(body)).status, 400);
+  assert.equal((await register(body)).status, 409);
   assert.equal((await notifications.listDeliveries()).filter(item => item.userId === user.id).length, 1);
   const normal = await register({ ...body, email: "romanian-api@example.com", language: undefined });
   assert.equal(normal.status, 201);

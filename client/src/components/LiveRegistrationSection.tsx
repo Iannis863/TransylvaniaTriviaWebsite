@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
+import TeamRegistrationStatus from "./TeamRegistrationStatus";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -22,11 +23,11 @@ import {
 } from "lucide-react";
 
 const registrationSchema = z.object({
-  teamName: z.string().min(2, "Numele echipei trebuie să aibă cel puțin 2 caractere"),
-  captainName: z.string().min(2, "Numele căpitanului trebuie să aibă cel puțin 2 caractere"),
-  email: z.string().email("Te rugăm să introduci o adresă de email validă"),
-  phoneNumber: z.string().optional(),
-  memberCount: z.number().min(1, "Este necesar cel puțin 1 membru").max(6, "Sunt permiși maximum 6 membri"),
+  teamName: z.string().trim().max(100).min(2, "Numele echipei trebuie să aibă cel puțin 2 caractere"),
+  captainName: z.string().trim().max(100).min(2, "Numele căpitanului trebuie să aibă cel puțin 2 caractere"),
+  email: z.string().trim().max(254).email("Te rugăm să introduci o adresă de email validă"),
+  phoneNumber: z.string().trim().max(30).optional(),
+  memberCount: z.number().int().min(1, "Este necesar cel puțin 1 membru").max(6, "Sunt permiși maximum 6 membri"),
 });
 
 type RegistrationFormData = z.infer<typeof registrationSchema>;
@@ -38,7 +39,12 @@ interface LiveRegistrationSectionProps {
   onRegistrationSuccess: () => void;
 }
 
-export default function LiveRegistrationSection({
+export default function LiveRegistrationSection(props: LiveRegistrationSectionProps) {
+  const { user, team } = useAuth();
+  return <RegistrationSectionForm key={`${props.editionId}:${user?.id ?? "guest"}:${team?.id ?? "none"}`} {...props} />;
+}
+
+function RegistrationSectionForm({
   editionId,
   editionLabel,
   isFull,
@@ -49,6 +55,7 @@ export default function LiveRegistrationSection({
   const [isSuccess, setIsSuccess] = useState(false);
   const [isWaitlisted, setIsWaitlisted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  useEffect(() => { setIsSuccess(false); setIsWaitlisted(false); }, [editionId, user?.id, team?.id]);
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
@@ -79,7 +86,7 @@ export default function LiveRegistrationSection({
   }, [form, user?.id, user?.name, user?.email, user?.phoneNumber, team?.id, team?.name, teamMembers.length, dirtyFields, touchedFields]);
 
   const handleLeaderOneClickRegister = async () => {
-    if (!user || !team) return;
+    if (!user || !team || isSubmitting) return;
     setIsSubmitting(true);
 
     try {
@@ -90,7 +97,7 @@ export default function LiveRegistrationSection({
         teamName: team.name,
         captainName: user.name,
         email: user.email,
-        phoneNumber: "",
+        phoneNumber: user.phoneNumber || "",
         memberCount: Math.min(6, Math.max(1, teamMembers.length || 4)),
       };
 
@@ -102,7 +109,7 @@ export default function LiveRegistrationSection({
 
       const data = await res.json();
       if (!res.ok) {
-        toast({ title: t("Înregistrare eșuată"), description: data.message, variant: "destructive" });
+        toast({ title: t("Înregistrare eșuată"), description: t(data.message || "Nu s-a putut efectua înscrierea"), variant: "destructive" });
       } else {
         setIsSuccess(true);
         setIsWaitlisted(data.status === "WAITLISTED");
@@ -118,6 +125,7 @@ export default function LiveRegistrationSection({
   };
 
   const onSubmit = async (data: RegistrationFormData) => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
     try {
       const payload = {
@@ -135,7 +143,7 @@ export default function LiveRegistrationSection({
 
       const resData = await res.json();
       if (!res.ok) {
-        toast({ title: t("Înscriere eșuată"), description: resData.message, variant: "destructive" });
+        toast({ title: t("Înscriere eșuată"), description: t(resData.message || "Eroare la procesarea formularului"), variant: "destructive" });
       } else {
         setIsSuccess(true);
         setIsWaitlisted(resData.status === "WAITLISTED");
@@ -178,12 +186,12 @@ export default function LiveRegistrationSection({
               <p className="text-emerald-100/90 max-w-md mx-auto text-sm sm:text-base mb-6 font-light">
                 {isWaitlisted ? t("Înscrierea a fost primită, dar nu aveți încă un loc rezervat. Dacă quizmasterul vă acceptă, primiți un email de confirmare. Așteptați confirmarea înainte de a veni la eveniment.") : <>{t("Masa este rezervată la Insomnia Cafe & Bistro pentru")} <strong>{editionLabel}</strong>{t(". Vă așteptăm cu drag!")}</>}
               </p>
-              <Button
-                onClick={() => setIsSuccess(false)}
+              {!team && <Button
+                onClick={() => { setIsSuccess(false); form.reset({ teamName: "", captainName: "", email: "", phoneNumber: "", memberCount: 4 }); }}
                 variant="outline"
                 className="rounded-full border-emerald-400/50 text-emerald-300 hover:bg-emerald-400/20 font-heading text-sm px-6 py-4"
               >
-                 {t("Înscrie O Altă Echipă")} </Button>
+                 {t("Înscrie O Altă Echipă")} </Button>}
             </div>
           </div>
         ) : (
@@ -192,7 +200,7 @@ export default function LiveRegistrationSection({
                {t("Locurile pentru înscriere directă sunt ocupate. Te poți înscrie pe lista de așteptare; locul este rezervat doar după acceptarea de către quizmaster și primirea confirmării.")} </div>}
 
             {/* Quick 1-Click Leader Card */}
-            {user && team && user.role === "TEAM_LEADER" && (
+            {user && team && team.leaderId === user.id && (
               <div className="p-2 rounded-[2rem] bg-gradient-to-r from-amber-500/20 via-purple-900/30 to-amber-500/10 ring-2 ring-amber-400/60 shadow-[0_0_35px_rgba(246,184,40,0.3)]">
                 <div className="p-6 rounded-[calc(2rem-0.5rem)] bg-[#0e041d] flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-4 text-left">
@@ -222,7 +230,13 @@ export default function LiveRegistrationSection({
               </div>
             )}
 
-            {/* Standard Double-Bezel Form Shell */}
+            {/* Only the captain can submit a registration linked to this team. */}
+            {team && team.leaderId !== user?.id ? (
+              <div className="rounded-2xl border border-purple-700/50 bg-purple-950/30 p-6">
+                <p className="mb-4 text-purple-200">{t("Doar căpitanul poate înscrie echipa")}</p>
+                <TeamRegistrationStatus />
+              </div>
+            ) : (
             <div className="p-2 sm:p-2.5 rounded-[2.5rem] bg-gradient-to-b from-purple-900/20 to-purple-950/10 ring-1 ring-purple-500/30 shadow-2xl">
               <div className="p-6 sm:p-10 rounded-[calc(2.5rem-0.5rem)] bg-[#0e041d] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
 
@@ -232,7 +246,7 @@ export default function LiveRegistrationSection({
                   </div>
                   <div>
                     <h3 className="font-heading text-xl text-white tracking-wider">
-                       {t("Formular Oficial de Înregistrare Echipei")} </h3>
+                       {t("Formular oficial de înscriere a echipei")} </h3>
                     <p className="text-xs text-purple-300/70">
                        {t("Completează datele echipei pentru rezervarea mesei la Insomnia Cafe & Bistro")} </p>
                   </div>
@@ -250,12 +264,14 @@ export default function LiveRegistrationSection({
                             <FormLabel className="text-xs text-purple-200">{t("Nume Echipă *")}</FormLabel>
                             <FormControl>
                               <Input
+                                readOnly={!!team}
+                                maxLength={100}
                                 placeholder={t("Ex: Geniile Carpaților")}
                                 {...field}
                                 className="bg-purple-950/40 border-purple-700/50 focus:border-amber-400 text-sm h-11 rounded-xl"
                               />
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage>{form.formState.errors[field.name]?.message && t(form.formState.errors[field.name]!.message!)}</FormMessage>
                           </FormItem>
                         )}
                       />
@@ -268,12 +284,15 @@ export default function LiveRegistrationSection({
                             <FormLabel className="text-xs text-purple-200">{t("Nume Căpitan *")}</FormLabel>
                             <FormControl>
                               <Input
+                                readOnly={!!team}
+                                maxLength={100}
+                                autoComplete="name"
                                 placeholder={t("Ex: Vlad Țepeș")}
                                 {...field}
                                 className="bg-purple-950/40 border-purple-700/50 focus:border-amber-400 text-sm h-11 rounded-xl"
                               />
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage>{form.formState.errors[field.name]?.message && t(form.formState.errors[field.name]!.message!)}</FormMessage>
                           </FormItem>
                         )}
                       />
@@ -289,12 +308,15 @@ export default function LiveRegistrationSection({
                             <FormControl>
                               <Input
                                 type="email"
+                                autoComplete="email"
+                                readOnly={!!team}
+                                maxLength={254}
                                 placeholder="echipa@exemplu.ro"
                                 {...field}
                                 className="bg-purple-950/40 border-purple-700/50 focus:border-amber-400 text-sm h-11 rounded-xl"
                               />
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage>{form.formState.errors[field.name]?.message && t(form.formState.errors[field.name]!.message!)}</FormMessage>
                           </FormItem>
                         )}
                       />
@@ -307,7 +329,7 @@ export default function LiveRegistrationSection({
                             <FormLabel className="text-xs text-purple-200">{t("Membri (1 - 6) *")}</FormLabel>
                             <Select
                               onValueChange={(val) => field.onChange(parseInt(val))}
-                              defaultValue={field.value.toString()}
+                              value={field.value.toString()}
                             >
                               <FormControl>
                                 <SelectTrigger className="bg-purple-950/40 border-purple-700/50 focus:border-amber-400 text-sm h-11 rounded-xl">
@@ -323,7 +345,7 @@ export default function LiveRegistrationSection({
                                 <SelectItem value="6">{t("6 Jucători (Maxim)")}</SelectItem>
                               </SelectContent>
                             </Select>
-                            <FormMessage />
+                            <FormMessage>{form.formState.errors[field.name]?.message && t(form.formState.errors[field.name]!.message!)}</FormMessage>
                           </FormItem>
                         )}
                       />
@@ -338,12 +360,14 @@ export default function LiveRegistrationSection({
                           <FormControl>
                             <Input
                               type="tel"
+                              autoComplete="tel"
+                              maxLength={30}
                               placeholder="+40 7XX XXX XXX"
                               {...field}
                               className="bg-purple-950/40 border-purple-700/50 focus:border-amber-400 text-sm h-11 rounded-xl"
                             />
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage>{form.formState.errors[field.name]?.message && t(form.formState.errors[field.name]!.message!)}</FormMessage>
                         </FormItem>
                       )}
                     />
@@ -364,6 +388,7 @@ export default function LiveRegistrationSection({
 
               </div>
             </div>
+            )}
 
           </div>
         )}

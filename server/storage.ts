@@ -14,6 +14,10 @@ import { randomUUID } from "crypto";
 import { eq, and, gt, sql } from "drizzle-orm";
 import { ADMIN_CREDENTIAL_ID, INITIAL_ADMIN_PASSWORD_HASH } from "./admin-credential.js";
 
+export class DuplicateEmailError extends Error {
+  constructor() { super("EMAIL_ALREADY_EXISTS"); }
+}
+
 export interface IStorage {
   getAdminPasswordHash(): Promise<string | undefined>;
   setAdminPasswordHash(passwordHash: string): Promise<void>;
@@ -79,11 +83,12 @@ export interface IStorage {
   setEditionCapacityOverride(editionId: string, maxTeams: number): Promise<void>;
 
   // ── Password Reset Codes ──────────────────────────────────────────────────
-  createResetCode(email: string, code: string, expiresAt: Date): Promise<void>;
+  createResetCode(email: string, code: string, expiresAt: Date, expectedUserId?: string): Promise<boolean>;
+  resetUserPassword(email: string, code: string, passwordHash: string): Promise<boolean>;
   consumeResetCode(email: string, code: string): Promise<boolean>;
   getValidResetCode(email: string): Promise<PasswordResetCode | undefined>;
   incrementResetCodeAttempts(id: string): Promise<void>;
-  deleteResetCodes(email: string): Promise<void>;
+  deleteResetCodes(email: string, issuedCode?: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -274,12 +279,15 @@ export class MemStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    const email = insertUser.email.trim().toLowerCase();
+    if (Array.from(this.users.values()).some(user => user.email.trim().toLowerCase() === email)) throw new DuplicateEmailError();
+    this.resetCodes.delete(email);
     const id = randomUUID();
     const user: User = {
       language: insertUser.language ?? "ro", welcomeQueued: false,
       id,
       name: insertUser.name,
-      email: insertUser.email,
+      email,
       phoneNumber: insertUser.phoneNumber || null,
       password: insertUser.password || null,
       role: insertUser.role || "MEMBER",
@@ -294,7 +302,13 @@ export class MemStorage implements IStorage {
   async updateUser(id: string, data: Partial<Pick<User, "name" | "email" | "phoneNumber" | "password">>): Promise<User | undefined> {
     const user = this.users.get(id);
     if (!user) return undefined;
-    const updated = { ...user, ...data };
+    const email = data.email?.trim().toLowerCase() ?? user.email;
+    if (Array.from(this.users.values()).some(other => other.id !== id && other.email.trim().toLowerCase() === email)) throw new DuplicateEmailError();
+    if (email !== user.email.trim().toLowerCase()) {
+      this.resetCodes.delete(user.email.trim().toLowerCase());
+      this.resetCodes.delete(email);
+    }
+    const updated = { ...user, ...data, email };
     this.users.set(id, updated);
     return updated;
   }
@@ -318,6 +332,8 @@ export class MemStorage implements IStorage {
   }
 
   async deleteUser(id: string): Promise<boolean> {
+    const user = this.users.get(id);
+    if (user) this.resetCodes.delete(user.email.trim().toLowerCase());
     this.puzzleProgress.forEach(progress => { if (progress.solvedByUserId === id) progress.solvedByUserId = null; });
     return this.users.delete(id);
   }
@@ -574,7 +590,10 @@ export class MemStorage implements IStorage {
   // ── Password Reset Codes (in-memory for dev) ─────────────────────────────
   private resetCodes: Map<string, PasswordResetCode> = new Map();
 
-  async createResetCode(email: string, code: string, expiresAt: Date): Promise<void> {
+  async createResetCode(email: string, code: string, expiresAt: Date, expectedUserId?: string): Promise<boolean> {
+    if (expectedUserId && this.users.get(expectedUserId)?.email.trim().toLowerCase() !== email.toLowerCase()) return false;
+    const previous = this.resetCodes.get(email.toLowerCase());
+    if (expectedUserId && previous && previous.expiresAt > new Date() && previous.createdAt.getTime() > Date.now() - 60000) return false;
     const id = randomUUID();
     this.resetCodes.set(email.toLowerCase(), {
       id,
@@ -584,6 +603,7 @@ export class MemStorage implements IStorage {
       expiresAt,
       createdAt: new Date(),
     });
+    return true;
   }
 
   async getValidResetCode(email: string): Promise<PasswordResetCode | undefined> {
@@ -606,6 +626,19 @@ export class MemStorage implements IStorage {
     return true;
   }
 
+  async resetUserPassword(email: string, code: string, passwordHash: string): Promise<boolean> {
+    // No await between validation and update: account reassignment cannot interleave.
+    const key = email.trim().toLowerCase();
+    const user = Array.from(this.users.values()).find(item => item.email.trim().toLowerCase() === key);
+    const entry = this.resetCodes.get(key);
+    if (!user || !entry || entry.expiresAt <= new Date() || entry.attempts >= 5) return false;
+    entry.attempts++;
+    if (entry.code !== code) return false;
+    this.users.set(user.id, { ...user, password: passwordHash });
+    this.resetCodes.delete(key);
+    return true;
+  }
+
   async incrementResetCodeAttempts(id: string): Promise<void> {
     this.resetCodes.forEach((entry, key) => {
       if (entry.id === id) {
@@ -614,8 +647,9 @@ export class MemStorage implements IStorage {
     });
   }
 
-  async deleteResetCodes(email: string): Promise<void> {
-    this.resetCodes.delete(email.toLowerCase());
+  async deleteResetCodes(email: string, issuedCode?: string): Promise<void> {
+    const key = email.toLowerCase();
+    if (!issuedCode || this.resetCodes.get(key)?.code === issuedCode) this.resetCodes.delete(key);
   }
 }
 
@@ -653,11 +687,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [result] = await this.database.insert(users).values(insertUser).returning();
-    return result;
+    return this.database.transaction(async (tx: any) => {
+      // The normalized lookup must remain atomic even for legacy mixed-case addresses.
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('app-account-mutations'))`);
+      const email = insertUser.email.trim().toLowerCase();
+      if (await new DatabaseStorage(tx).getUserByEmail(email)) throw new DuplicateEmailError();
+      await tx.delete(passwordResetCodes).where(eq(passwordResetCodes.email, email));
+      const [result] = await tx.insert(users).values({ ...insertUser, email }).returning();
+      return result;
+    });
   }
 
   async updateUser(id: string, data: Partial<Pick<User, "name" | "email" | "phoneNumber" | "password">>): Promise<User | undefined> {
+    if (data.email !== undefined) return this.database.transaction(async (tx: any) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('app-account-mutations'))`);
+      const source = new DatabaseStorage(tx);
+      const user = await source.getUser(id);
+      if (!user) return undefined;
+      const email = data.email!.trim().toLowerCase();
+      const existing = await source.getUserByEmail(email);
+      if (existing && existing.id !== id) throw new DuplicateEmailError();
+      if (email !== user.email.trim().toLowerCase()) {
+        await source.deleteResetCodes(user.email);
+        await source.deleteResetCodes(email);
+      }
+      const [updated] = await tx.update(users).set({ ...data, email }).where(eq(users.id, id)).returning();
+      return updated;
+    });
     const [result] = await this.database.update(users).set(data).where(eq(users.id, id)).returning();
     return result;
   }
@@ -678,8 +734,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    const [result] = await this.database.delete(users).where(eq(users.id, id)).returning();
-    return !!result;
+    return this.database.transaction(async (tx: any) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('app-account-mutations'))`);
+      const source = new DatabaseStorage(tx);
+      const user = await source.getUser(id);
+      if (!user) return false;
+      await source.deleteResetCodes(user.email);
+      const [result] = await tx.delete(users).where(eq(users.id, id)).returning();
+      return !!result;
+    });
   }
 
   async updateUserTeam(userId: string, teamId: string | null, role?: string): Promise<User | undefined> {
@@ -878,11 +941,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ── Password Reset Codes ─────────────────────────────────────────────────
-  async createResetCode(email: string, code: string, expiresAt: Date): Promise<void> {
-    await this.database.transaction(async (tx: any) => {
+  async createResetCode(email: string, code: string, expiresAt: Date, expectedUserId?: string): Promise<boolean> {
+    return this.database.transaction(async (tx: any) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('app-account-mutations'))`);
+      const source = new DatabaseStorage(tx);
+      if (expectedUserId && (await source.getUserByEmail(email))?.id !== expectedUserId) return false;
+      const previous = expectedUserId ? await source.getValidResetCode(email) : undefined;
+      if (previous && previous.createdAt.getTime() > Date.now() - 60000) return false;
       await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`reset:${email.toLowerCase()}`}))`);
       await tx.delete(passwordResetCodes).where(eq(passwordResetCodes.email, email.toLowerCase()));
       await tx.insert(passwordResetCodes).values({ email: email.toLowerCase(), code, expiresAt });
+      return true;
     });
   }
 
@@ -910,6 +979,19 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
+  async resetUserPassword(email: string, code: string, passwordHash: string): Promise<boolean> {
+    return this.database.transaction(async (tx: any) => {
+      // Address changes, code issuance, account recreation and reset share this lock.
+      // A failed write rolls back consumption so the valid code can be retried.
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('app-account-mutations'))`);
+      const source = new DatabaseStorage(tx);
+      const user = await source.getUserByEmail(email);
+      if (!user || !await source.consumeResetCode(email, code)) return false;
+      await tx.update(users).set({ password: passwordHash }).where(eq(users.id, user.id));
+      return true;
+    });
+  }
+
   async incrementResetCodeAttempts(id: string): Promise<void> {
     const entry = await this.database.select().from(passwordResetCodes).where(eq(passwordResetCodes.id, id));
     if (entry.length > 0) {
@@ -919,8 +1001,11 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async deleteResetCodes(email: string): Promise<void> {
-    await this.database.delete(passwordResetCodes).where(eq(passwordResetCodes.email, email.toLowerCase()));
+  async deleteResetCodes(email: string, issuedCode?: string): Promise<void> {
+    await this.database.delete(passwordResetCodes).where(and(
+      eq(passwordResetCodes.email, email.toLowerCase()),
+      issuedCode ? eq(passwordResetCodes.code, issuedCode) : undefined,
+    ));
   }
 }
 

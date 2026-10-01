@@ -17,7 +17,7 @@ export const users = pgTable("app_users", {
   phoneNumber: text("phone_number"),
   language: text("language").notNull().default("ro"),
   welcomeQueued: boolean("welcome_queued").notNull().default(false),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -58,7 +58,7 @@ export const teams = pgTable("app_teams", {
   inviteCode: varchar("invite_code", { length: 12 }).notNull().unique(),
   tagline: text("tagline"),
   score: integer("score").default(0).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const insertTeamSchema = createInsertSchema(teams).omit({
@@ -83,10 +83,10 @@ export const seasons = pgTable("app_seasons", {
   number: integer("number").notNull().unique(), // 1, 2
   name: text("name").notNull(),
   totalEditions: integer("total_editions").default(15).notNull(),
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
+  startDate: timestamp("start_date", { withTimezone: true }).notNull(),
+  endDate: timestamp("end_date", { withTimezone: true }).notNull(),
   isActive: boolean("is_active").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const insertSeasonSchema = createInsertSchema(seasons).omit({
@@ -104,12 +104,12 @@ export const editions = pgTable("app_editions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   seasonId: varchar("season_id").notNull(),
   editionNumber: integer("edition_number").notNull(), // 1 to 15
-  eventDate: timestamp("event_date").notNull(),
+  eventDate: timestamp("event_date", { withTimezone: true }).notNull(),
   theme: text("theme"),
   isCompleted: boolean("is_completed").default(false).notNull(),
   maxTeams: integer("max_teams").default(10).notNull(),
   secretClue: text("secret_clue"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const insertEditionSchema = createInsertSchema(editions).omit({
@@ -138,7 +138,7 @@ export const registrations = pgTable("app_registrations", {
   status: text("status").$type<"CONFIRMED" | "WAITLISTED">().default("CONFIRMED").notNull(),
   eventDate: timestamp("event_date", { withTimezone: true }),
   reminderSent: boolean("reminder_sent").default(false).notNull(),
-  registeredAt: timestamp("registered_at").defaultNow().notNull(),
+  registeredAt: timestamp("registered_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const insertRegistrationSchema = createInsertSchema(registrations).omit({
@@ -182,8 +182,8 @@ export const weeklyPuzzleProgress = pgTable("app_weekly_puzzle_progress", {
   isSolved: boolean("is_solved").default(false).notNull(),
   solvedByUserId: varchar("solved_by_user_id"),
   data: jsonb("data"), // stores state, guesses, board status
-  solvedAt: timestamp("solved_at"),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  solvedAt: timestamp("solved_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const insertPuzzleProgressSchema = createInsertSchema(weeklyPuzzleProgress).omit({
@@ -206,7 +206,7 @@ export const themeSuggestions = pgTable("app_theme_suggestions", {
   popularityScore: integer("popularity_score").default(0).notNull(),
   status: text("status").default("PENDING").notNull(), // 'PENDING' | 'APPROVED' | 'REJECTED'
   proposedBy: text("proposed_by").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const insertThemeSuggestionSchema = createInsertSchema(themeSuggestions).omit({
@@ -225,8 +225,8 @@ export const passwordResetCodes = pgTable("app_password_reset_codes", {
   email: text("email").notNull(),
   code: varchar("code", { length: 6 }).notNull(),
   attempts: integer("attempts").default(0).notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export type PasswordResetCode = typeof passwordResetCodes.$inferSelect;

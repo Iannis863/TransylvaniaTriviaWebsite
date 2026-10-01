@@ -64,6 +64,11 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
   const { user, team } = useAuth();
   const { toast } = useToast();
   const [activeGameTab, setActiveGameTab] = useState("wordle");
+  const [visitedGames, setVisitedGames] = useState(() => new Set(["wordle"]));
+  const selectGame = (game: string) => {
+    setVisitedGames(previous => new Set([...Array.from(previous), game]));
+    setActiveGameTab(game);
+  };
   const [isClueModalOpen, setIsClueModalOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
@@ -73,6 +78,11 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
   const weekId = getPuzzleWeekId(weekIndex);
   const [resetVersion, setResetVersion] = useState(0);
   const mounted = useRef(true);
+  const progressRequest = useRef(0);
+  const progressVersion = useRef(0);
+  const pendingSaves = useRef(new Set<string>());
+  const [savingCount, setSavingCount] = useState(0);
+  const [progressError, setProgressError] = useState(false);
   useEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; };
@@ -97,11 +107,15 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
     }
 
     if (!background) setIsLoadingProgress(true);
+    const request = ++progressRequest.current;
+    const version = progressVersion.current;
     try {
       const res = await fetch(`/api/games/progress/${weekId}?teamId=${team.id}`);
-      if (res.ok) {
+      if (!res.ok) throw new Error("Progress unavailable");
+      {
         const data = await res.json();
-        if (!mounted.current) return;
+        if (!mounted.current || request !== progressRequest.current || version !== progressVersion.current) return;
+        setProgressError(false);
         const map: Record<string, boolean> = {
           WORDLE: false,
           TARGET: false,
@@ -112,12 +126,14 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
         Object.entries(data.games || {}).forEach(([key, val]: [string, any]) => {
           map[key] = !!val.isSolved;
         });
+        pendingSaves.current.forEach(game => { map[game] = true; });
         setSolvedGames(map);
       }
     } catch (err) {
+      if (mounted.current && request === progressRequest.current) setProgressError(true);
       console.error("Failed to fetch game progress:", err);
     } finally {
-      if (!background) setIsLoadingProgress(false);
+      if (!background && mounted.current) setIsLoadingProgress(false);
     }
   };
 
@@ -129,7 +145,7 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
   }, [weekId, team?.id, isPreview]);
 
   const handleGameSolved = async (gameType: string, payloadData: any) => {
-    if (!mounted.current || getCurrentWeekIndex() !== weekIndex) return;
+    if (!mounted.current || (!isPreview && getCurrentWeekIndex() !== weekIndex) || isResetting || pendingSaves.current.has(gameType)) return;
     setSolvedGames((prev) => ({ ...prev, [gameType]: true }));
 
     // Don't save to the backend if not logged in or not in a team
@@ -139,6 +155,9 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
       return;
     }
 
+    pendingSaves.current.add(gameType);
+    setSavingCount(pendingSaves.current.size);
+    ++progressVersion.current;
     try {
       const response = await fetch("/api/games/progress", {
         method: "POST",
@@ -153,16 +172,23 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
         }),
       });
       if (!response.ok) throw new Error(t("Progresul nu a putut fi salvat"));
+      pendingSaves.current.delete(gameType);
       await fetchProgress(true);
     } catch (err) {
       console.error("Error saving puzzle solve:", err);
       if (!mounted.current) return;
+      ++progressVersion.current;
       setSolvedGames(previous => ({ ...previous, [gameType]: false }));
       toast({ title: t("Progres nesalvat"), description: t("Nu am putut salva rezultatul. Încearcă din nou."), variant: "destructive" });
+    } finally {
+      pendingSaves.current.delete(gameType);
+      if (mounted.current) setSavingCount(pendingSaves.current.size);
     }
   };
 
   const handleResetProgress = async () => {
+    if (isResetting || pendingSaves.current.size > 0) return;
+    ++progressVersion.current;
     if (!user || !team || isPreview) {
       setSolvedGames({
         WORDLE: false,
@@ -184,7 +210,8 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
         body: JSON.stringify({ teamId: team.id, weekId }),
       });
       if (!res.ok) throw new Error("Reset failed");
-      if (res.ok) {
+      if (res.ok && mounted.current) {
+        ++progressVersion.current;
         setSolvedGames({
           WORDLE: false,
           TARGET: false,
@@ -312,7 +339,7 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
                 <button
                   type="button"
                   onClick={() => setIsResetDialogOpen(true)}
-                  disabled={isResetting}
+                  disabled={isResetting || savingCount > 0}
                   className="text-xs text-purple-400/70 hover:text-amber-300 flex items-center gap-1 transition-colors px-2 py-1"
                   title={t("Resetează puzzle-urile la 0/5")}
                 >
@@ -327,9 +354,11 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
               {gamesConfig.map((g) => {
                 const isSolved = solvedGames[g.type];
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={g.id}
-                    onClick={() => setActiveGameTab(g.id)}
+                    aria-pressed={activeGameTab === g.id}
+                    onClick={() => selectGame(g.id)}
                     className={`p-2.5 rounded-xl border text-center cursor-pointer transition-all ${
                       isSolved
                         ? "bg-emerald-950/40 border-emerald-500/50 text-emerald-300 shadow-[0_0_15px_rgba(52,211,153,0.15)]"
@@ -346,7 +375,7 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
                           <Lock className="w-3 h-3" />  {t("Nerezolvat")} </span>
                       )}
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -356,13 +385,14 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
 
         {/* Double-Bezel Interactive Game Arena Shell */}
         <div className="p-2 sm:p-2.5 rounded-[2.5rem] bg-gradient-to-b from-purple-900/20 to-purple-950/10 ring-1 ring-purple-500/30 shadow-2xl">
-          <div className="p-6 sm:p-10 rounded-[calc(2.5rem-0.5rem)] bg-[#0d041a] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+          <div className="p-3 sm:p-10 rounded-[calc(2.5rem-0.5rem)] bg-[#0d041a] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+            {progressError && <p role="alert" className="mb-4 text-center text-sm text-amber-200">{t("Nu am putut încărca progresul echipei.")} <button className="underline" onClick={() => void fetchProgress()}>{t("Reîncearcă")}</button></p>}
             {isLoadingProgress ? (
               <div className="flex justify-center items-center py-20 text-purple-300">
                 <span className="animate-spin mr-2 w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full" />
                  {t("Se încarcă progresul echipei...")} </div>
             ) : (
-              <Tabs key={`${resetVersion}:${language}`} value={activeGameTab} onValueChange={setActiveGameTab} className="w-full">
+              <Tabs key={`${resetVersion}:${language}`} value={activeGameTab} onValueChange={selectGame} className="w-full">
 
                 <TabsList className="w-full grid grid-cols-2 sm:grid-cols-5 bg-purple-950/80 border border-purple-700/50 p-1.5 rounded-2xl mb-8 h-auto gap-1 sm:gap-2 items-center justify-center">
                   {gamesConfig.map((g) => {
@@ -383,19 +413,23 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
               </TabsList>
 
               {/* TAB 1: WORDLE */}
-              <TabsContent value="wordle">
+              <TabsContent value="wordle" forceMount className="data-[state=inactive]:hidden">
+                {visitedGames.has("wordle") && (
                 <Suspense fallback={<GameLoading />}>
                 <WordleGame
+                  isActive={activeGameTab === "wordle"}
                   weeklyData={weeklyData}
                   key={String(solvedGames["WORDLE"])}
                   onSolve={(data) => handleGameSolved("WORDLE", data)}
                   isAlreadySolved={solvedGames["WORDLE"]}
                 />
                 </Suspense>
+                )}
               </TabsContent>
 
               {/* TAB 2: TARGET */}
-              <TabsContent value="target">
+              <TabsContent value="target" forceMount className="data-[state=inactive]:hidden">
+                {visitedGames.has("target") && (
                 <Suspense fallback={<GameLoading />}>
                 <TargetGame
                   weeklyData={weeklyData}
@@ -404,11 +438,13 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
                   isAlreadySolved={solvedGames["TARGET"]}
                 />
                 </Suspense>
+                )}
               </TabsContent>
 
 
               {/* TAB 4: TIMELINE */}
-              <TabsContent value="timeline">
+              <TabsContent value="timeline" forceMount className="data-[state=inactive]:hidden">
+                {visitedGames.has("timeline") && (
                 <Suspense fallback={<GameLoading />}>
                 <TimelineGame
                   weeklyData={weeklyData}
@@ -417,10 +453,12 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
                   isAlreadySolved={solvedGames["TIMELINE"]}
                 />
                 </Suspense>
+                )}
               </TabsContent>
 
               {/* TAB 5: CONNECTIONS */}
-              <TabsContent value="connections">
+              <TabsContent value="connections" forceMount className="data-[state=inactive]:hidden">
+                {visitedGames.has("connections") && (
                 <Suspense fallback={<GameLoading />}>
                 <ConnectionsGame
                   weeklyData={weeklyData}
@@ -429,18 +467,22 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
                   isAlreadySolved={solvedGames["CONNECTIONS"]}
                 />
                 </Suspense>
+                )}
               </TabsContent>
 
               {/* TAB 6: GLOBLE MAP */}
-              <TabsContent value="globle">
+              <TabsContent value="globle" forceMount className="data-[state=inactive]:hidden">
+                {visitedGames.has("globle") && (
                 <Suspense fallback={<GameLoading />}>
                 <GlobleGame
+                  isActive={activeGameTab === "globle"}
                   weeklyData={weeklyData}
                   key={String(solvedGames["GLOBLE"])}
                   onSolve={(data) => handleGameSolved("GLOBLE", data)}
                   isAlreadySolved={solvedGames["GLOBLE"]}
                 />
                 </Suspense>
+                )}
               </TabsContent>
 
             </Tabs>

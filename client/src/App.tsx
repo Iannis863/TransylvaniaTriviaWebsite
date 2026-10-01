@@ -9,6 +9,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth-context";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
+import PageErrorBoundary from "@/components/PageErrorBoundary";
 
 const AdminPanel = lazy(() => import("@/pages/AdminPanel"));
 const Account = lazy(() => import("@/pages/Account"));
@@ -34,7 +35,7 @@ function App() {
         <TooltipProvider>
           <LanguageToggle />
           <Toaster />
-          <Router />
+          <PageErrorBoundary><Router /></PageErrorBoundary>
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>

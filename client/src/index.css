@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700;900&family=Inter:wght@300;400;500;600;700;800&family=Creepster&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -186,4 +185,13 @@
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(245, 158, 11, 0.8); /* Amber on hover */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

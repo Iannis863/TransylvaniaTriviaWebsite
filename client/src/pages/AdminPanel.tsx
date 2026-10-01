@@ -1,11 +1,12 @@
 import { locale } from "@/lib/i18n";
 import { t } from "@/lib/i18n";
 import AdminEmails from "@/components/AdminEmails";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Gamepad2, Shield, LogOut, ChevronDown, ChevronUp, Edit2, Trash2,
   Save, X, Users, User, Calendar, RefreshCw, CheckCircle, AlertCircle, Crown
 } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -65,7 +66,7 @@ interface Team {
 // ─── Toast ────────────────────────────────────────────────────────────────────
 function Toast({ msg, ok }: { msg: string; ok: boolean }) {
   return (
-    <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-2xl text-sm font-medium transition-all
+    <div role={ok ? "status" : "alert"} className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-2xl text-sm font-medium transition-all
       ${ok ? "bg-emerald-900 border border-emerald-500/50 text-emerald-200" : "bg-red-900 border border-red-500/50 text-red-200"}`}>
       {ok ? <CheckCircle className="w-4 h-4 text-emerald-400" /> : <AlertCircle className="w-4 h-4 text-red-400" />}
       {t(msg)}
@@ -116,6 +117,8 @@ export default function AdminPanel() {
 
   // Themes state
   const [themeSuggestions, setThemeSuggestions] = useState<ThemeSuggestion[]>([]);
+  const [savingThemeId, setSavingThemeId] = useState<string | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   // Loading & toast
   const [loading, setLoading] = useState(false);
@@ -129,10 +132,14 @@ export default function AdminPanel() {
     description: string;
   }>({ isOpen: false, action: null, title: "", description: "" });
 
-  const showToast = (msg: string, ok = true) => {
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>();
+  const latestLoad = useRef(0);
+  const showToast = useCallback((msg: string, ok = true) => {
+    clearTimeout(toastTimer.current);
     setToast({ msg, ok });
-    setTimeout(() => setToast(null), 3000);
-  };
+    toastTimer.current = setTimeout(() => setToast(null), 3000);
+  }, []);
+  useEffect(() => () => { clearTimeout(toastTimer.current); ++latestLoad.current; }, []);
 
   // ─── API helper ─────────────────────────────────────────────────────────────
   const api = useCallback(async (method: string, path: string, body?: unknown) => {
@@ -177,41 +184,45 @@ export default function AdminPanel() {
 
   // ─── Load data ───────────────────────────────────────────────────────────────
   const loadEditions = useCallback(async () => {
+    const request = ++latestLoad.current;
     setLoading(true);
     try {
       const data = await api("GET", "/api/admin/editions");
-      setEditions(data);
-    } catch (e: any) { showToast(e.message, false); }
-    finally { setLoading(false); }
-  }, [api]);
+      if (request === latestLoad.current) setEditions(data);
+    } catch (e: any) { if (request === latestLoad.current) showToast(e.message, false); }
+    finally { if (request === latestLoad.current) setLoading(false); }
+  }, [api, showToast]);
 
   const loadTeams = useCallback(async () => {
+    const request = ++latestLoad.current;
     setLoading(true);
     try {
       const data = await api("GET", "/api/admin/teams");
-      setTeams(data);
-    } catch (e: any) { showToast(e.message, false); }
-    finally { setLoading(false); }
-  }, [api]);
+      if (request === latestLoad.current) setTeams(data);
+    } catch (e: any) { if (request === latestLoad.current) showToast(e.message, false); }
+    finally { if (request === latestLoad.current) setLoading(false); }
+  }, [api, showToast]);
 
   const loadThemes = useCallback(async () => {
+    const request = ++latestLoad.current;
     setLoading(true);
     try {
       const data = await api("GET", "/api/admin/theme-suggestions");
-      setThemeSuggestions(data);
-    } catch (e: any) { showToast(e.message, false); }
-    finally { setLoading(false); }
-  }, [api]);
+      if (request === latestLoad.current) setThemeSuggestions(data);
+    } catch (e: any) { if (request === latestLoad.current) showToast(e.message, false); }
+    finally { if (request === latestLoad.current) setLoading(false); }
+  }, [api, showToast]);
 
   const [users, setUsers] = useState<any[]>([]);
   const loadUsers = useCallback(async () => {
+    const request = ++latestLoad.current;
     setLoading(true);
     try {
       const data = await api("GET", "/api/admin/users");
-      setUsers(data);
-    } catch (e: any) { showToast(e.message, false); }
-    finally { setLoading(false); }
-  }, [api]);
+      if (request === latestLoad.current) setUsers(data);
+    } catch (e: any) { if (request === latestLoad.current) showToast(e.message, false); }
+    finally { if (request === latestLoad.current) setLoading(false); }
+  }, [api, showToast]);
 
   useEffect(() => {
     if (!isAuthed) return;
@@ -223,8 +234,8 @@ export default function AdminPanel() {
 
   // ─── Edition capacity ────────────────────────────────────────────────────────
   const saveCapacity = async (editionId: string) => {
-    const val = parseInt(editingCapacity[editionId] ?? "", 10);
-    if (isNaN(val) || val < 1) { showToast(t("Valoare invalidă"), false); return; }
+    const val = Number(editingCapacity[editionId] ?? "");
+    if (!Number.isInteger(val) || val < 10 || val > 1000) { showToast(t("Valoare invalidă"), false); return; }
     try {
       await api("PATCH", `/api/admin/editions/${editionId}/capacity`, { maxTeams: val });
       setEditingCapacity(c => { const n = { ...c }; delete n[editionId]; return n; });
@@ -269,27 +280,32 @@ export default function AdminPanel() {
   };
 
   const saveReg = async () => {
-    if (!editingReg) return;
+    if (!editingReg || savingEdit) return;
+    if (!Number.isInteger(regDraft.memberCount) || regDraft.memberCount! < 1 || regDraft.memberCount! > 6) { showToast(t("Valoare invalidă"), false); return; }
+    setSavingEdit(true);
     try {
-      await api("PATCH", `/api/admin/registrations/${editingReg.id}`, regDraft);
+      const updated = await api("PATCH", `/api/admin/registrations/${editingReg.id}`, regDraft);
       showToast(t("Înregistrare actualizată"));
       setEditions(eds => eds.map(ed => ({
         ...ed,
-        registrations: ed.registrations.map(r => r.id === editingReg.id ? { ...r, ...regDraft } : r),
+        registrations: ed.registrations.map(r => r.id === editingReg.id ? { ...r, ...updated } : r),
       })));
       setEditingReg(null);
     } catch (e: any) { showToast(e.message, false); }
+    finally { setSavingEdit(false); }
   };
 
   // ─── Team actions ─────────────────────────────────────────────────────────────
   const saveTeam = async () => {
-    if (!editingTeam) return;
+    if (!editingTeam || savingEdit) return;
+    setSavingEdit(true);
     try {
-      await api("PATCH", `/api/admin/teams/${editingTeam.id}`, teamDraft);
+      const updated = await api("PATCH", `/api/admin/teams/${editingTeam.id}`, teamDraft);
       showToast(t("Echipă actualizată"));
-      setTeams(ts => ts.map(t => t.id === editingTeam.id ? { ...t, ...teamDraft } : t));
+      setTeams(ts => ts.map(t => t.id === editingTeam.id ? { ...t, ...updated } : t));
       setEditingTeam(null);
     } catch (e: any) { showToast(e.message, false); }
+    finally { setSavingEdit(false); }
   };
 
   const deleteTeam = async (id: string) => {
@@ -320,6 +336,17 @@ export default function AdminPanel() {
         } catch (e: any) { showToast(e.message, false); }
       }
     });
+  };
+
+  const updateThemeStatus = async (id: string, status: "APPROVED" | "REJECTED") => {
+    if (savingThemeId) return;
+    setSavingThemeId(id);
+    try {
+      await api("PATCH", `/api/admin/theme-suggestions/${id}/status`, { status });
+      await loadThemes();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t("Eroare server"), false);
+    } finally { setSavingThemeId(null); }
   };
 
   // ─── Login screen ─────────────────────────────────────────────────────────────
@@ -380,7 +407,7 @@ export default function AdminPanel() {
           <span className="text-purple-400/60 text-xs">· Transilvania Trivia</span>
         </div>
         <button
-          onClick={() => { setIsAuthed(false); setPassword(""); }}
+          onClick={() => { ++latestLoad.current; setIsAuthed(false); setPassword(""); setEditions([]); setTeams([]); setThemeSuggestions([]); setUsers([]); setEditingReg(null); setEditingTeam(null); }}
           className="flex items-center gap-1.5 text-purple-400 hover:text-red-400 text-xs transition-colors"
         >
           <LogOut className="w-3.5 h-3.5" />  {t("Ieșire")} </button>
@@ -436,6 +463,7 @@ export default function AdminPanel() {
                   {/* Edition header */}
                   <button
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-purple-900/20 transition-colors text-left"
+                    aria-expanded={isExpanded}
                     onClick={() => setExpandedEdition(isExpanded ? null : ed.id)}
                   >
                     <div className="flex-1 min-w-0">
@@ -477,7 +505,9 @@ export default function AdminPanel() {
                         <span className="text-xs text-purple-300/70 font-medium">{t("Capacitate maximă:")}</span>
                         <input
                           type="number"
+                          aria-label={t("Capacitate maximă:")}
                           min={10}
+                          max={1000}
                           value={editingCapacity[ed.id] ?? ed.maxTeams}
                           onChange={e => setEditingCapacity(c => ({ ...c, [ed.id]: e.target.value }))}
                           className="w-20 bg-purple-950/60 border border-purple-700/50 rounded-lg px-2.5 py-1 text-white text-sm outline-none focus:border-amber-400/60 text-center"
@@ -519,14 +549,14 @@ export default function AdminPanel() {
                                       <button
                                         onClick={() => { setEditingReg(reg); setRegDraft({ teamName: reg.teamName, captainName: reg.captainName, email: reg.email, phoneNumber: reg.phoneNumber ?? "", memberCount: reg.memberCount }); }}
                                         className="p-1 text-purple-400 hover:text-amber-400 transition-colors"
-                                        title={t("Editează")}
+                                        aria-label={t("Editează")} title={t("Editează")}
                                       >
                                         <Edit2 className="w-3.5 h-3.5" />
                                       </button>
                                       <button
                                         onClick={() => deleteReg(reg.id, ed.id)}
                                         className="p-1 text-purple-400 hover:text-red-400 transition-colors"
-                                        title={t("Șterge")}
+                                        aria-label={t("Șterge")} title={t("Șterge")}
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
                                       </button>
@@ -573,14 +603,14 @@ export default function AdminPanel() {
                     <button
                       onClick={() => { setEditingTeam(team); setTeamDraft({ name: team.name, tagline: team.tagline ?? "", score: team.score }); }}
                       className="p-1.5 text-purple-400 hover:text-amber-400 transition-colors"
-                      title={t("Editează echipă")}
+                      aria-label={t("Editează echipă")} title={t("Editează echipă")}
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => deleteTeam(team.id)}
                       className="p-1.5 text-purple-400 hover:text-red-400 transition-colors"
-                      title={t("Șterge echipă")}
+                      aria-label={t("Șterge echipă")} title={t("Șterge echipă")}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -615,13 +645,19 @@ export default function AdminPanel() {
                         title: t("Ștergi această propunere?"),
                         description: t("Ești sigur că vrei să ștergi definitiv această temă de pe ecran?"),
                         action: async () => {
-                          await api("DELETE", `/api/theme-suggestions/${theme.id}`);
-                          loadThemes();
+                          if (savingThemeId) return;
+                          setSavingThemeId(theme.id);
+                          try {
+                            await api("DELETE", `/api/theme-suggestions/${theme.id}`);
+                            await loadThemes();
+                          } catch (error) {
+                            showToast(error instanceof Error ? error.message : t("Eroare server"), false);
+                          } finally { setSavingThemeId(null); }
                         }
                       });
                     }}
                     className="absolute top-3 right-3 text-purple-400/50 hover:text-red-400 transition-colors p-1"
-                    title={t("Șterge propunerea")}
+                    aria-label={t("Șterge propunerea")} title={t("Șterge propunerea")}
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -641,26 +677,14 @@ export default function AdminPanel() {
                   {theme.status === "PENDING" ? (
                     <div className="flex gap-2 w-full mt-1">
                       <button
-                        onClick={async () => {
-                          await fetch(`/api/admin/theme-suggestions/${theme.id}/status`, {
-                            method: "PATCH",
-                            headers: { "Content-Type": "application/json", "x-admin-password": password },
-                            body: JSON.stringify({ status: "APPROVED" })
-                          });
-                          loadThemes();
-                        }}
+                        disabled={savingThemeId !== null}
+                        onClick={() => void updateThemeStatus(theme.id, "APPROVED")}
                         className="flex-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 text-xs font-bold py-1.5 rounded border border-emerald-500/30 transition-colors"
                       >
                          {t("DA")} </button>
                       <button
-                        onClick={async () => {
-                          await fetch(`/api/admin/theme-suggestions/${theme.id}/status`, {
-                            method: "PATCH",
-                            headers: { "Content-Type": "application/json", "x-admin-password": password },
-                            body: JSON.stringify({ status: "REJECTED" })
-                          });
-                          loadThemes();
-                        }}
+                        disabled={savingThemeId !== null}
+                        onClick={() => void updateThemeStatus(theme.id, "REJECTED")}
                         className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-bold py-1.5 rounded border border-red-500/30 transition-colors"
                       >
                          {t("NU")} </button>
@@ -719,8 +743,9 @@ export default function AdminPanel() {
 
               <div className="flex items-center gap-3 bg-[#0c0317] p-4 rounded-lg border border-purple-800/40 w-fit">
                 <div>
-                  <label className="text-xs text-purple-300/70 block mb-1">{t("Săptămâna curentă în aplicație")}</label>
+                  <label htmlFor="admin-preview-week" className="text-xs text-purple-300/70 block mb-1">{t("Săptămâna curentă în aplicație")}</label>
                   <input
+                    id="admin-preview-week"
                     type="number"
                     min="0"
                     placeholder={t("Auto (dinamic)")}
@@ -762,11 +787,10 @@ export default function AdminPanel() {
 
       {/* ── Edit Registration Modal ── */}
       {editingReg && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center px-4">
-          <div className="bg-[#0f041e] border border-purple-700/50 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
+        <Dialog open onOpenChange={open => { if (!open && !savingEdit) setEditingReg(null); }}>
+          <DialogContent aria-describedby={undefined} className="bg-[#0f041e] border border-purple-700/50 rounded-2xl p-6 max-w-md max-h-[90dvh] overflow-y-auto shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-white">{t("Editează Înregistrare")}</h3>
-              <button onClick={() => setEditingReg(null)} className="text-purple-400 hover:text-white"><X className="w-4 h-4" /></button>
+              <DialogTitle className="font-bold text-white">{t("Editează Înregistrare")}</DialogTitle>
             </div>
             {[
               { key: "teamName", label: t("Nume echipă") },
@@ -775,8 +799,10 @@ export default function AdminPanel() {
               { key: "phoneNumber", label: t("Telefon") },
             ].map(({ key, label }) => (
               <div key={key}>
-                <label className="text-xs text-purple-300/70 block mb-1">{label}</label>
+                <label htmlFor={`admin-reg-${key}`} className="text-xs text-purple-300/70 block mb-1">{label}</label>
                 <input
+                  id={`admin-reg-${key}`}
+                  disabled={savingEdit}
                   value={(regDraft as any)[key] ?? ""}
                   onChange={e => setRegDraft(d => ({ ...d, [key]: e.target.value }))}
                   className="w-full bg-purple-950/60 border border-purple-700/50 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-amber-400/60"
@@ -784,39 +810,40 @@ export default function AdminPanel() {
               </div>
             ))}
             <div>
-              <label className="text-xs text-purple-300/70 block mb-1">{t("Nr. membri")}</label>
+              <label htmlFor="admin-registration-size" className="text-xs text-purple-300/70 block mb-1">{t("Nr. membri")}</label>
               <input
-                type="number" min={1} max={10}
+                id="admin-registration-size" disabled={savingEdit} type="number" min={1} max={6}
                 value={regDraft.memberCount ?? 1}
                 onChange={e => setRegDraft(d => ({ ...d, memberCount: parseInt(e.target.value) }))}
                 className="w-24 bg-purple-950/60 border border-purple-700/50 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-amber-400/60 text-center"
               />
             </div>
             <div className="flex gap-2 pt-2">
-              <button onClick={saveReg} className="flex-1 bg-amber-400 hover:bg-amber-300 text-purple-950 font-bold rounded-lg py-2 text-sm transition-colors flex items-center justify-center gap-1.5">
+              <button disabled={savingEdit} onClick={saveReg} className="flex-1 bg-amber-400 hover:bg-amber-300 text-purple-950 font-bold rounded-lg py-2 text-sm transition-colors flex items-center justify-center gap-1.5">
                 <Save className="w-3.5 h-3.5" />  {t("Salvează")} </button>
-              <button onClick={() => setEditingReg(null)} className="px-4 text-purple-300 hover:text-white border border-purple-700/50 rounded-lg text-sm transition-colors">
+              <button disabled={savingEdit} onClick={() => setEditingReg(null)} className="px-4 text-purple-300 hover:text-white border border-purple-700/50 rounded-lg text-sm transition-colors">
                  {t("Anulează")} </button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* ── Edit Team Modal ── */}
       {editingTeam && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center px-4">
-          <div className="bg-[#0f041e] border border-purple-700/50 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
+        <Dialog open onOpenChange={open => { if (!open && !savingEdit) setEditingTeam(null); }}>
+          <DialogContent aria-describedby={undefined} className="bg-[#0f041e] border border-purple-700/50 rounded-2xl p-6 max-w-md max-h-[90dvh] overflow-y-auto shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-white">{t("Editează Echipă")}</h3>
-              <button onClick={() => setEditingTeam(null)} className="text-purple-400 hover:text-white"><X className="w-4 h-4" /></button>
+              <DialogTitle className="font-bold text-white">{t("Editează Echipă")}</DialogTitle>
             </div>
             {[
               { key: "name", label: t("Nume echipă") },
               { key: "tagline", label: t("Slogan") },
             ].map(({ key, label }) => (
               <div key={key}>
-                <label className="text-xs text-purple-300/70 block mb-1">{label}</label>
+                <label htmlFor={`admin-team-${key}`} className="text-xs text-purple-300/70 block mb-1">{label}</label>
                 <input
+                  id={`admin-team-${key}`}
+                  disabled={savingEdit}
                   value={(teamDraft as any)[key] ?? ""}
                   onChange={e => setTeamDraft(d => ({ ...d, [key]: e.target.value }))}
                   className="w-full bg-purple-950/60 border border-purple-700/50 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-amber-400/60"
@@ -824,22 +851,22 @@ export default function AdminPanel() {
               </div>
             ))}
             <div>
-              <label className="text-xs text-purple-300/70 block mb-1">{t("Scor")}</label>
+              <label htmlFor="admin-team-score" className="text-xs text-purple-300/70 block mb-1">{t("Scor")}</label>
               <input
-                type="number" min={0}
+                id="admin-team-score" disabled={savingEdit} type="number" min={0}
                 value={teamDraft.score ?? 0}
                 onChange={e => setTeamDraft(d => ({ ...d, score: parseInt(e.target.value) }))}
                 className="w-28 bg-purple-950/60 border border-purple-700/50 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-amber-400/60 text-center"
               />
             </div>
             <div className="flex gap-2 pt-2">
-              <button onClick={saveTeam} className="flex-1 bg-amber-400 hover:bg-amber-300 text-purple-950 font-bold rounded-lg py-2 text-sm transition-colors flex items-center justify-center gap-1.5">
+              <button disabled={savingEdit} onClick={saveTeam} className="flex-1 bg-amber-400 hover:bg-amber-300 text-purple-950 font-bold rounded-lg py-2 text-sm transition-colors flex items-center justify-center gap-1.5">
                 <Save className="w-3.5 h-3.5" />  {t("Salvează")} </button>
-              <button onClick={() => setEditingTeam(null)} className="px-4 text-purple-300 hover:text-white border border-purple-700/50 rounded-lg text-sm transition-colors">
+              <button disabled={savingEdit} onClick={() => setEditingTeam(null)} className="px-4 text-purple-300 hover:text-white border border-purple-700/50 rounded-lg text-sm transition-colors">
                  {t("Anulează")} </button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Confirm Dialog */}

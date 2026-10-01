@@ -39,7 +39,7 @@ export function buildEventEmail(kind: EmailKind, details: EventEmailDetails): Em
   const fee = memberCount * 10;
   return {
     to: email,
-    subject: kind === "reminder" ? l("Ne vedem DISEARĂ la Transilvania Trivia!", "Reminder: Transylvania Trivia is TONIGHT!") : `${kind === "waitlist" ? l("Listă de așteptare", "Waiting list") : l("Înscriere confirmată", "Registration confirmed")}: ${teamName.replace(/[\r\n]/g, " ")}`,
+    subject: kind === "reminder" ? l("Ne vedem DISEARĂ la Transilvania Trivia!", "Reminder: Transilvania Trivia is TONIGHT!") : `${kind === "waitlist" ? l("Listă de așteptare", "Waiting list") : l("Înscriere confirmată", "Registration confirmed")}: ${teamName.replace(/[\r\n]/g, " ")}`,
     text: `${l("Bună", "Hello")} ${name}, ${message}\n${dateLabel}\nInsomnia Cafe & Bistro\n${l("Membri", "Team size")}: ${memberCount}\n${l("Taxă de participare", "Entry fee")}: 10 LEI ${l("de persoană", "per person")} (${fee} LEI ${l("pentru întreaga echipă", "for the whole team")}).`,
     html: brandedEmail({
       title, language,
@@ -47,7 +47,7 @@ export function buildEventEmail(kind: EmailKind, details: EventEmailDetails): Em
       preheader: kind === "waitlist" ? l(`${teamName} este pe lista de așteptare. Așteptați confirmarea.`, `${teamName} is on the waiting list. Please wait for confirmation.`) : `${teamName} · ${dateLabel} · Insomnia Cafe & Bistro`,
       body: `<p style="margin:12px 0 24px;">${emailText(l("Bună", "Hello") + " ")}<strong style="color:#ffc30b;">${emailText(name, "#ffc30b")}</strong>${emailText(", " + message)}</p>
         <table class="email-bg-1c0d2d" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#1c0d2d" style="width:100%;background-color:#1c0d2d;border:1px solid #55316c;border-radius:10px;">
-          ${eventDetailRow(l("ECHIPA TA", "YOUR TEAM"), `${teamName} · ${memberCount} ${l("jucători", "players")}`)}
+          ${eventDetailRow(l("ECHIPA TA", "YOUR TEAM"), `${teamName} · ${memberCount} ${memberCount === 1 ? l("jucător", "player") : l("jucători", "players")}`)}
           ${eventDetailRow(l("CÂND", "WHEN"), dateLabel)}
           ${eventDetailRow(l("UNDE", "WHERE"), "Insomnia Cafe & Bistro")}
           ${eventDetailRow(kind === "waitlist" ? l("TAXĂ DACĂ SUNTEȚI ACCEPTAȚI", "ENTRY FEE IF ACCEPTED") : l("TAXĂ DE PARTICIPARE", "ENTRY FEE"), `10 LEI ${l("de persoană", "per person")} · ${fee} LEI ${l("pentru întreaga echipă", "for the whole team")}`, true)}
@@ -89,7 +89,7 @@ export function buildPasswordResetEmail(toEmail: string, code: string, language:
   const l = (ro: string, en: string) => language === "ro" ? ro : en;
   return {
     to: toEmail,
-    subject: l("Codul tău de resetare parolă — Transylvania Trivia", "Your password reset code \u2014 Transylvania Trivia"),
+    subject: l("Codul tău de resetare a parolei — Transilvania Trivia", "Your password reset code \u2014 Transilvania Trivia"),
     text: l(`Codul tău de resetare: ${code}. Expiră în 10 minute. Dacă nu ai solicitat resetarea, ignoră acest email.`, `Your reset code: ${code}. It expires in 10 minutes. If you did not request a reset, ignore this email.`),
     html: brandedEmail({
       language, title: l("Resetare parolă", "Reset your password"), label: l("ACCES LA CONTUL TĂU", "ACCESS YOUR ACCOUNT"),
