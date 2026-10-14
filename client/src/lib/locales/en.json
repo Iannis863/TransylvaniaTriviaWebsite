@@ -1071,5 +1071,12 @@
   "Logo-ul trebuie să fie o imagine PNG validă.": "The logo must be a valid PNG image.",
   "Logo-ul PNG trebuie să aibă maximum 1 MB.": "The PNG logo must be no larger than 1 MB.",
   "Logo-ul PNG trebuie să aibă maximum 4096 px pe latură și maximum 4 megapixeli.": "The PNG logo must be no larger than 4096 pixels per side and 4 megapixels.",
-  "Pentru colaborare, adaugă numele partenerului și un logo PNG.": "To enable collaboration, add the partner’s name and a PNG logo."
+  "Pentru colaborare, adaugă numele partenerului și un logo PNG.": "To enable collaboration, add the partner’s name and a PNG logo.",
+  "Logo colaborator (PNG)": "Collaborator logo (PNG)",
+  "Se pregătește logoul…": "Preparing logo…",
+  "Redimensionăm automat logoul și păstrăm proporțiile și transparența. Poți încărca un alt PNG pentru a-l înlocui.": "We automatically resize the logo while preserving its proportions and transparency. Upload another PNG to replace it.",
+  "Alege o imagine PNG validă.": "Choose a valid PNG image.",
+  "Imaginea este prea mare pentru a fi pregătită. Alege un PNG mai mic.": "This image is too large to prepare. Choose a smaller PNG.",
+  "Logoul nu a putut fi pregătit. Încearcă un alt PNG.": "The logo could not be prepared. Try another PNG.",
+  "Logoul nu conține elemente vizibile.": "The logo has no visible artwork."
 }

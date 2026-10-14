@@ -7,9 +7,10 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { locale, t } from "@/lib/i18n";
+import { prepareCustomEventLogo } from "@/lib/custom-event-logo";
 import {
   bucharestDateTimeInput, bucharestInputToISO, CUSTOM_EVENT_DEFAULTS, CUSTOM_EVENT_DEFAULT_PRIZES,
-  CUSTOM_EVENT_LOGO_MAX_BYTES, customEventInputSchema,
+  customEventInputSchema,
   type CustomEventAdminView, type CustomEventInput, type CustomEventPrizes,
 } from "@shared/custom-events";
 
@@ -56,6 +57,7 @@ export default function AdminCustomEvents({ api }: { api: AdminApi }) {
   const [titleEdited, setTitleEdited] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoLoading, setLogoLoading] = useState(false);
+  const [logoProcessing, setLogoProcessing] = useState(false);
   const [logoLoadFailed, setLogoLoadFailed] = useState(false);
   const [editingRegistration, setEditingRegistration] = useState<Registration | null>(null);
   const [registrationDraft, setRegistrationDraft] = useState<RegistrationDraft>({ teamName: "", captainName: "", email: "", phoneNumber: "", memberCount: 1 });
@@ -65,7 +67,7 @@ export default function AdminCustomEvents({ api }: { api: AdminApi }) {
   const latestLoad = useRef(0);
   const copyTimer = useRef<ReturnType<typeof setTimeout>>();
   const logoRequestVersion = useRef(0);
-  const logoReader = useRef<FileReader | null>(null);
+  const logoController = useRef<AbortController | null>(null);
   const logoFileInput = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const load = useCallback(async () => {
@@ -79,7 +81,7 @@ export default function AdminCustomEvents({ api }: { api: AdminApi }) {
     } finally { if (active.current && request === latestLoad.current) setLoading(false); }
   }, [api]);
   useEffect(() => { active.current = true; void load(); return () => {
-    active.current = false; ++latestLoad.current; ++logoRequestVersion.current; logoReader.current?.abort(); clearTimeout(copyTimer.current);
+    active.current = false; ++latestLoad.current; ++logoRequestVersion.current; logoController.current?.abort(); clearTimeout(copyTimer.current);
   }; }, [load]);
   const invalidatePublic = () => queryClient.invalidateQueries({ predicate: query => query.queryKey[0] === "custom-event" || query.queryKey[0] === "custom-events" || query.queryKey[0] === "team-registrations" });
   const mutate = async (operation: () => Promise<unknown>, success: string, closeEditor?: () => void) => {
@@ -100,11 +102,11 @@ export default function AdminCustomEvents({ api }: { api: AdminApi }) {
     } finally { if (active.current) setBusy(false); }
   };
   const closeEventEditor = () => {
-    ++logoRequestVersion.current; logoReader.current?.abort(); setLogoLoading(false); setEditingEvent(null);
+    ++logoRequestVersion.current; logoController.current?.abort(); setLogoLoading(false); setLogoProcessing(false); setEditingEvent(null);
   };
   const loadLogo = (event: CustomEventAdminView) => {
     const request = ++logoRequestVersion.current;
-    logoReader.current?.abort(); setLogoLoading(true); setLogoLoadFailed(false);
+    logoController.current?.abort(); setLogoLoading(true); setLogoProcessing(false); setLogoLoadFailed(false);
     void api("GET", `/api/admin/custom-events/${event.id}/collaborator-logo`).then((result: { dataUrl: string | null }) => {
       if (active.current && request === logoRequestVersion.current) { setLogoPreview(result.dataUrl); setLogoLoading(false); }
     }).catch(failure => {
@@ -115,7 +117,7 @@ export default function AdminCustomEvents({ api }: { api: AdminApi }) {
     });
   };
   const openEditor = (event?: CustomEventAdminView) => {
-    ++logoRequestVersion.current; logoReader.current?.abort(); setLogoPreview(null); setLogoLoading(false); setLogoLoadFailed(false);
+    ++logoRequestVersion.current; logoController.current?.abort(); setLogoPreview(null); setLogoLoading(false); setLogoProcessing(false); setLogoLoadFailed(false);
     setFormError(""); setSlugEdited(!!event); setTitleEdited(!!event);
     if (event) {
       const { eventDate, maxTeams, ...fields } = eventInput(event);
@@ -147,19 +149,11 @@ export default function AdminCustomEvents({ api }: { api: AdminApi }) {
   const selectLogo = async (file: File | undefined) => {
     if (!file || busy) return;
     const request = ++logoRequestVersion.current;
-    logoReader.current?.abort(); setFormError(""); setLogoLoading(true); setLogoLoadFailed(false);
+    logoController.current?.abort();
+    const controller = new AbortController(); logoController.current = controller;
+    setFormError(""); setLogoLoading(true); setLogoProcessing(true); setLogoLoadFailed(false);
     try {
-      if (file.size > CUSTOM_EVENT_LOGO_MAX_BYTES) throw new Error(t("Logoul trebuie să fie un fișier PNG de maximum 1 MB."));
-      const bytes = new Uint8Array(await file.slice(0, 8).arrayBuffer());
-      if (bytes.length !== 8 || ![137, 80, 78, 71, 13, 10, 26, 10].every((byte, index) => bytes[index] === byte)) throw new Error(t("Logoul trebuie să fie un fișier PNG de maximum 1 MB."));
-      if (!active.current || request !== logoRequestVersion.current) return;
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader(); logoReader.current = reader;
-        reader.onload = () => typeof reader.result === "string" ? resolve(reader.result.replace(/^data:[^;]*;base64,/, "data:image/png;base64,")) : reject(new Error(t("Logoul nu a putut fi citit.")));
-        reader.onerror = () => reject(new Error(t("Logoul nu a putut fi citit.")));
-        reader.onabort = () => reject(new Error("FILE_READ_CANCELLED"));
-        reader.readAsDataURL(file);
-      });
+      const { dataUrl } = await prepareCustomEventLogo(file, { signal: controller.signal });
       if (active.current && request === logoRequestVersion.current) {
         setDraft(value => ({ ...value, collaboratorLogoData: dataUrl })); setLogoPreview(dataUrl);
       }
@@ -168,10 +162,10 @@ export default function AdminCustomEvents({ api }: { api: AdminApi }) {
         setFormError(failure instanceof Error ? failure.message : t("Logoul nu a putut fi citit."));
         if (logoFileInput.current) logoFileInput.current.value = "";
       }
-    } finally { if (active.current && request === logoRequestVersion.current) setLogoLoading(false); }
+    } finally { if (active.current && request === logoRequestVersion.current) { setLogoLoading(false); setLogoProcessing(false); } }
   };
   const removeLogo = () => {
-    ++logoRequestVersion.current; logoReader.current?.abort(); setLogoLoading(false); setLogoLoadFailed(false); setLogoPreview(null);
+    ++logoRequestVersion.current; logoController.current?.abort(); setLogoLoading(false); setLogoProcessing(false); setLogoLoadFailed(false); setLogoPreview(null);
     setDraft(value => ({ ...value, collaboratorLogoData: null }));
     if (logoFileInput.current) logoFileInput.current.value = "";
   };
@@ -282,13 +276,13 @@ export default function AdminCustomEvents({ api }: { api: AdminApi }) {
             <p className="text-xs leading-relaxed text-purple-300">{t("Activează pentru a afișa logoul colaboratorului lângă logoul Transilvania Trivia.")}</p>
             {draft.isCollaboration && <div className="space-y-4">
               <div><label htmlFor="custom-event-collaborator-name" className="mb-1.5 block text-xs text-purple-300">{t("Nume colaborator")}</label><input id="custom-event-collaborator-name" required maxLength={120} value={draft.collaboratorName} className={inputClass} onChange={event => setDraft(value => ({ ...value, collaboratorName: event.target.value }))} /></div>
-              <div><label htmlFor="custom-event-collaborator-logo" className="mb-1.5 block text-xs text-purple-300">{t("Logo colaborator (PNG, maximum 1 MB)")}</label><input ref={logoFileInput} id="custom-event-collaborator-logo" type="file" accept="image/png,.png" disabled={logoLoading} className={`${inputClass} file:mr-3 file:rounded file:border-0 file:bg-purple-800 file:px-3 file:py-1 file:text-purple-100`} onChange={event => void selectLogo(event.target.files?.[0])} />
-                <p className="mt-2 text-xs text-purple-300">{t("Folosește un PNG cu fundal transparent. Încarcă un alt fișier pentru a înlocui logoul.")}</p>
+              <div><label htmlFor="custom-event-collaborator-logo" className="mb-1.5 block text-xs text-purple-300">{t("Logo colaborator (PNG)")}</label><input ref={logoFileInput} id="custom-event-collaborator-logo" type="file" accept="image/png,.png" disabled={logoLoading && !logoProcessing} className={`${inputClass} file:mr-3 file:rounded file:border-0 file:bg-purple-800 file:px-3 file:py-1 file:text-purple-100`} onChange={event => void selectLogo(event.target.files?.[0])} />
+                <p className="mt-2 text-xs text-purple-300">{t("Redimensionăm automat logoul și păstrăm proporțiile și transparența. Poți încărca un alt PNG pentru a-l înlocui.")}</p>
               </div>
-              {logoLoading && <p role="status" className="text-xs text-purple-300">{t("Se încarcă logoul…")}</p>}
+              {logoLoading && <p role="status" className="text-xs text-purple-300">{logoProcessing ? t("Se pregătește logoul…") : t("Se încarcă logoul…")}</p>}
               {logoLoadFailed && editingEvent !== "new" && <button type="button" onClick={() => loadLogo(editingEvent)} className={secondaryButton}>{t("Reîncarcă logoul")}</button>}
               {logoPreview && <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-purple-800/40 bg-[#07020d] p-4">
-                <div className="flex min-w-0 flex-1 items-center justify-center gap-5"><img src="/logo-main.webp" width={880} height={880} alt="Transilvania Trivia" className="h-20 w-20 shrink-0 object-contain" /><span aria-hidden="true" className="text-lg text-amber-300">×</span><img data-testid="custom-event-logo-preview" src={logoPreview} alt={draft.collaboratorName || t("Logo colaborator")} className="h-20 w-32 min-w-0 object-contain" /></div>
+                <div className="mx-auto grid min-w-0 max-w-[260px] flex-1 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3"><img src="/logo-main.webp" width={880} height={880} alt="Transilvania Trivia" className="aspect-square w-full max-w-24 justify-self-center object-contain" /><span aria-hidden="true" className="text-lg text-amber-300">×</span><img data-testid="custom-event-logo-preview" src={logoPreview} alt={draft.collaboratorName || t("Logo colaborator")} className="aspect-square w-full max-w-24 justify-self-center object-contain" /></div>
                 <button type="button" onClick={removeLogo} className={`${secondaryButton} text-red-300`}>{t("Elimină logoul")}</button>
               </div>}
             </div>}

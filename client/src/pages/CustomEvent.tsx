@@ -73,14 +73,15 @@ export default function CustomEvent() {
   const editionLabel = `${dateLabel}, ${timeLabel}`;
   const registrationClosed = data.registrationClosed || !currentEvent.registrationOpen || date.getTime() <= Date.now();
   const isCollaboration = currentEvent.isCollaboration && !!currentEvent.collaboratorLogoUrl;
+  const collaborationLogoClass = "aspect-square w-full min-w-0 max-w-[280px] justify-self-center object-contain";
 
   return <main data-testid="custom-event-page" className="min-h-screen bg-[#07020d] text-foreground selection:bg-amber-400 selection:text-purple-950">
     <header className="relative overflow-hidden px-4 pb-4 pt-12 sm:px-6 sm:pt-16 lg:px-8">
       <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-36 h-96 w-96 -translate-x-1/2 rounded-full bg-purple-600/15 blur-[120px]" />
       <div className="relative mx-auto flex max-w-5xl flex-col items-center text-center">
         <div data-testid="custom-event-logos" role={isCollaboration ? "group" : undefined} aria-label={isCollaboration ? t("Eveniment în colaborare cu {0}", [currentEvent.collaboratorName]) : undefined} className={isCollaboration ? "grid w-full max-w-3xl grid-cols-2 items-center gap-4 sm:gap-8" : "max-w-full"}>
-          <img src="/logo-main.webp" width={880} height={880} fetchPriority="high" alt="Transilvania Trivia" className={isCollaboration ? "h-40 w-full min-w-0 object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.7)] sm:h-[280px]" : "h-auto w-[260px] max-w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.7)] sm:w-[320px]"} />
-          {isCollaboration && <img src={currentEvent.collaboratorLogoUrl!} fetchPriority="high" decoding="async" alt={currentEvent.collaboratorName || t("Logo colaborator")} className="h-40 w-full min-w-0 object-contain sm:h-[280px]" />}
+          <img src="/logo-main.webp" width={880} height={880} fetchPriority="high" alt="Transilvania Trivia" className={isCollaboration ? `${collaborationLogoClass} drop-shadow-[0_20px_40px_rgba(0,0,0,0.7)]` : "h-auto w-[260px] max-w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.7)] sm:w-[320px]"} />
+          {isCollaboration && <img src={currentEvent.collaboratorLogoUrl!} fetchPriority="high" decoding="async" alt={currentEvent.collaboratorName || t("Logo colaborator")} className={collaborationLogoClass} />}
         </div>
         <h1 data-testid="custom-event-title" className="text-gold-gradient mt-6 w-full max-w-4xl break-words py-2 font-heading text-4xl leading-tight tracking-wider sm:text-5xl md:text-6xl">
           {currentEvent.title}
