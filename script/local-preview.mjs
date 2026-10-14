@@ -6,8 +6,11 @@ const { default: express } = await import('express');
 const { createServer } = await import('node:http');
 const { readFile } = await import('node:fs/promises');
 const { setupSecurity, hashPassword } = await import('../server/security.ts');
+const { setupRequestBodyParsers } = await import('../server/request-body.ts');
 const { storage, MemStorage } = await import('../server/storage.ts');
 const { parseLeaderboard, planLeaderboardImport } = await import('../server/leaderboard.ts');
+const { saveCustomEvent } = await import('../server/custom-events.ts');
+const { customEventInputSchema, bucharestDateTimeInput, bucharestInputToISO } = await import('../shared/custom-events.ts');
 const { registerRoutes } = await import('../server/routes.ts');
 const { setupVite } = await import('../server/vite.ts');
 
@@ -18,10 +21,18 @@ const plan = await planLeaderboardImport(storage, await parseLeaderboard(sample)
 for (const identity of plan.changed) await storage.saveLeaderboardIdentity(identity);
 await storage.saveLeaderboardSeason(plan.season);
 
+const sampleDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+const eventDate = bucharestInputToISO(`${bucharestDateTimeInput(sampleDate).slice(0, 10)}T19:30`);
+await saveCustomEvent(storage, customEventInputSchema.parse({
+  name: 'Hermes — exemplu local', slug: 'hermes',
+  title: 'Hermes — Quiz special',
+  subtitle: 'O seară de trivia pentru prieteni și colegi.',
+  eventDate, maxTeams: 3, isPublished: true,
+}));
+
 const app = express();
 setupSecurity(app);
-app.use(express.json({ limit: '100kb' }));
-app.use(express.urlencoded({ extended: false }));
+setupRequestBodyParsers(app);
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', database: 'memory', preview: true }));
 const server = createServer(app);
 await registerRoutes(server, app);
@@ -32,5 +43,6 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invali
 server.listen(port, '127.0.0.1', () => {
   console.log(`Local preview: http://localhost:${port}`);
   console.log(`Admin: http://localhost:${port}/admin — password: local-trivia-admin`);
+  console.log(`Sample custom event: http://localhost:${port}/hermes — fixed capacity: 3 teams`);
   console.log('Sample leaderboard loaded. Test data resets on restart; live data and emails are untouched.');
 });

@@ -1,4 +1,6 @@
 import { registerLeaderboardRoutes } from "./leaderboard-routes.js";
+import { registerCustomEventRoutes } from "./custom-event-routes.js";
+import { customEventIdFromRegistrationKey } from "../shared/custom-events.js";
 import { getPuzzleWeekId, getRealCurrentWeekIndex, getWeekDateRange } from "../shared/puzzle-week.js";
 import { bucharestParts } from "../shared/event-time.js";
 import { getTargetPuzzle, isTargetSolution } from "../shared/target-game.js";
@@ -55,6 +57,7 @@ export async function registerRoutes(
   app.use("/api/games", requireUser);
   app.use("/api/auth/me", requireUser);
   registerLeaderboardRoutes(app, checkAuth);
+  registerCustomEventRoutes(app, checkAuth);
 
   app.post("/api/auth/logout", (req, res, next) => {
     req.session.destroy(error => {
@@ -138,6 +141,8 @@ export async function registerRoutes(
   app.get("/api/registrations/active", async (req, res) => {
     try {
       const editionId = (req.query.editionId as string) || getCurrentOrNextEdition().currentEdition.id;
+      const customEventId = customEventIdFromRegistrationKey(editionId);
+      if (customEventId && !(await storage.getCustomEvent(customEventId))?.isPublished) return res.status(404).json({ message: "Evenimentul nu a fost găsit." });
       const registeredList = await storage.getRegistrations(editionId);
       
       // Mask email / phone for public view
@@ -926,6 +931,7 @@ export async function registerRoutes(
       res.json({ ...registration, emailStatus });
     } catch (error) {
       if (error instanceof Error && error.message === "EVENT_CLOSED") return res.status(409).json({ message: "Evenimentul a început deja." });
+      if (error instanceof Error && error.message === "CUSTOM_EVENT_FULL") return res.status(409).json({ message: "Capacitatea evenimentului este ocupată. Mărește numărul de echipe înainte de acceptare." });
       res.status(500).json({ message: "Echipa nu a putut fi acceptată." });
     }
   });
@@ -953,11 +959,17 @@ export async function registerRoutes(
   // Update a registration
   app.patch("/api/admin/registrations/:id", checkAuth, async (req, res) => {
     try {
-      const updated = await storage.updateRegistration(req.params.id, insertRegistrationSchema.pick({ teamName: true, captainName: true, memberCount: true, email: true, phoneNumber: true }).partial().parse(req.body));
+      const data = insertRegistrationSchema.pick({ teamName: true, captainName: true, memberCount: true, email: true, phoneNumber: true }).partial().parse(req.body);
+      const existing = await storage.getRegistration(req.params.id);
+      const updated = existing ? await storage.withEditionMutation(existing.editionId, async source => {
+        if (data.teamName && (await source.getRegistrations(existing.editionId)).some(item => item.id !== existing.id && item.teamName.trim().toLowerCase() === data.teamName!.trim().toLowerCase())) throw new Error("DUPLICATE_REGISTRATION");
+        return source.updateRegistration(req.params.id, data);
+      }) : undefined;
       if (!updated) return res.status(404).json({ message: "Înregistrare negăsită" });
       res.json(updated);
     } catch (err) {
       if (err instanceof ZodError) return res.status(400).json({ message: fromZodError(err).message });
+      if (err instanceof Error && err.message === "DUPLICATE_REGISTRATION") return res.status(409).json({ message: "Există deja o echipă cu acest nume la eveniment." });
       res.status(500).json({ message: "Eroare la actualizare" });
     }
   });

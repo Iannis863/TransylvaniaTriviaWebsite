@@ -14,11 +14,13 @@ export interface EventEmailDetails {
   eventDate: Date;
   isCaptain: boolean;
   language?: "ro" | "en";
+  customEvent?: { name: string; venue: string; address: string; feeLabel: string; slug: string };
 }
 export type EmailKind = "confirmation" | "reminder" | "waitlist";
 export const FROM_EMAIL = "Transilvania Trivia <contact@transilvaniatrivia.ro>";
 
 export function buildEventEmail(kind: EmailKind, details: EventEmailDetails): EmailPayload {
+  if (details.customEvent) return buildCustomEventEmail(kind, details);
   const { email, name, teamName, memberCount, eventDate, isCaptain, language = "ro" } = details;
   const ro = language === "ro";
   const l = (romanian: string, english: string) => ro ? romanian : english;
@@ -54,6 +56,36 @@ export function buildEventEmail(kind: EmailKind, details: EventEmailDetails): Em
         </table>
         ${emailButton(l("Vezi detaliile evenimentului", "View event details"), EMAIL_WEBSITE_URL)}`,
       footer: kind === "waitlist" ? l("Acest email confirmă înscrierea pe lista de așteptare. Masa nu este încă rezervată. Vă anunțăm pe email dacă echipa este acceptată.", "This email confirms your waiting-list entry, not a reserved table. We will email you if your team is accepted.") : l("Voi aduceți curiozitatea, noi aducem întrebările. Ne vedem la Insomnia Cafe & Bistro!", "Bring your curiosity. We'll bring the questions. See you at Insomnia Cafe & Bistro!"),
+    }),
+  };
+}
+
+function buildCustomEventEmail(kind: EmailKind, details: EventEmailDetails): EmailPayload {
+  const { email, name, teamName, memberCount, eventDate, language = "ro", customEvent: event } = details;
+  const l = (ro: string, en: string) => language === "ro" ? ro : en;
+  const title = kind === "waitlist" ? l("Echipa ta este pe lista de așteptare", "Your team is on the waiting list") : kind === "reminder" ? l("Ne vedem la eveniment!", "See you at the event!") : l("Înscriere confirmată!", "Registration confirmed!");
+  const message = kind === "waitlist"
+    ? l(`Echipa ${teamName} este pe lista de așteptare pentru ${event!.name}. Locul nu este confirmat. Așteptați emailul de confirmare înainte de a veni.`, `Team ${teamName} is on the waiting list for ${event!.name}. Your place is not confirmed. Please wait for a confirmation email before attending.`)
+    : l(`Echipa ${teamName} are locul confirmat la ${event!.name}.`, `Team ${teamName} has a confirmed place at ${event!.name}.`);
+  const date = `${formatEventDate(eventDate, language)} (${l("ora României", "Romania time")})`;
+  const venue = `${event!.venue} · ${event!.address}`;
+  const url = `${EMAIL_WEBSITE_URL}/${event!.slug}`;
+  return {
+    to: email,
+    subject: `${title.replace(/!/g, "")} — ${event!.name.replace(/[\r\n]/g, " ")}`,
+    text: `${l("Bună", "Hello")} ${name},\n${message}\n${date}\n${venue}\n${l("Membri", "Team size")}: ${memberCount}\n${l("Taxă de participare", "Entry fee")}: ${event!.feeLabel}\n${url}`,
+    html: brandedEmail({
+      title, language, label: event!.name,
+      preheader: `${teamName} · ${date} · ${event!.venue}`,
+      body: `<p style="margin:12px 0 24px;">${emailText(`${l("Bună", "Hello")} ${name}, ${message}`)}</p>
+        <table class="email-bg-1c0d2d" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#1c0d2d" style="width:100%;background-color:#1c0d2d;border:1px solid #55316c;border-radius:10px;">
+          ${eventDetailRow(l("EVENIMENT", "EVENT"), event!.name)}
+          ${eventDetailRow(l("ECHIPA TA", "YOUR TEAM"), `${teamName} · ${memberCount} ${l("jucători", "players")}`)}
+          ${eventDetailRow(l("CÂND", "WHEN"), date)}
+          ${eventDetailRow(l("UNDE", "WHERE"), venue)}
+          ${eventDetailRow(l("TAXĂ DE PARTICIPARE", "ENTRY FEE"), event!.feeLabel, true)}
+        </table>${emailButton(l("Vezi detaliile evenimentului", "View event details"), url)}`,
+      footer: kind === "waitlist" ? l("Acest email confirmă înscrierea pe lista de așteptare. Vă anunțăm pe email dacă echipa este acceptată.", "This email confirms your waiting-list entry. We will email you if your team is accepted.") : l("Voi aduceți curiozitatea, noi aducem întrebările. Ne vedem la eveniment!", "Bring your curiosity. We'll bring the questions. See you at the event!"),
     }),
   };
 }

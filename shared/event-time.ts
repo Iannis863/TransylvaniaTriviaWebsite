@@ -1,12 +1,12 @@
 export const EVENT_TIME_ZONE = "Europe/Bucharest";
 
 const partsFormatter = new Intl.DateTimeFormat("en-GB", {
-  timeZone: EVENT_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", hourCycle: "h23",
+  timeZone: EVENT_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
 });
 export function bucharestParts(date: Date) {
   const parts = partsFormatter.formatToParts(date);
   const value = (type: string) => Number(parts.find(part => part.type === type)!.value);
-  return { year: value("year"), month: value("month"), day: value("day"), hour: value("hour") };
+  return { year: value("year"), month: value("month"), day: value("day"), hour: value("hour"), minute: value("minute") };
 }
 export function eventDateInBucharest(year: number, monthIndex: number, day: number): Date {
   const utc = new Date(Date.UTC(year, monthIndex, day, 20));

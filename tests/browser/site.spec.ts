@@ -79,7 +79,7 @@ test('public sections, bilingual controls, calendar, responsive assets, and 404 
   }
   await page.goto('/missing-audit-page');
   await expect(page.getByRole('heading', { name: /404/ })).toBeVisible();
-  await page.getByRole('link', { name: 'Eveniment', exact: true }).click();
+  await page.getByRole('link', { name: 'Înapoi la pagina principală', exact: true }).click();
   await expect(page.locator('h1')).toContainText('QUIZ SĂPTĂMÂNAL');
   expect(errors).toEqual([]);
 });

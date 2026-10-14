@@ -1,4 +1,5 @@
 import AdminLeaderboard from "@/components/AdminLeaderboard";
+import AdminCustomEvents from "@/components/AdminCustomEvents";
 import { locale } from "@/lib/i18n";
 import { t } from "@/lib/i18n";
 import AdminEmails from "@/components/AdminEmails";
@@ -94,7 +95,7 @@ export default function AdminPanel() {
   const [authError, setAuthError] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
-  const [activeTab, setActiveTab] = useState<"editions" | "teams" | "themes" | "users" | "simulator" | "emails" | "leaderboard">("editions");
+  const [activeTab, setActiveTab] = useState<"editions" | "teams" | "themes" | "users" | "simulator" | "emails" | "leaderboard" | "custom-events">("editions");
 
   // Simulator state
   const [previewWeek, setPreviewWeek] = useState(
@@ -416,7 +417,7 @@ export default function AdminPanel() {
 
       {/* Tabs */}
       <div className="border-b border-purple-800/30 px-6 flex gap-1 pt-4 overflow-x-auto whitespace-nowrap">
-        {(["editions", "teams", "leaderboard", "themes", "users", "emails", "simulator"] as const).map(tab => (
+        {(["editions", "custom-events", "teams", "leaderboard", "themes", "users", "emails", "simulator"] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -428,6 +429,8 @@ export default function AdminPanel() {
           >
             {tab === "editions" ? (
               <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />{t("Ediții")}</span>
+            ) : tab === "custom-events" ? (
+              <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />{t("Evenimente speciale")}</span>
             ) : tab === "teams" ? (
               <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />{t("Echipe")}</span>
             ) : tab === "leaderboard" ? (
@@ -443,7 +446,7 @@ export default function AdminPanel() {
             )}
           </button>
         ))}
-        {activeTab !== "emails" && activeTab !== "simulator" && activeTab !== "leaderboard" && <button
+        {activeTab !== "emails" && activeTab !== "simulator" && activeTab !== "leaderboard" && activeTab !== "custom-events" && <button
           onClick={() => activeTab === "editions" ? loadEditions() : activeTab === "teams" ? loadTeams() : activeTab === "themes" ? loadThemes() : activeTab === "users" ? loadUsers() : undefined}
           className="ml-auto mb-1 flex items-center gap-1 text-purple-400 hover:text-white text-xs transition-colors"
         >
@@ -454,6 +457,7 @@ export default function AdminPanel() {
 
         {activeTab === "emails" && <AdminEmails api={api} />}
         {activeTab === "leaderboard" && <AdminLeaderboard api={api} password={password} />}
+        {activeTab === "custom-events" && <AdminCustomEvents api={api} />}
 
         {/* ── EDITIONS TAB ── */}
         {activeTab === "editions" && (

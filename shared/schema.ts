@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { pgTable, text, varchar, integer, timestamp, boolean, jsonb, json, uniqueIndex, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { CUSTOM_EVENT_DEFAULT_PRIZES, type CustomEventPrizes } from "./custom-events.js";
 
 // ==========================================
 // 1. USERS & ROLES
@@ -119,6 +120,29 @@ export const insertEditionSchema = createInsertSchema(editions).omit({
 
 export type InsertEdition = z.infer<typeof insertEditionSchema>;
 export type Edition = typeof editions.$inferSelect;
+
+// Custom events have independent, administrator-controlled capacity and URLs.
+export const customEvents = pgTable("app_custom_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  subtitle: text("subtitle").notNull().default(""),
+  eventDate: timestamp("event_date", { withTimezone: true }).notNull(),
+  venue: text("venue").notNull(),
+  address: text("address").notNull(),
+  feeLabel: text("fee_label").notNull(),
+  maxTeams: integer("max_teams").notNull().default(10),
+  isPublished: boolean("is_published").notNull().default(false),
+  registrationOpen: boolean("registration_open").notNull().default(true),
+  notificationRevision: integer("notification_revision").notNull().default(0),
+  prizes: jsonb("prizes").$type<CustomEventPrizes>().notNull().default(CUSTOM_EVENT_DEFAULT_PRIZES),
+  isCollaboration: boolean("is_collaboration").notNull().default(false),
+  collaboratorName: text("collaborator_name").notNull().default(""),
+  collaboratorLogoData: text("collaborator_logo_data"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 // ==========================================
 // 5. REGISTRATIONS

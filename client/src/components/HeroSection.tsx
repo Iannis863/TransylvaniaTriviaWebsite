@@ -83,19 +83,19 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-purple-600/15 rounded-full blur-[150px] pointer-events-none" />
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[450px] h-[450px] bg-amber-500/10 rounded-full blur-[130px] pointer-events-none" />
 
-      <div className="max-w-5xl mx-auto flex flex-col items-center text-center relative z-10">
+      <div className="w-full min-w-0 max-w-5xl mx-auto flex flex-col items-center text-center relative z-10">
 
         {/* Micro-Pill Eyebrow */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/80 border border-amber-400/40 shadow-[0_0_20px_rgba(246,184,40,0.2)] mb-6 backdrop-blur-md">
-          <span className="flex h-2 w-2 relative">
+        <div className="inline-flex max-w-full min-w-0 items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/80 border border-amber-400/40 shadow-[0_0_20px_rgba(246,184,40,0.2)] mb-6 backdrop-blur-md">
+          <span className="flex h-2 w-2 shrink-0 relative">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
           </span>
-          <span className="text-xs font-semibold tracking-wider text-amber-300">
+          <span className="min-w-0 text-[10px] sm:text-xs font-semibold tracking-wider text-amber-300">
             S{seasonNumber}E{editionNumber}  {t("· QUIZ SĂPTĂMÂNAL LA INSOMNIA")} </span>
           <button
             onClick={() => setIsCalendarOpen(true)}
-            className="text-[11px] text-purple-300 hover:text-white underline ml-1 flex items-center gap-0.5"
+            className="shrink-0 text-[11px] text-purple-300 hover:text-white underline ml-1 flex items-center gap-0.5"
           >
              {t("Calendar")} <ChevronRight className="w-3 h-3" />
           </button>
@@ -115,11 +115,11 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
         </div>
 
         {/* Master Headline */}
-        <h1 className="text-3xl sm:text-5xl md:text-6xl font-heading tracking-widest text-gold-gradient mt-6 mb-4 drop-shadow-lg max-w-4xl leading-snug pt-2 pb-2">
+        <h1 className="w-full break-words text-3xl sm:text-5xl md:text-6xl font-heading tracking-widest text-gold-gradient mt-6 mb-4 drop-shadow-lg max-w-4xl leading-snug pt-2 pb-2">
            {t("QUIZ SĂPTĂMÂNAL LA INSOMNIA")} </h1>
 
         {/* Value Proposition */}
-        <p className="text-base sm:text-lg md:text-xl text-purple-200/90 max-w-2xl font-light mb-10 leading-relaxed">
+        <p className="w-full text-base sm:text-lg md:text-xl text-purple-200/90 max-w-2xl font-light mb-10 leading-relaxed">
            {t("5 runde, 10 întrebări pe rundă +")} <strong className="text-purple-300 font-semibold">{t("Pariul")}</strong>.
         </p>
 
@@ -143,12 +143,12 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
                 {timeUnits.map((unit) => (
                   <div
                     key={t(unit.label)}
-                    className="p-3 sm:p-4 rounded-xl bg-purple-950/40 border border-purple-800/60 flex flex-col items-center justify-center shadow-inner"
+                    className="min-w-0 p-2 sm:p-4 rounded-xl bg-purple-950/40 border border-purple-800/60 flex flex-col items-center justify-center shadow-inner"
                   >
                     <div className={`font-heading text-3xl sm:text-5xl md:text-6xl ${unit.color} tracking-tight drop-shadow`}>
                       {unit.value}
                     </div>
-                    <div className="text-[10px] sm:text-xs font-semibold text-purple-300/80 tracking-widest mt-1 font-sans">
+                    <div className="text-[9px] sm:text-xs font-semibold text-purple-300/80 tracking-wide sm:tracking-widest mt-1 font-sans">
                       {t(unit.label)}
                     </div>
                   </div>
@@ -226,10 +226,10 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
           <Button
             onClick={onRegisterClick}
-            className="gold-btn rounded-full px-8 py-7 text-lg font-heading tracking-widest shadow-[0_0_35px_rgba(246,184,40,0.4)] group flex items-center gap-3 w-full sm:w-auto justify-center"
+            className="gold-btn h-auto min-h-14 whitespace-normal rounded-full px-6 sm:px-8 py-5 sm:py-7 text-base sm:text-lg font-heading tracking-widest shadow-[0_0_35px_rgba(246,184,40,0.4)] group flex items-center gap-3 w-full sm:w-auto justify-center"
           >
             <span>{t("ÎNSCRIE-ȚI ECHIPA ACUM")}</span>
-            <span className="w-8 h-8 rounded-full bg-black/15 dark:bg-white/20 flex items-center justify-center group-hover:translate-x-1 group-hover:-translate-y-0.5 transition-transform">
+            <span className="w-8 h-8 shrink-0 rounded-full bg-black/15 dark:bg-white/20 flex items-center justify-center group-hover:translate-x-1 group-hover:-translate-y-0.5 transition-transform">
               <ArrowRight className="w-4 h-4 text-purple-950" />
             </span>
           </Button>
@@ -237,7 +237,7 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
           <Button
             onClick={() => setIsCalendarOpen(true)}
             variant="outline"
-            className="rounded-full px-6 py-7 text-sm font-heading tracking-wider border-purple-500/40 hover:bg-purple-900/30 text-purple-200 w-full sm:w-auto"
+            className="h-auto min-h-14 whitespace-normal rounded-full px-4 sm:px-6 py-5 sm:py-7 text-sm font-heading tracking-wider border-purple-500/40 hover:bg-purple-900/30 text-purple-200 w-full sm:w-auto"
           >
             <CalendarDays className="w-4 h-4 text-amber-400 mr-2" />
              {t("CALENDARUL SEZOANELOR (30 EDIȚII)")} </Button>

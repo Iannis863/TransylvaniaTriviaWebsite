@@ -207,3 +207,35 @@ CREATE TABLE IF NOT EXISTS app_leaderboard_seasons (
     data JSONB NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Bespoke events are separate from the season calendar. Registrations use event:<id>.
+CREATE TABLE IF NOT EXISTS app_custom_events (
+    id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    subtitle TEXT NOT NULL DEFAULT '',
+    event_date TIMESTAMPTZ NOT NULL,
+    venue TEXT NOT NULL,
+    address TEXT NOT NULL,
+    fee_label TEXT NOT NULL,
+    max_teams INTEGER NOT NULL DEFAULT 10 CHECK (max_teams BETWEEN 1 AND 1000),
+    is_published BOOLEAN NOT NULL DEFAULT false,
+    registration_open BOOLEAN NOT NULL DEFAULT true,
+    notification_revision INTEGER NOT NULL DEFAULT 0,
+    prizes JSONB NOT NULL DEFAULT '{"first":{"title":"Sticlă de Vin","description":"Sărbătoriți victoria cu vinul preferat: alb, roșu sau rosé."},"second":{"title":"Găleată de Bere","description":"O găleată cu beri reci pentru toți membrii echipei de pe locul secund."},"third":{"title":"Rând de shoturi","description":"Un rând de shoturi pentru a sărbători bronzul."}}',
+    is_collaboration BOOLEAN NOT NULL DEFAULT false,
+    collaborator_name TEXT NOT NULL DEFAULT '',
+    collaborator_logo_data TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE app_custom_events ADD COLUMN IF NOT EXISTS notification_revision INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE app_custom_events ADD COLUMN IF NOT EXISTS prizes JSONB NOT NULL DEFAULT '{"first":{"title":"Sticlă de Vin","description":"Sărbătoriți victoria cu vinul preferat: alb, roșu sau rosé."},"second":{"title":"Găleată de Bere","description":"O găleată cu beri reci pentru toți membrii echipei de pe locul secund."},"third":{"title":"Rând de shoturi","description":"Un rând de shoturi pentru a sărbători bronzul."}}';
+ALTER TABLE app_custom_events ADD COLUMN IF NOT EXISTS is_collaboration BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE app_custom_events ADD COLUMN IF NOT EXISTS collaborator_name TEXT NOT NULL DEFAULT '';
+ALTER TABLE app_custom_events ADD COLUMN IF NOT EXISTS collaborator_logo_data TEXT;
+
+-- Revisioned custom-event scopes allow a rescheduled event to notify its teams again.
+-- The scope/kind/email unique index above still prevents duplicate deliveries.
+ALTER TABLE app_email_deliveries DROP CONSTRAINT IF EXISTS app_email_deliveries_registration_id_kind_email_key;

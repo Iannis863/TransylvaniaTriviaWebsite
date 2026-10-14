@@ -149,7 +149,7 @@ export default function TeamDashboard() {
                {t("GESTIONEAZĂ-ȚI ECHIPA DE TRIVIA")} </h2>
             <p className="text-purple-200/80 text-sm max-w-md mx-auto mb-6">
                {t("Autentifică-te pentru a crea o echipă, a genera codul de invitație sau a-ți administra membrii.")} </p>
-            <Button onClick={() => setIsAuthOpen(true)} className="gold-btn rounded-full px-8 py-5 font-heading text-base tracking-wider">
+            <Button onClick={() => setIsAuthOpen(true)} className="gold-btn h-auto min-h-12 w-full sm:w-auto max-w-full whitespace-normal rounded-full px-4 sm:px-8 py-4 sm:py-5 font-heading text-base tracking-wider">
                {t("AUTENTIFICARE / ÎNREGISTRARE")} </Button>
             <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
           </div>
@@ -170,7 +170,7 @@ export default function TeamDashboard() {
                {t("NU FACI PARTE DINTR-O ECHIPĂ ÎNCĂ")} </h2>
             <p className="text-purple-200/80 text-sm max-w-md mx-auto mb-6">
                {t("Poți crea o echipă nouă pentru a deveni Căpitan sau te poți alătura echipei prietenilor tăi folosind codul de invitație.")} </p>
-            <Button onClick={() => setIsAuthOpen(true)} className="gold-btn rounded-full px-8 py-5 font-heading text-base">
+            <Button onClick={() => setIsAuthOpen(true)} className="gold-btn h-auto min-h-12 w-full sm:w-auto max-w-full whitespace-normal rounded-full px-4 sm:px-8 py-4 sm:py-5 font-heading text-base">
                {t("FORMEAZĂ SAU INTRĂ ÎNTR-O ECHIPĂ")} </Button>
             <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} defaultTab="team" />
           </div>

@@ -37,6 +37,8 @@ interface LiveRegistrationSectionProps {
   editionLabel: string;
   isFull: boolean;
   onRegistrationSuccess: () => void;
+  registrationEndpoint?: string;
+  customEvent?: { venue: string; feeLabel: string };
 }
 
 export default function LiveRegistrationSection(props: LiveRegistrationSectionProps) {
@@ -49,6 +51,8 @@ function RegistrationSectionForm({
   editionLabel,
   isFull,
   onRegistrationSuccess,
+  registrationEndpoint = "/api/registrations",
+  customEvent,
 }: LiveRegistrationSectionProps) {
   const { user, team, teamMembers } = useAuth();
   const { toast } = useToast();
@@ -101,7 +105,7 @@ function RegistrationSectionForm({
         memberCount: Math.min(6, Math.max(1, teamMembers.length || 4)),
       };
 
-      const res = await fetch("/api/registrations", {
+      const res = await fetch(registrationEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -114,7 +118,7 @@ function RegistrationSectionForm({
         setIsSuccess(true);
         setIsWaitlisted(data.status === "WAITLISTED");
         window.dispatchEvent(new Event("registration-updated"));
-        toast({ title: data.status === "WAITLISTED" ? t("Echipa este pe lista de așteptare") : t("Echipa ta a fost acceptată!"), description: data.status === "WAITLISTED" ? t("Locul nu este încă rezervat. Vei primi confirmarea dacă quizmasterul vă acceptă.") : t("Ne vedem {0} la Insomnia Cafe & Bistro!", [editionLabel]) });
+        toast({ title: data.status === "WAITLISTED" ? t("Echipa este pe lista de așteptare") : t("Echipa ta a fost acceptată!"), description: data.status === "WAITLISTED" ? t("Locul nu este încă rezervat. Vei primi confirmarea dacă quizmasterul vă acceptă.") : customEvent ? t("Ne vedem {0} la {1}!", [editionLabel, customEvent.venue]) : t("Ne vedem {0} la Insomnia Cafe & Bistro!", [editionLabel]) });
         onRegistrationSuccess();
       }
     } catch (err) {
@@ -135,7 +139,7 @@ function RegistrationSectionForm({
         teamId: team?.id || undefined,
       };
 
-      const res = await fetch("/api/registrations", {
+      const res = await fetch(registrationEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -168,9 +172,9 @@ function RegistrationSectionForm({
             <Crown className="w-3.5 h-3.5 text-amber-400" />
              {t("Rezervare Masă & Locuri")} </div>
           <h2 className="text-3xl sm:text-5xl font-heading tracking-widest text-gold-gradient pt-2 pb-1">
-             {t("ÎNREGISTRARE LA EDIȚIA CURENTĂ")} </h2>
-          <p className="text-purple-200/80 text-sm sm:text-base max-w-xl mx-auto mt-2 font-light">
-             {t("Asigură masa echipei tale pentru")} {editionLabel}{t(". Taxa este de 10 lei de persoană.")} </p>
+             {customEvent ? t("ÎNSCRIERE LA EVENIMENT") : t("ÎNREGISTRARE LA EDIȚIA CURENTĂ")} </h2>
+          <p className="break-words text-purple-200/80 text-sm sm:text-base max-w-xl mx-auto mt-2 font-light">
+             {customEvent ? t("Rezervă locul echipei tale pentru {0}. Taxă: {1}.", [editionLabel, customEvent.feeLabel]) : <>{t("Asigură masa echipei tale pentru")} {editionLabel}{t(". Taxa este de 10 lei de persoană.")}</>} </p>
         </div>
 
         {/* Success Banner */}
@@ -183,8 +187,8 @@ function RegistrationSectionForm({
               <h3 className="text-2xl sm:text-3xl font-heading tracking-wider text-emerald-300 mb-2">
                 {isWaitlisted ? t("SUNTEȚI PE LISTA DE AȘTEPTARE") : t("LOCUL VOSTRU ESTE CONFIRMAT!")}
               </h3>
-              <p className="text-emerald-100/90 max-w-md mx-auto text-sm sm:text-base mb-6 font-light">
-                {isWaitlisted ? t("Înscrierea a fost primită, dar nu aveți încă un loc rezervat. Dacă quizmasterul vă acceptă, primiți un email de confirmare. Așteptați confirmarea înainte de a veni la eveniment.") : <>{t("Masa este rezervată la Insomnia Cafe & Bistro pentru")} <strong>{editionLabel}</strong>{t(". Vă așteptăm cu drag!")}</>}
+              <p className="break-words text-emerald-100/90 max-w-md mx-auto text-sm sm:text-base mb-6 font-light">
+                {isWaitlisted ? t("Înscrierea a fost primită, dar nu aveți încă un loc rezervat. Dacă quizmasterul vă acceptă, primiți un email de confirmare. Așteptați confirmarea înainte de a veni la eveniment.") : customEvent ? t("Locul echipei este rezervat la {0} pentru {1}. Vă așteptăm cu drag!", [customEvent.venue, editionLabel]) : <>{t("Masa este rezervată la Insomnia Cafe & Bistro pentru")} <strong>{editionLabel}</strong>{t(". Vă așteptăm cu drag!")}</>}
               </p>
               {!team && <Button
                 onClick={() => { setIsSuccess(false); form.reset({ teamName: "", captainName: "", email: "", phoneNumber: "", memberCount: 4 }); }}
@@ -196,6 +200,7 @@ function RegistrationSectionForm({
           </div>
         ) : (
           <div className="space-y-6">
+            {customEvent && team && team.leaderId === user?.id && <TeamRegistrationStatus editionId={editionId} />}
             {isFull && <div role="status" className="rounded-2xl border border-amber-400/40 bg-amber-500/10 p-5 text-amber-200 text-sm">
                {t("Locurile pentru înscriere directă sunt ocupate. Te poți înscrie pe lista de așteptare; locul este rezervat doar după acceptarea de către quizmaster și primirea confirmării.")} </div>}
 
@@ -234,7 +239,7 @@ function RegistrationSectionForm({
             {team && team.leaderId !== user?.id ? (
               <div className="rounded-2xl border border-purple-700/50 bg-purple-950/30 p-6">
                 <p className="mb-4 text-purple-200">{t("Doar căpitanul poate înscrie echipa")}</p>
-                <TeamRegistrationStatus />
+                <TeamRegistrationStatus editionId={customEvent ? editionId : undefined} />
               </div>
             ) : (
             <div className="p-2 sm:p-2.5 rounded-[2.5rem] bg-gradient-to-b from-purple-900/20 to-purple-950/10 ring-1 ring-purple-500/30 shadow-2xl">
@@ -248,7 +253,7 @@ function RegistrationSectionForm({
                     <h3 className="font-heading text-xl text-white tracking-wider">
                        {t("Formular oficial de înscriere a echipei")} </h3>
                     <p className="text-xs text-purple-300/70">
-                       {t("Completează datele echipei pentru rezervarea mesei la Insomnia Cafe & Bistro")} </p>
+                       {customEvent ? t("Completează datele echipei pentru înscrierea la eveniment.") : t("Completează datele echipei pentru rezervarea mesei la Insomnia Cafe & Bistro")} </p>
                   </div>
                 </div>
 

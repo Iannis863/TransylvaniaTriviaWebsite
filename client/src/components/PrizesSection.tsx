@@ -1,4 +1,5 @@
 import { t } from "@/lib/i18n";
+import { CUSTOM_EVENT_DEFAULT_PRIZES, type CustomEventPrizes } from "@shared/custom-events";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,12 +15,13 @@ import {
   Award
 } from "lucide-react";
 
-export default function PrizesSection() {
+export default function PrizesSection({ customEvent }: { customEvent?: { prizes: CustomEventPrizes } } = {}) {
+  const eventPrizes = customEvent?.prizes ?? CUSTOM_EVENT_DEFAULT_PRIZES;
   const prizes = [
     {
       place: t("LOCUL I"),
-      title: t("Sticlă de Vin"),
-      desc: t("Sărbătoriți victoria cu vinul preferat: alb, roșu sau rosé."),
+      title: customEvent ? eventPrizes.first.title : t("Sticlă de Vin"),
+      desc: customEvent ? eventPrizes.first.description : t("Sărbătoriți victoria cu vinul preferat: alb, roșu sau rosé."),
       image: "/prize_wine.webp",
       width: 103,
       height: 480,
@@ -31,8 +33,8 @@ export default function PrizesSection() {
     },
     {
       place: t("LOCUL II"),
-      title: t("Găleată de Bere"),
-      desc: t("O găleată cu beri reci pentru toți membrii echipei de pe locul secund."),
+      title: customEvent ? eventPrizes.second.title : t("Găleată de Bere"),
+      desc: customEvent ? eventPrizes.second.description : t("O găleată cu beri reci pentru toți membrii echipei de pe locul secund."),
       image: "/prize_beer.webp",
       width: 382,
       height: 480,
@@ -44,8 +46,8 @@ export default function PrizesSection() {
     },
     {
       place: t("LOCUL III"),
-      title: t("Rând de shoturi"),
-      desc: t("Un rând de shoturi la barul Insomnia pentru a sărbători bronzul."),
+      title: customEvent ? eventPrizes.third.title : t("Rând de shoturi"),
+      desc: customEvent ? eventPrizes.third.description : t("Un rând de shoturi la barul Insomnia pentru a sărbători bronzul."),
       image: "/prize_shots.webp",
       width: 320,
       height: 480,
@@ -58,7 +60,7 @@ export default function PrizesSection() {
   ];
 
   return (
-    <section id="prizes" className="py-24 px-4 sm:px-6 lg:px-8 relative">
+    <section id="prizes" data-testid={customEvent ? "custom-event-prizes" : undefined} className="py-24 px-4 sm:px-6 lg:px-8 relative">
       <div className="max-w-5xl mx-auto">
 
         {/* Section Header */}
@@ -67,9 +69,9 @@ export default function PrizesSection() {
             <Trophy className="w-3.5 h-3.5 text-amber-400" />
              {t("Glorie & Recompense")} </div>
           <h2 className="text-3xl sm:text-5xl font-heading tracking-widest text-gold-gradient py-1">
-             {t("PREMIILE SĂPTĂMÂNALE")} </h2>
+             {customEvent ? t("PREMIILE EVENIMENTULUI") : t("PREMIILE SĂPTĂMÂNALE")} </h2>
           <p className="text-purple-200/80 text-sm sm:text-base max-w-xl mx-auto mt-2 font-light">
-             {t("La fiecare ediție de marți, primele 3 echipe sunt premiate la Insomnia Cafe & Bistro!")} </p>
+             {customEvent ? t("Primele 3 echipe sunt premiate la acest eveniment.") : t("La fiecare ediție de marți, primele 3 echipe sunt premiate la Insomnia Cafe & Bistro!")} </p>
         </div>
 
         {/* Prizes Cards (Double-Bezel Architecture) */}
@@ -103,11 +105,11 @@ export default function PrizesSection() {
                   </div>
 
                   {/* Content */}
-                  <div>
-                    <h3 className="font-heading text-lg sm:text-xl text-white tracking-wide mb-2 leading-snug">
+                  <div className="min-w-0 w-full">
+                    <h3 className="break-words font-heading text-lg sm:text-xl text-white tracking-wide mb-2 leading-snug">
                       {p.title}
                     </h3>
-                    <p className="text-xs text-purple-300/80 leading-relaxed font-light">
+                    <p className="break-words whitespace-pre-line text-xs text-purple-300/80 leading-relaxed font-light">
                       {p.desc}
                     </p>
                   </div>
@@ -119,6 +121,7 @@ export default function PrizesSection() {
         </div>
 
         {/* Jackpot Section */}
+        {!customEvent && <>
         <div className="p-2 sm:p-2.5 rounded-[2.5rem] bg-gradient-to-b from-amber-500/20 via-purple-900/10 to-[#0e041d] ring-2 ring-amber-400/50 shadow-[0_0_40px_rgba(246,184,40,0.2)] mb-16 mx-auto max-w-4xl">
           <div className="p-6 sm:p-10 rounded-[calc(2.5rem-0.5rem)] bg-[#0d041a] flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
             <div className="space-y-2">
@@ -159,6 +162,7 @@ export default function PrizesSection() {
 
           </div>
         </div>
+        </>}
 
       </div>
     </section>

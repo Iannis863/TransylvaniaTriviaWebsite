@@ -2,9 +2,14 @@ import { storage } from "./storage.js";
 import { notifications, registrationEventDate } from "./notifications.js";
 import { bucharestDateKey, bucharestParts } from "../shared/event-time.js";
 import type { Registration } from "../shared/schema.js";
+import { customEventIdFromRegistrationKey } from "../shared/custom-events.js";
 
 export function reminderIsDue(registration: Registration, now = new Date()): boolean {
   const eventDate = registrationEventDate(registration);
+  if (customEventIdFromRegistrationKey(registration.editionId)) {
+    // A full-day window also supports the once-daily serverless cron.
+    return registration.status === "CONFIRMED" && !registration.reminderSent && !!eventDate && eventDate > now && eventDate.getTime() - now.getTime() <= 24 * 3600000;
+  }
   return registration.status === "CONFIRMED" && !registration.reminderSent && !!eventDate && eventDate > now &&
     bucharestDateKey(eventDate) === bucharestDateKey(now) && bucharestParts(now).hour >= 12;
 }
@@ -16,10 +21,12 @@ export function runNotifications(now = new Date()) {
     for (const registration of registrations) {
       const eventDate = registrationEventDate(registration);
       if (eventDate && eventDate > now) {
-        if (registration.status === "WAITLISTED" && !registration.waitlistQueued) {
+        const custom = !!customEventIdFromRegistrationKey(registration.editionId);
+        // Event revisions deduplicate custom mail and recover concurrent reschedule requests.
+        if (registration.status === "WAITLISTED" && (!registration.waitlistQueued || custom)) {
           await notifications.queue(registration, "waitlist");
           await storage.markWaitlistQueued(registration.id);
-        } else if (registration.status === "CONFIRMED" && !registration.confirmationQueued) {
+        } else if (registration.status === "CONFIRMED" && (!registration.confirmationQueued || custom)) {
           await notifications.queue(registration, "confirmation");
           await storage.markConfirmationQueued(registration.id);
         }

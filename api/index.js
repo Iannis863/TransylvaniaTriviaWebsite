@@ -6,6 +6,7 @@ import { startScheduler } from "../server/scheduler.js";
 import { setupSecurity } from "../server/security.js";
 import { ensureDatabaseReady, pool } from "../server/db.js";
 import { retryableInitialization, startupFailure } from "../server/startup.js";
+import { setupRequestBodyParsers } from "../server/request-body.js";
 
 // Vercel Hobby supports this duration when Fluid Compute is enabled.
 export const config = { maxDuration: 300 };
@@ -34,8 +35,7 @@ const initialize = retryableInitialization(async () => {
   const app = express();
   const httpServer = createServer(app);
   setupSecurity(app);
-  app.use(express.json({ limit: "100kb" }));
-  app.use(express.urlencoded({ extended: false }));
+  setupRequestBodyParsers(app);
 
   app.use((req, res, next) => {
     const start = Date.now();

@@ -4,6 +4,7 @@ process.env.NODE_ENV = 'test';
 const { default: express } = await import('express');
 const { createServer } = await import('node:http');
 const { setupSecurity, hashPassword, establishSession } = await import('../server/security.ts');
+const { setupRequestBodyParsers } = await import('../server/request-body.ts');
 const { storage, MemStorage } = await import('../server/storage.ts');
 const { getCurrentOrNextEdition } = await import('../shared/schedule.ts');
 if (!(storage instanceof MemStorage)) throw new Error('Browser tests require in-memory storage');
@@ -15,7 +16,7 @@ setupSecurity(app);
 // This loopback-only fixture server lets browser suites simulate separate clients.
 // Production proxy trust and rate limits remain governed by setupSecurity.
 app.set('trust proxy', 'loopback');
-app.use(express.json());
+setupRequestBodyParsers(app);
 const server = createServer(app);
 await registerRoutes(server, app);
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', database: 'memory' }));

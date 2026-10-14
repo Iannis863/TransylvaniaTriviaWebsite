@@ -4,8 +4,8 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 
-interface TeamRegistration { id: string; status: "WAITLISTED" | "CONFIRMED"; eventDate: string | null }
-export default function TeamRegistrationStatus() {
+interface TeamRegistration { id: string; editionId: string; status: "WAITLISTED" | "CONFIRMED"; eventDate: string | null }
+export default function TeamRegistrationStatus({ editionId }: { editionId?: string } = {}) {
   const { user, team } = useAuth();
   const queryClient = useQueryClient();
   const query = useQuery<TeamRegistration[]>({
@@ -26,10 +26,10 @@ export default function TeamRegistrationStatus() {
     return () => window.removeEventListener("registration-updated", refresh);
   }, [queryClient]);
   if (!user || !team) return null;
-  const upcoming = (query.data ?? []).filter(r => r.eventDate && new Date(r.eventDate) > new Date()).sort((a, b) => a.eventDate!.localeCompare(b.eventDate!));
+  const upcoming = (query.data ?? []).filter(r => (!editionId || r.editionId === editionId) && r.eventDate && new Date(r.eventDate) > new Date()).sort((a, b) => a.eventDate!.localeCompare(b.eventDate!));
   return <div className="mb-6 space-y-3" aria-live="polite">
     <h3 className="text-lg text-amber-300 font-heading">{t("Înscrierile echipei")}</h3>
-    {query.isLoading ? <p className="text-purple-300 text-sm">{t("Se verifică înscrierile…")}</p> : query.isError ? <p className="text-amber-200 text-sm">{t("Nu am putut verifica înscrierile.")} <button onClick={() => query.refetch()} className="underline">{t("Reîncearcă")}</button></p> : upcoming.length === 0 ? <p className="text-purple-300 text-sm">{t("Echipa nu este înscrisă la un eveniment viitor.")}</p> : upcoming.map(registration => (
+    {query.isLoading ? <p className="text-purple-300 text-sm">{t("Se verifică înscrierile…")}</p> : query.isError ? <p className="text-amber-200 text-sm">{t("Nu am putut verifica înscrierile.")} <button onClick={() => query.refetch()} className="underline">{t("Reîncearcă")}</button></p> : upcoming.length === 0 ? <p className="text-purple-300 text-sm">{editionId ? t("Echipa nu este înscrisă la acest eveniment.") : t("Echipa nu este înscrisă la un eveniment viitor.")}</p> : upcoming.map(registration => (
       <div key={registration.id} className="rounded-xl border border-purple-700/50 bg-purple-950/40 p-4">
         <p className="text-sm text-purple-100">{new Date(registration.eventDate!).toLocaleString(locale(), { timeZone: "Europe/Bucharest", dateStyle: "long", timeStyle: "short" })}  {t("· ora României")}</p>
         <p className={`font-semibold mt-1 ${registration.status === "WAITLISTED" ? "text-amber-300" : "text-emerald-300"}`}>

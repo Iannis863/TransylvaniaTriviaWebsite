@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { customEventIdFromRegistrationKey, customEventRegistrationKey } from "../shared/custom-events.js";
 import type { Registration, User } from "../shared/schema.js";
 import { getFullSchedule, getEditionDateTime } from "../shared/schedule.js";
 import { bucharestParts } from "../shared/event-time.js";
@@ -115,16 +116,44 @@ export class NotificationService {
 
   async queue(registration: Registration, kind: EmailKind) {
     if ((kind === "waitlist") !== (registration.status === "WAITLISTED")) return;
-    const eventDate = registrationEventDate(registration);
+    const eventId = customEventIdFromRegistrationKey(registration.editionId);
+    const customEvent = eventId ? await this.source.getCustomEvent(eventId) : undefined;
+    if (eventId && !customEvent) return;
+    // A concurrent event edit can make the request's saved registration snapshot stale.
+    const eventDate = customEvent?.eventDate ?? registrationEventDate(registration);
     if (!eventDate) throw new Error(`Unknown edition for registration ${registration.id}`);
     const recipients = await getRegistrationRecipients(registration, this.source);
     for (const recipient of recipients) {
       const delivery: Delivery = {
-        id: randomUUID(), registrationId: registration.id, scopeKey: registration.id, userId: null, teamId: null, weekId: null, kind, email: recipient.email,
-        payload: buildEventEmail(kind, { ...recipient, language: registration.language ?? "ro", teamName: registration.teamName, memberCount: registration.memberCount, eventDate }),
+        id: randomUUID(), registrationId: registration.id, scopeKey: customEvent ? `${registration.id}:revision:${customEvent.notificationRevision}` : registration.id, userId: null, teamId: null, weekId: null, kind, email: recipient.email,
+        payload: buildEventEmail(kind, { ...recipient, language: registration.language ?? "ro", teamName: registration.teamName, memberCount: registration.memberCount, eventDate, customEvent }),
         eventDate, sentAt: null, lockedUntil: null, cancelledAt: null, lastAttemptAt: null, lastError: null,
       };
       await this.enqueue(delivery);
+    }
+  }
+
+  // Keep durable, unsent snapshots in sync when the owner changes the event.
+  async refreshCustomEvent(eventId: string) {
+    const event = await this.source.getCustomEvent(eventId);
+    if (!event) return;
+    for (const registration of await this.source.getRegistrations(customEventRegistrationKey(eventId))) {
+      const eventDate = registrationEventDate(registration)!;
+      const currentScope = `${registration.id}:revision:${event.notificationRevision}`;
+      if (this.database) {
+        await this.database.query("UPDATE app_email_deliveries SET cancelled_at = now(), locked_until = NULL, last_error = 'Event rescheduled' WHERE registration_id = $1 AND sent_at IS NULL AND cancelled_at IS NULL AND scope_key <> $2", [registration.id, currentScope]);
+      } else {
+        for (const delivery of Array.from(this.deliveries.values())) {
+          if (delivery.registrationId === registration.id && !delivery.sentAt && !delivery.cancelledAt && delivery.scopeKey !== currentScope) {
+            delivery.cancelledAt = new Date(); delivery.lockedUntil = null; delivery.lastError = "Event rescheduled";
+          }
+        }
+      }
+      if (eventDate > new Date() && (registration.status === "WAITLISTED" ? !registration.waitlistQueued : !registration.confirmationQueued)) {
+        await this.queue(registration, registration.status === "WAITLISTED" ? "waitlist" : "confirmation");
+        if (registration.status === "WAITLISTED") await this.source.markWaitlistQueued(registration.id);
+        else await this.source.markConfirmationQueued(registration.id);
+      }
     }
   }
 
@@ -134,20 +163,34 @@ export class NotificationService {
       // A lease prevents concurrent cron workers from sending the same recipient at once.
       const result = await this.database.query(`UPDATE app_email_deliveries SET locked_until = $1::timestamptz + interval '5 minutes'
         WHERE id IN (SELECT id FROM app_email_deliveries WHERE sent_at IS NULL AND cancelled_at IS NULL AND event_date > $1
-          AND (locked_until IS NULL OR locked_until <= $1) AND ($2::text IS NULL OR COALESCE(scope_key, registration_id) = $2)
+          AND (locked_until IS NULL OR locked_until <= $1) AND ($2::text IS NULL OR COALESCE(scope_key, registration_id) = $2 OR registration_id = $2)
           ORDER BY event_date LIMIT 100 FOR UPDATE SKIP LOCKED)
         RETURNING id, registration_id AS "registrationId", scope_key AS "scopeKey", user_id AS "userId", team_id AS "teamId", week_id AS "weekId", kind, email, payload, event_date AS "eventDate"`, [now, scopeKey || null]);
       pending = result.rows;
     } else {
-      pending = Array.from(this.deliveries.values()).filter(item => !item.sentAt && !item.cancelledAt && item.eventDate > now && (!item.lockedUntil || item.lockedUntil <= now) && (!scopeKey || item.scopeKey === scopeKey)).slice(0, 100);
+      pending = Array.from(this.deliveries.values()).filter(item => !item.sentAt && !item.cancelledAt && item.eventDate > now && (!item.lockedUntil || item.lockedUntil <= now) && (!scopeKey || item.scopeKey === scopeKey || item.registrationId === scopeKey)).slice(0, 100);
       for (const item of pending) item.lockedUntil = new Date(now.getTime() + 5 * 60000);
     }
     const result = { sent: 0, failed: 0 };
     for (const item of pending) {
+      const registration = item.registrationId ? await this.source.getRegistration(item.registrationId) : undefined;
+      const eventId = registration ? customEventIdFromRegistrationKey(registration.editionId) : null;
+      const customEvent = eventId ? await this.source.getCustomEvent(eventId) : undefined;
+      if (customEvent && !customEvent.isPublished) {
+        // Unpublishing pauses delivery without losing notifications if republished.
+        if (this.database) await this.database.query("UPDATE app_email_deliveries SET locked_until = NULL WHERE id = $1", [item.id]);
+        else item.lockedUntil = null;
+        continue;
+      }
       if (!await this.deliveryIsRelevant(item, now)) {
         if (this.database) await this.database.query("UPDATE app_email_deliveries SET cancelled_at = $2, locked_until = NULL, last_error = 'Recipient or notification status changed' WHERE id = $1", [item.id, now]);
         else { item.cancelledAt = now; item.lockedUntil = null; item.lastError = "Recipient or notification status changed"; }
         continue;
+      }
+      if (registration && customEvent) {
+        const recipient = (await getRegistrationRecipients(registration, this.source)).find(value => value.email === item.email)!;
+        item.payload = buildEventEmail(item.kind as EmailKind, { ...recipient, teamName: registration.teamName, memberCount: registration.memberCount, language: registration.language, eventDate: customEvent.eventDate, customEvent });
+        if (this.database) await this.database.query("UPDATE app_email_deliveries SET payload = $2 WHERE id = $1", [item.id, item.payload]);
       }
       if (Date.now() + 16000 >= deadline) {
         // Leave enough time to persist results and release unsent recipients for the next run.
@@ -174,6 +217,11 @@ export class NotificationService {
     if (item.registrationId) {
       const registration = await this.source.getRegistration(item.registrationId);
       if (!registration || ((item.kind === "waitlist") !== (registration.status === "WAITLISTED"))) return false;
+      const eventId = customEventIdFromRegistrationKey(registration.editionId);
+      if (eventId) {
+        const event = await this.source.getCustomEvent(eventId);
+        if (!event || event.eventDate <= now || event.eventDate.getTime() !== new Date(item.eventDate).getTime() || item.scopeKey !== `${registration.id}:revision:${event.notificationRevision}`) return false;
+      }
       // A retry must not contact a removed member or the previous account/contact address.
       return (await getRegistrationRecipients(registration, this.source)).some(recipient => recipient.email === item.email);
     }
@@ -195,11 +243,15 @@ export class NotificationService {
     return Array.from(this.deliveries.values()).reverse().slice(0, 200);
   }
   async reminderComplete(registrationId: string): Promise<boolean> {
+    const registration = await this.source.getRegistration(registrationId);
+    const eventId = registration ? customEventIdFromRegistrationKey(registration.editionId) : null;
+    const event = eventId ? await this.source.getCustomEvent(eventId) : undefined;
+    const scope = event ? `${registrationId}:revision:${event.notificationRevision}` : undefined;
     if (this.database) {
-      const result = await this.database.query("SELECT count(*)::int AS total, count(*) FILTER (WHERE sent_at IS NULL AND cancelled_at IS NULL)::int AS pending FROM app_email_deliveries WHERE registration_id = $1 AND kind = 'reminder'", [registrationId]);
+      const result = await this.database.query("SELECT count(*)::int AS total, count(*) FILTER (WHERE sent_at IS NULL AND cancelled_at IS NULL)::int AS pending FROM app_email_deliveries WHERE registration_id = $1 AND kind = 'reminder' AND ($2::text IS NULL OR scope_key = $2)", [registrationId, scope ?? null]);
       return result.rows[0].total > 0 && result.rows[0].pending === 0;
     }
-    const entries = Array.from(this.deliveries.values()).filter(item => item.registrationId === registrationId && item.kind === "reminder");
+    const entries = Array.from(this.deliveries.values()).filter(item => item.registrationId === registrationId && item.kind === "reminder" && (!scope || item.scopeKey === scope));
     return entries.length > 0 && entries.every(item => item.sentAt || item.cancelledAt);
   }
 }

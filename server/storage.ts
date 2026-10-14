@@ -1,4 +1,5 @@
 import type { LeaderboardIdentity, LeaderboardSeason } from "../shared/leaderboard.js";
+import type { CustomEvent } from "../shared/custom-events.js";
 import { bookTeam, approveTeam } from "./booking.js";
 import { 
   type User, type InsertUser, 
@@ -7,7 +8,7 @@ import {
   type WeeklyPuzzleProgress, type InsertPuzzleProgress,
   type ThemeSuggestion, type InsertThemeSuggestion,
   type PasswordResetCode,
-  users, teams, registrations, weeklyPuzzleProgress, themeSuggestions, passwordResetCodes, adminCredentials, leaderboardIdentities, leaderboardSeasons
+  users, teams, registrations, weeklyPuzzleProgress, themeSuggestions, passwordResetCodes, adminCredentials, leaderboardIdentities, leaderboardSeasons, customEvents
 } from "../shared/schema.js";
 import { getCurrentOrNextEdition } from "../shared/schedule.js";
 import { db, pool } from "./db.js";
@@ -18,8 +19,15 @@ import { ADMIN_CREDENTIAL_ID, INITIAL_ADMIN_PASSWORD_HASH } from "./admin-creden
 export class DuplicateEmailError extends Error {
   constructor() { super("EMAIL_ALREADY_EXISTS"); }
 }
+export type StoredCustomEvent = CustomEvent & { notificationRevision: number };
 
 export interface IStorage {
+  getCustomEvents(): Promise<StoredCustomEvent[]>;
+  getCustomEvent(id: string): Promise<StoredCustomEvent | undefined>;
+  getCustomEventBySlug(slug: string): Promise<StoredCustomEvent | undefined>;
+  saveCustomEvent(event: StoredCustomEvent): Promise<void>;
+  deleteCustomEvent(id: string): Promise<boolean>;
+  rescheduleCustomRegistrations(editionId: string, eventDate: Date): Promise<void>;
   getLeaderboardIdentities(): Promise<LeaderboardIdentity[]>;
   getLeaderboardSeasons(): Promise<LeaderboardSeason[]>;
   saveLeaderboardIdentity(identity: LeaderboardIdentity): Promise<void>;
@@ -97,6 +105,20 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  private customEvents = new Map<string, StoredCustomEvent>();
+  async getCustomEvents() { return structuredClone(Array.from(this.customEvents.values())); }
+  async getCustomEvent(id: string) { return structuredClone(this.customEvents.get(id)); }
+  async getCustomEventBySlug(slug: string) { return structuredClone(Array.from(this.customEvents.values()).find(event => event.slug === slug)); }
+  async saveCustomEvent(event: StoredCustomEvent) {
+    if (Array.from(this.customEvents.values()).some(item => item.id !== event.id && item.slug === event.slug)) throw new Error("EVENT_SLUG_EXISTS");
+    this.customEvents.set(event.id, structuredClone(event));
+  }
+  async deleteCustomEvent(id: string) { return this.customEvents.delete(id); }
+  async rescheduleCustomRegistrations(editionId: string, eventDate: Date) {
+    for (const registration of Array.from(this.registrations.values())) {
+      if (registration.editionId === editionId) Object.assign(registration, { eventDate, reminderSent: false, confirmationQueued: false, waitlistQueued: false });
+    }
+  }
   private leaderboardIdentities = new Map<string, LeaderboardIdentity>();
   private leaderboardSeasons = new Map<string, LeaderboardSeason>();
   async getLeaderboardIdentities() { return structuredClone(Array.from(this.leaderboardIdentities.values())); }
@@ -666,6 +688,24 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  async getCustomEvents(): Promise<StoredCustomEvent[]> { return this.database.select().from(customEvents); }
+  async getCustomEvent(id: string): Promise<StoredCustomEvent | undefined> {
+    const [event] = await this.database.select().from(customEvents).where(eq(customEvents.id, id));
+    return event;
+  }
+  async getCustomEventBySlug(slug: string): Promise<StoredCustomEvent | undefined> {
+    const [event] = await this.database.select().from(customEvents).where(eq(customEvents.slug, slug));
+    return event;
+  }
+  async saveCustomEvent(event: StoredCustomEvent) {
+    await this.database.insert(customEvents).values(event).onConflictDoUpdate({ target: customEvents.id, set: event });
+  }
+  async deleteCustomEvent(id: string): Promise<boolean> {
+    return (await this.database.delete(customEvents).where(eq(customEvents.id, id)).returning()).length > 0;
+  }
+  async rescheduleCustomRegistrations(editionId: string, eventDate: Date): Promise<void> {
+    await this.database.update(registrations).set({ eventDate, reminderSent: false, confirmationQueued: false, waitlistQueued: false }).where(eq(registrations.editionId, editionId));
+  }
   async getLeaderboardIdentities(): Promise<LeaderboardIdentity[]> { return this.database.select().from(leaderboardIdentities); }
   async getLeaderboardSeasons(): Promise<LeaderboardSeason[]> { return this.database.select().from(leaderboardSeasons); }
   async saveLeaderboardIdentity(identity: LeaderboardIdentity) {

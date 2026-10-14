@@ -29,6 +29,7 @@ export interface RegisteredTeamsGridProps {
   onRefresh?: () => void;
   isLoading?: boolean;
   hasError?: boolean;
+  customEvent?: boolean;
 }
 
 export default function RegisteredTeamsGrid({
@@ -38,11 +39,12 @@ export default function RegisteredTeamsGrid({
   isLoading = false,
   hasError = false,
   onRefresh,
+  customEvent = false,
 }: RegisteredTeamsGridProps) {
   const percentageOccupied = Math.min(100, Math.round((teams.length / maxTeams) * 100));
 
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8 relative">
+    <section data-testid={customEvent ? "custom-event-teams" : undefined} className="py-16 px-4 sm:px-6 lg:px-8 relative">
       <div className="max-w-5xl mx-auto">
 
         {/* Header & Capacity Telemetry */}
@@ -50,21 +52,21 @@ export default function RegisteredTeamsGrid({
           <div className="p-6 sm:p-8 rounded-[calc(2.5rem-0.5rem)] bg-[#0e041d] shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)]">
 
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-2 border-purple-800/40">
-              <div className="text-center md:text-left">
+              <div className="min-w-0 w-full text-center md:flex-1 md:text-left">
                 <div className="text-[10px] text-amber-400 uppercase tracking-widest font-bold flex items-center justify-center md:justify-start gap-1.5 mb-1">
                   <Flame className="w-3.5 h-3.5" />
                    {t("Echipe Înregistrate Live")} </div>
-                <h3 className="text-2xl sm:text-3xl font-heading text-gold-gradient tracking-wider">
+                <h3 className="break-words text-2xl sm:text-3xl font-heading text-gold-gradient tracking-wider">
                    {t("GRILA DE START •")} {editionLabel}
                 </h3>
                 <p className="text-xs text-purple-300/80 mt-0.5">
-                   {t("Lista publică a echipelor validate pentru confruntarea de marți")} </p>
+                   {customEvent ? t("Lista publică a echipelor confirmate pentru acest eveniment.") : t("Lista publică a echipelor validate pentru confruntarea de marți")} </p>
               </div>
 
               {/* Progress & Slots Counter */}
-              <div className="w-full md:w-64 text-center md:text-right">
+              <div className="w-full md:w-64 shrink-0 text-center md:text-right">
                 <div className="flex items-center justify-between text-xs font-bold mb-1.5">
-                  <span className="text-purple-300">{t("Capacitate Restaurant:")}</span>
+                  <span className="text-purple-300">{customEvent ? t("Capacitate eveniment:") : t("Capacitate Restaurant:")}</span>
                   <span className="text-amber-400 font-mono">{teams.length} / {maxTeams}  {t("Echipe")}</span>
                 </div>
                 <Progress value={percentageOccupied} className="h-2.5 bg-purple-950 border border-purple-800" />
@@ -120,7 +122,7 @@ export default function RegisteredTeamsGrid({
 
                   <div className="pt-3 mt-3 border-t border-purple-800/40 flex items-center justify-between text-[10px] text-purple-400/70 font-mono">
                     <span className="flex items-center gap-1 text-emerald-400/90 font-sans">
-                      <ShieldCheck className="w-3 h-3 text-emerald-400" />  {t("Masă Confirmată")} </span>
+                      <ShieldCheck className="w-3 h-3 text-emerald-400" />  {customEvent ? t("Loc Confirmat") : t("Masă Confirmată")} </span>
                     <span>
                       {new Date(team.registeredAt).toLocaleDateString(locale(), { day: "numeric", month: "short" })}
                     </span>

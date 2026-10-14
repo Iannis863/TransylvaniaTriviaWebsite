@@ -13,6 +13,7 @@ import PageErrorBoundary from "@/components/PageErrorBoundary";
 
 const AdminPanel = lazy(() => import("@/pages/AdminPanel"));
 const Account = lazy(() => import("@/pages/Account"));
+const CustomEvent = lazy(() => import("@/pages/CustomEvent"));
 
 function Router() {
   return (
@@ -21,6 +22,7 @@ function Router() {
         <Route path="/" component={Home} />
         <Route path="/admin" component={AdminPanel} />
         <Route path="/cont" component={Account} />
+        <Route path="/:slug" component={CustomEvent} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
