@@ -287,15 +287,24 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
                 <div
                   key={ed.id}
                   aria-current={isCurrent ? "date" : undefined}
-                  className={`min-h-24 px-5 py-6 rounded-2xl border transition-colors flex items-center ${
+                  className={`min-h-20 px-3.5 py-3 rounded-2xl border transition-colors grid grid-cols-[2rem_minmax(0,1fr)_auto] sm:grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 ${
                     isCurrent
                       ? "bg-amber-500/15 border-amber-400 shadow-[0_0_25px_rgba(246,184,40,0.25)]"
                       : "bg-purple-950/30 border-purple-800/40 hover:border-purple-600/50"
                   }`}
                 >
-                  <time dateTime={eventDate.toISOString()} className={`font-heading text-3xl sm:text-4xl leading-tight tracking-wide ${isCurrent ? "text-amber-300" : "text-white"}`}>
+                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-heading text-lg ${isCurrent ? "bg-amber-400 text-purple-950 font-bold" : "bg-purple-900/60 text-purple-200"}`}>
+                    #{ed.editionNumber}
+                  </div>
+                  <time dateTime={eventDate.toISOString()} className={`min-w-0 break-words font-heading text-2xl sm:text-3xl leading-tight tracking-wide ${isCurrent ? "text-amber-300" : "text-white"}`}>
                     {dateLabel.charAt(0).toLocaleUpperCase(locale()) + dateLabel.slice(1)}
                   </time>
+                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2">
+                    <span className="text-xs text-purple-300/80 font-mono">20:00</span>
+                    <Badge variant="outline" className="whitespace-nowrap border-purple-600/40 text-purple-300 text-[10px] sm:text-[11px]">
+                      Max {ed.maxTeams} {t("Echipe")}
+                    </Badge>
+                  </div>
                 </div>
               );
             })}

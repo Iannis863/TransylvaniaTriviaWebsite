@@ -45,7 +45,7 @@ Additional browser coverage checks guest, member, and captain states in Romanian
 
 ## Calendar and language-toggle polish
 
-The selected language now uses the same metallic gold gradient as the site's gold buttons. Calendar entries show only a larger localized weekday and date, including holidays and special editions; speculative event titles, descriptions, edition-number badges, and repeated time/capacity labels were removed from individual rows. The shared time and venue remain in the calendar introduction. The current edition retains its visual highlight and an accessible current-date marker.
+The selected language now uses the same metallic gold gradient as the site's gold buttons. Calendar entries show a larger localized weekday and date, including holidays and special editions, with the edition number on the left and 20:00/team capacity on the right. Speculative event titles and descriptions were removed. Rows were shortened to an 80px minimum height, with time/capacity stacked on narrow screens. The shared time and venue remain in the calendar introduction. The current edition retains its visual highlight and an accessible current-date marker.
 
 Desktop/mobile browser checks cover both seasons, Romanian and English dates, absence of every schedule title/description, larger date typography, modal overflow, and the active language's gold gradient. Both seasons were reviewed in screenshots.
 

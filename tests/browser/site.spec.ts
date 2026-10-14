@@ -47,9 +47,14 @@ test('public sections, bilingual controls, calendar, responsive assets, and 404 
     for (const edition of schedule) {
       await expect(calendar.getByText(edition.theme, { exact: true })).toHaveCount(0);
       await expect(calendar.getByText(edition.description, { exact: true })).toHaveCount(0);
+      const row = calendar.locator('time').nth(edition.editionNumber - 1).locator('..');
+      await expect(row.getByText(`#${edition.editionNumber}`, { exact: true })).toBeAttached();
+      await expect(row.getByText('20:00', { exact: true })).toBeAttached();
+      await expect(row.getByText(`Max ${edition.maxTeams} Echipe`, { exact: true })).toBeAttached();
     }
-    expect(await calendar.locator('time').evaluateAll(nodes => nodes.every(node => parseFloat(getComputedStyle(node).fontSize) >= 30))).toBe(true);
+    expect(await calendar.locator('time').evaluateAll(nodes => nodes.every(node => parseFloat(getComputedStyle(node).fontSize) >= 24))).toBe(true);
     expect(await calendar.evaluate(node => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+    expect(await calendar.locator('time').evaluateAll(nodes => nodes.every(node => node.parentElement!.getBoundingClientRect().height < 96))).toBe(true);
     await calendar.screenshot({ path: `/private/tmp/trivia-calendar-${test.info().project.name}-season-${season}.png` });
   }
   await calendar.getByRole('button', { name: /^Sezonul 1:/ }).click();
