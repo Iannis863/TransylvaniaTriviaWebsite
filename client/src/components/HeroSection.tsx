@@ -293,7 +293,7 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
                       : "bg-purple-950/30 border-purple-800/40 hover:border-purple-600/50"
                   }`}
                 >
-                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-heading text-lg ${isCurrent ? "bg-amber-400 text-purple-950 font-bold" : "bg-purple-900/60 text-purple-200"}`}>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-heading text-lg font-bold text-purple-950 bg-[linear-gradient(135deg,#fce588_0%,#f6b828_40%,#d48b11_80%,#fbd46d_100%)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]">
                     #{ed.editionNumber}
                   </div>
                   <time dateTime={eventDate.toISOString()} className={`min-w-0 break-words font-heading text-2xl sm:text-3xl leading-tight tracking-wide ${isCurrent ? "text-amber-300" : "text-white"}`}>
