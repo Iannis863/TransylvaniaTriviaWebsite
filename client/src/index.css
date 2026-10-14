@@ -171,6 +171,12 @@
   }
 }
 
+/* Section navigation */
+#registration, #games, #leaderboard, #rulebook, #team, #prizes {
+  /* Keep section anchors below the floating header and aligned with its scroll indicator. */
+  scroll-margin-top: 100px;
+}
+
 /* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

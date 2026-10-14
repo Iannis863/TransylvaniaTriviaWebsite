@@ -41,7 +41,7 @@ const TimelineGame = lazy(() => import("./games/TimelineGame"));
 const ConnectionsGame = lazy(() => import("./games/ConnectionsGame"));
 const GlobleGame = lazy(() => import("./games/GlobleGame"));
 import { getWeeklyGameData } from "@/lib/weeklyGames";
-import { getCurrentWeekIndex, getEditionForWeek, getPuzzleWeekId } from "@/lib/weeklyEngine";
+import { getEditionForWeek, getPuzzleWeekId } from "@/lib/weeklyEngine";
 import { usePuzzleWeek } from "@/hooks/use-puzzle-week";
 import SecretClueModal from "./games/SecretClueModal";
 
@@ -110,11 +110,12 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
     const request = ++progressRequest.current;
     const version = progressVersion.current;
     try {
-      const res = await fetch(`/api/games/progress/${weekId}?teamId=${team.id}`);
+      const res = await fetch(`/api/games/progress/${weekId}?teamId=${team.id}`, { cache: "no-store" });
       if (!res.ok) throw new Error("Progress unavailable");
       {
         const data = await res.json();
         if (!mounted.current || request !== progressRequest.current || version !== progressVersion.current) return;
+        if (data.weekId !== weekId) throw new Error("Unexpected puzzle week");
         setProgressError(false);
         const map: Record<string, boolean> = {
           WORDLE: false,
@@ -145,7 +146,7 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
   }, [weekId, team?.id, isPreview]);
 
   const handleGameSolved = async (gameType: string, payloadData: any) => {
-    if (!mounted.current || (!isPreview && getCurrentWeekIndex() !== weekIndex) || isResetting || pendingSaves.current.has(gameType)) return;
+    if (!mounted.current || isResetting || pendingSaves.current.has(gameType)) return;
     setSolvedGames((prev) => ({ ...prev, [gameType]: true }));
 
     // Don't save to the backend if not logged in or not in a team
@@ -230,10 +231,10 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
   };
 
   const solvedCount = Object.values(solvedGames).filter(Boolean).length;
-  const allSolved = solvedCount === 5;
+  const allSolved = solvedCount === 5 && savingCount === 0;
   const clueQuery = useQuery<{ clue: string }>({
     queryKey: ["edition-clue", edition?.id, language],
-    enabled: allSolved && !!edition,
+    enabled: allSolved && savingCount === 0 && !!edition,
     queryFn: async () => {
       const response = await fetch(`/api/editions/${edition!.id}/clue?language=${language}`);
       if (!response.ok) throw new Error(t("Indiciul nu a putut fi încărcat."));
@@ -274,7 +275,7 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
         {isPreview && (
           <p className="mb-6 text-center text-sm text-amber-300">
              {t("Previzualizare: săptămâna")} {weekIndex}{t(". Progresul echipei nu este modificat.")}{" "}
-            <button className="underline" onClick={() => { localStorage.removeItem("admin_preview_week"); window.dispatchEvent(new Event("storage")); }}>
+            <button className="underline" onClick={() => { sessionStorage.removeItem("admin_preview_week"); window.dispatchEvent(new Event("storage")); }}>
                {t("Revino la săptămâna curentă")} </button>
           </p>
         )}

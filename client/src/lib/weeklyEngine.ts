@@ -5,7 +5,7 @@ export { EPOCH_START, getRealCurrentWeekIndex, getWeekDateRange, getPuzzleWeekId
 
 export function getPreviewWeekIndex(): number | null {
   try {
-    const value = localStorage.getItem("admin_preview_week");
+    const value = sessionStorage.getItem("admin_preview_week");
     if (value === null || !/^\d+$/.test(value)) return null;
     const index = Number(value);
     return Number.isSafeInteger(index) && index <= 10000 ? index : null;

@@ -1,3 +1,4 @@
+import type { LeaderboardIdentity, LeaderboardSeason } from "../shared/leaderboard.js";
 import { bookTeam, approveTeam } from "./booking.js";
 import { 
   type User, type InsertUser, 
@@ -6,7 +7,7 @@ import {
   type WeeklyPuzzleProgress, type InsertPuzzleProgress,
   type ThemeSuggestion, type InsertThemeSuggestion,
   type PasswordResetCode,
-  users, teams, registrations, weeklyPuzzleProgress, themeSuggestions, passwordResetCodes, adminCredentials
+  users, teams, registrations, weeklyPuzzleProgress, themeSuggestions, passwordResetCodes, adminCredentials, leaderboardIdentities, leaderboardSeasons
 } from "../shared/schema.js";
 import { getCurrentOrNextEdition } from "../shared/schedule.js";
 import { db, pool } from "./db.js";
@@ -19,6 +20,10 @@ export class DuplicateEmailError extends Error {
 }
 
 export interface IStorage {
+  getLeaderboardIdentities(): Promise<LeaderboardIdentity[]>;
+  getLeaderboardSeasons(): Promise<LeaderboardSeason[]>;
+  saveLeaderboardIdentity(identity: LeaderboardIdentity): Promise<void>;
+  saveLeaderboardSeason(season: LeaderboardSeason): Promise<void>;
   getAdminPasswordHash(): Promise<string | undefined>;
   setAdminPasswordHash(passwordHash: string): Promise<void>;
   withTeamMutation<T>(operation: (source: IStorage) => Promise<T>): Promise<T>;
@@ -92,6 +97,12 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  private leaderboardIdentities = new Map<string, LeaderboardIdentity>();
+  private leaderboardSeasons = new Map<string, LeaderboardSeason>();
+  async getLeaderboardIdentities() { return structuredClone(Array.from(this.leaderboardIdentities.values())); }
+  async getLeaderboardSeasons() { return structuredClone(Array.from(this.leaderboardSeasons.values())); }
+  async saveLeaderboardIdentity(identity: LeaderboardIdentity) { this.leaderboardIdentities.set(identity.id, structuredClone(identity)); }
+  async saveLeaderboardSeason(season: LeaderboardSeason) { this.leaderboardSeasons.set(season.id, structuredClone(season)); }
   private adminPasswordHash = INITIAL_ADMIN_PASSWORD_HASH;
   async getAdminPasswordHash() { return this.adminPasswordHash; }
   async setAdminPasswordHash(passwordHash: string) { this.adminPasswordHash = passwordHash; }
@@ -564,6 +575,7 @@ export class MemStorage implements IStorage {
   }
 
   async deleteTeam(id: string): Promise<boolean> {
+    this.leaderboardIdentities.forEach(identity => { if (identity.teamId === id) identity.teamId = null; });
     // Detach all members from this team
     this.users.forEach((user, uid) => {
       if (user.teamId === id) this.users.set(uid, { ...user, teamId: null, role: "MEMBER" });
@@ -654,6 +666,14 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  async getLeaderboardIdentities(): Promise<LeaderboardIdentity[]> { return this.database.select().from(leaderboardIdentities); }
+  async getLeaderboardSeasons(): Promise<LeaderboardSeason[]> { return this.database.select().from(leaderboardSeasons); }
+  async saveLeaderboardIdentity(identity: LeaderboardIdentity) {
+    await this.database.insert(leaderboardIdentities).values(identity).onConflictDoUpdate({ target: leaderboardIdentities.id, set: { name: identity.name, teamId: identity.teamId } });
+  }
+  async saveLeaderboardSeason(season: LeaderboardSeason) {
+    await this.database.insert(leaderboardSeasons).values(season).onConflictDoUpdate({ target: leaderboardSeasons.id, set: { data: season.data, updatedAt: season.updatedAt } });
+  }
   constructor(private database: any = db) {}
   async getAdminPasswordHash(): Promise<string | undefined> {
     const [credential] = await this.database.select({ passwordHash: adminCredentials.passwordHash })

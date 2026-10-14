@@ -1,3 +1,4 @@
+import LeaderboardSection from "@/components/LeaderboardSection";
 import { t, locale } from "@/lib/i18n";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -13,7 +14,7 @@ import PrizesSection from "@/components/PrizesSection";
 import FooterSection from "@/components/FooterSection";
 
 // Ordered list of section IDs matching the navbar links
-const SECTION_IDS = ["hero", "registration", "games", "rulebook", "team", "prizes"];
+const SECTION_IDS = ["hero", "registration", "games", "leaderboard", "rulebook", "team", "prizes"];
 
 export default function Home() {
   const { isLoading: isAuthLoading } = useAuth();
@@ -193,6 +194,8 @@ export default function Home() {
           theme={scheduleState.theme}
           secretClue={scheduleState.secretClue}
         />
+
+        <LeaderboardSection />
 
         {/* 5. Rulebook & Theme Validator */}
         <RulebookSection />

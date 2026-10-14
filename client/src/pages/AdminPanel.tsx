@@ -1,3 +1,4 @@
+import AdminLeaderboard from "@/components/AdminLeaderboard";
 import { locale } from "@/lib/i18n";
 import { t } from "@/lib/i18n";
 import AdminEmails from "@/components/AdminEmails";
@@ -93,11 +94,11 @@ export default function AdminPanel() {
   const [authError, setAuthError] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
-  const [activeTab, setActiveTab] = useState<"editions" | "teams" | "themes" | "users" | "simulator" | "emails">("editions");
+  const [activeTab, setActiveTab] = useState<"editions" | "teams" | "themes" | "users" | "simulator" | "emails" | "leaderboard">("editions");
 
   // Simulator state
   const [previewWeek, setPreviewWeek] = useState(
-    localStorage.getItem("admin_preview_week") || ""
+    sessionStorage.getItem("admin_preview_week") || ""
   );
 
   // Editions state
@@ -415,7 +416,7 @@ export default function AdminPanel() {
 
       {/* Tabs */}
       <div className="border-b border-purple-800/30 px-6 flex gap-1 pt-4 overflow-x-auto whitespace-nowrap">
-        {(["editions", "teams", "themes", "users", "emails", "simulator"] as const).map(tab => (
+        {(["editions", "teams", "leaderboard", "themes", "users", "emails", "simulator"] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -429,6 +430,8 @@ export default function AdminPanel() {
               <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />{t("Ediții")}</span>
             ) : tab === "teams" ? (
               <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />{t("Echipe")}</span>
+            ) : tab === "leaderboard" ? (
+              <span className="flex items-center gap-1.5"><Crown className="w-3.5 h-3.5" />{t("Clasament")}</span>
             ) : tab === "themes" ? (
               <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />{t("Teme Propuse")}</span>
             ) : tab === "users" ? (
@@ -440,7 +443,7 @@ export default function AdminPanel() {
             )}
           </button>
         ))}
-        {activeTab !== "emails" && activeTab !== "simulator" && <button
+        {activeTab !== "emails" && activeTab !== "simulator" && activeTab !== "leaderboard" && <button
           onClick={() => activeTab === "editions" ? loadEditions() : activeTab === "teams" ? loadTeams() : activeTab === "themes" ? loadThemes() : activeTab === "users" ? loadUsers() : undefined}
           className="ml-auto mb-1 flex items-center gap-1 text-purple-400 hover:text-white text-xs transition-colors"
         >
@@ -450,6 +453,7 @@ export default function AdminPanel() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-3">
 
         {activeTab === "emails" && <AdminEmails api={api} />}
+        {activeTab === "leaderboard" && <AdminLeaderboard api={api} password={password} />}
 
         {/* ── EDITIONS TAB ── */}
         {activeTab === "editions" && (
@@ -587,7 +591,7 @@ export default function AdminPanel() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-white">{team.name}</span>
                       <span className="text-[10px] font-mono text-amber-400/70 bg-amber-400/10 px-2 py-0.5 rounded">{team.inviteCode}</span>
-                      <span className="text-xs text-purple-300/60">⭐ {team.score}  {t("pct")}</span>
+
                     </div>
                     {team.tagline && <p className="text-xs text-purple-300/50 mt-0.5 italic">"{team.tagline}"</p>}
                     <div className="flex flex-wrap gap-1 mt-2">
@@ -601,7 +605,7 @@ export default function AdminPanel() {
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
-                      onClick={() => { setEditingTeam(team); setTeamDraft({ name: team.name, tagline: team.tagline ?? "", score: team.score }); }}
+                      onClick={() => { setEditingTeam(team); setTeamDraft({ name: team.name, tagline: team.tagline ?? "" }); }}
                       className="p-1.5 text-purple-400 hover:text-amber-400 transition-colors"
                       aria-label={t("Editează echipă")} title={t("Editează echipă")}
                     >
@@ -758,10 +762,10 @@ export default function AdminPanel() {
                   <button
                     onClick={() => {
                       if (previewWeek === "") {
-                        localStorage.removeItem("admin_preview_week");
+                        sessionStorage.removeItem("admin_preview_week");
                         window.location.href = "/";
                       } else {
-                        localStorage.setItem("admin_preview_week", previewWeek);
+                        sessionStorage.setItem("admin_preview_week", previewWeek);
                         window.location.href = "/";
                       }
                     }}
@@ -770,7 +774,7 @@ export default function AdminPanel() {
                      {t("Setează și Mergi la Jocuri")} </button>
                   <button
                     onClick={() => {
-                      localStorage.removeItem("admin_preview_week");
+                      sessionStorage.removeItem("admin_preview_week");
                       setPreviewWeek("");
                       setToast({ msg: t("Timpul a fost resetat la prezent."), ok: true });
                     }}
@@ -850,15 +854,7 @@ export default function AdminPanel() {
                 />
               </div>
             ))}
-            <div>
-              <label htmlFor="admin-team-score" className="text-xs text-purple-300/70 block mb-1">{t("Scor")}</label>
-              <input
-                id="admin-team-score" disabled={savingEdit} type="number" min={0}
-                value={teamDraft.score ?? 0}
-                onChange={e => setTeamDraft(d => ({ ...d, score: parseInt(e.target.value) }))}
-                className="w-28 bg-purple-950/60 border border-purple-700/50 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-amber-400/60 text-center"
-              />
-            </div>
+            <p className="text-xs text-purple-300/80">{t("Punctajele sunt administrate din fila Clasament.")}</p>
             <div className="flex gap-2 pt-2">
               <button disabled={savingEdit} onClick={saveTeam} className="flex-1 bg-amber-400 hover:bg-amber-300 text-purple-950 font-bold rounded-lg py-2 text-sm transition-colors flex items-center justify-center gap-1.5">
                 <Save className="w-3.5 h-3.5" />  {t("Salvează")} </button>

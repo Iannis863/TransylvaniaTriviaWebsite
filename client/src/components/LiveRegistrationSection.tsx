@@ -203,14 +203,14 @@ function RegistrationSectionForm({
             {user && team && team.leaderId === user.id && (
               <div className="p-2 rounded-[2rem] bg-gradient-to-r from-amber-500/20 via-purple-900/30 to-amber-500/10 ring-2 ring-amber-400/60 shadow-[0_0_35px_rgba(246,184,40,0.3)]">
                 <div className="p-6 rounded-[calc(2rem-0.5rem)] bg-[#0e041d] flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 text-left">
-                    <div className="w-12 h-12 rounded-2xl bg-amber-400 text-purple-950 flex items-center justify-center font-bold text-2xl shadow-md">
+                  <div className="flex min-w-0 w-full sm:flex-1 items-center gap-4 text-left">
+                    <div className="w-12 h-12 shrink-0 rounded-2xl bg-amber-400 text-purple-950 flex items-center justify-center font-bold text-2xl shadow-md">
                       👑
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-[10px] text-amber-300 font-bold uppercase tracking-wider">{t("Înscriere Rapidă Căpitan")}</div>
-                      <div className="font-heading text-2xl text-white mt-0.5">{team.name}</div>
-                      <div className="text-xs text-purple-300/80">
+                      <div className="break-words font-heading text-2xl text-white mt-0.5">{team.name}</div>
+                      <div className="break-words text-xs text-purple-300/80">
                          {t("Căpitan:")} {user.name} • {teamMembers.length || 4}  {t("membri în echipă")} </div>
                     </div>
                   </div>
@@ -218,7 +218,7 @@ function RegistrationSectionForm({
                   <Button
                     onClick={handleLeaderOneClickRegister}
                     disabled={isSubmitting}
-                    className="gold-btn h-auto min-h-12 whitespace-normal rounded-full px-6 py-4 font-heading tracking-widest text-base flex items-center gap-2 group w-full sm:w-auto justify-center"
+                    className="gold-btn h-auto min-h-12 whitespace-normal rounded-full px-6 py-4 font-heading tracking-widest text-base flex shrink-0 items-center gap-2 group w-full sm:w-auto sm:max-w-[45%] justify-center"
                   >
                     <Zap className="w-4 h-4 fill-purple-950 text-purple-950" />
                     <span>{isSubmitting ? t("SE PROCESEAZĂ...") : (isFull ? t("INTRĂ PE LISTA DE AȘTEPTARE") : t("1-CLICK ÎNSCRIERE ECHIPĂ"))}</span>

@@ -266,3 +266,18 @@ export const appSessions = pgTable("app_sessions", {
   sess: json("sess").notNull(),
   expire: timestamp("expire", { precision: 6 }).notNull(),
 }, table => [index("IDX_app_sessions_expire").on(table.expire)]);
+
+// Published results survive account/team deletion; the optional identity link is detached.
+export const leaderboardIdentities = pgTable("app_leaderboard_identities", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  nameKey: text("name_key").notNull().unique(),
+  teamId: varchar("team_id").references(() => teams.id, { onDelete: "set null" }),
+});
+export const leaderboardSeasons = pgTable("app_leaderboard_seasons", {
+  id: varchar("id").primaryKey(),
+  startYear: integer("start_year").notNull(),
+  number: integer("number").notNull(),
+  data: jsonb("data").$type<import("./leaderboard.js").LeaderboardSeasonData>().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});

@@ -88,19 +88,30 @@ test("weekly progress keys change during event breaks and across calendar years"
   assert.notEqual(getPuzzleWeekId(eventWeek), getPuzzleWeekId(eventWeek + 52));
 });
 
-test("invalid preview values do not choose nonexistent puzzles", () => {
+test("legacy persistent simulator settings cannot pin a player's week on a later visit", () => {
   const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
   try {
-    for (const value of ["", "-1", "NaN", "1.5", "1oops", "10001"]) {
-      Object.defineProperty(globalThis, "localStorage", { configurable: true, value: { getItem: () => value } });
-      assert.equal(getPreviewWeekIndex(), null);
-    }
     Object.defineProperty(globalThis, "localStorage", { configurable: true, value: { getItem: () => "4" } });
-    assert.equal(getPreviewWeekIndex(), 4);
-    assert.throws(() => getWeeklyGameData(-1), RangeError);
+    assert.equal(getPreviewWeekIndex(), null);
   } finally {
     if (original) Object.defineProperty(globalThis, "localStorage", original);
     else Reflect.deleteProperty(globalThis, "localStorage");
+  }
+});
+
+test("invalid preview values do not choose nonexistent puzzles", () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, "sessionStorage");
+  try {
+    for (const value of ["", "-1", "NaN", "1.5", "1oops", "10001"]) {
+      Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: { getItem: () => value } });
+      assert.equal(getPreviewWeekIndex(), null);
+    }
+    Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: { getItem: () => "4" } });
+    assert.equal(getPreviewWeekIndex(), 4);
+    assert.throws(() => getWeeklyGameData(-1), RangeError);
+  } finally {
+    if (original) Object.defineProperty(globalThis, "sessionStorage", original);
+    else Reflect.deleteProperty(globalThis, "sessionStorage");
   }
 });
 
@@ -125,6 +136,10 @@ test("API starts all five games fresh at midnight and rejects stale-week writes"
   };
   assert.equal((await request("/api/auth/login", "POST", { email: leader.email, password: "test-password" })).status, 200);
   const previousWeek = getPuzzleWeekId();
+  const initialClock = await request("/api/puzzles/week");
+  assert.equal(initialClock.status, 200);
+  assert.equal(initialClock.body.weekId, previousWeek);
+  assert.equal(initialClock.body.nextResetAt, "2026-09-22T21:00:00.000Z");
   await storage.savePuzzleProgress({ teamId: team.id, editionId: previousWeek, gameType: "SUDOKU", isSolved: true, solvedByUserId: leader.id });
   assert.equal((await request(`/api/games/progress/${previousWeek}`)).body.solvedCount, 0, "Historical Sudoku does not complete the replacement game");
   assert.equal((await request("/api/games/progress", "POST", { teamId: team.id, weekId: previousWeek, gameType: "TARGET", isSolved: true, data: { moves: [] } })).status, 400);
@@ -138,6 +153,10 @@ test("API starts all five games fresh at midnight and rejects stale-week writes"
   assert.equal((await notifications.listDeliveries()).filter(item => item.teamId === team.id && item.kind === "games-completed").length, 0);
   t.mock.timers.setTime(new Date("2026-09-22T21:00:00Z").getTime());
   const currentWeek = getPuzzleWeekId();
+  const nextClock = await request("/api/puzzles/week");
+  assert.equal(nextClock.body.weekId, currentWeek);
+  assert.equal(nextClock.body.weekIndex, initialClock.body.weekIndex + 1);
+  assert.equal((await request(`/api/games/progress/${previousWeek}`)).status, 409);
   const fresh = await request(`/api/games/progress/${currentWeek}`);
   assert.equal(fresh.status, 200);
   assert.equal(fresh.body.solvedCount, 0);

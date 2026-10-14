@@ -1,3 +1,4 @@
+import { registerLeaderboardRoutes } from "./leaderboard-routes.js";
 import { getPuzzleWeekId, getRealCurrentWeekIndex, getWeekDateRange } from "../shared/puzzle-week.js";
 import { bucharestParts } from "../shared/event-time.js";
 import { getTargetPuzzle, isTargetSolution } from "../shared/target-game.js";
@@ -53,6 +54,7 @@ export async function registerRoutes(
   app.use("/api/teams", requireUser);
   app.use("/api/games", requireUser);
   app.use("/api/auth/me", requireUser);
+  registerLeaderboardRoutes(app, checkAuth);
 
   app.post("/api/auth/logout", (req, res, next) => {
     req.session.destroy(error => {
@@ -547,6 +549,14 @@ export async function registerRoutes(
   // 5. WEEKLY PUZZLE PROGRESS ENDPOINTS
   // ==========================================
 
+  // The server clock controls the reset even when a player's device clock is wrong.
+  app.get("/api/puzzles/week", (_req, res) => {
+    const weekIndex = getRealCurrentWeekIndex();
+    const { nextResetAt } = getWeekDateRange(weekIndex);
+    res.set("Cache-Control", "no-store");
+    res.json({ weekIndex, weekId: getPuzzleWeekId(weekIndex), serverTime: new Date().toISOString(), nextResetAt: nextResetAt.toISOString() });
+  });
+
   // Get team progress for the current Wednesday–Tuesday puzzle week
   app.get("/api/games/progress/:weekId", async (req, res) => {
     try {
@@ -576,6 +586,7 @@ export async function registerRoutes(
         return eventDate >= startDate && eventDate <= endDate;
       });
 
+      res.set("Cache-Control", "no-store");
       res.json({
         teamId,
         weekId,

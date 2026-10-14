@@ -33,16 +33,39 @@ test('public sections, bilingual controls, calendar, responsive assets, and 404 
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('lang', 'ro');
+  await expect(page.getByRole('button', { name: 'Română', exact: true })).toHaveCSS('background-image', /linear-gradient/);
   await expect(page.locator('h1')).toContainText('QUIZ SĂPTĂMÂNAL');
   await noOverflow(page);
   for (const id of ['registration', 'games', 'rulebook', 'team', 'prizes']) await expect(page.locator(`#${id}`)).toBeAttached();
   await page.getByRole('button', { name: 'Calendar', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
+  const calendar = page.getByRole('dialog');
+  for (const season of [1, 2]) {
+    await calendar.getByRole('button', { name: new RegExp(`^Sezonul ${season}:`) }).click();
+    await expect(calendar.locator('time')).toHaveCount(15);
+    const schedule = (await import('../../shared/schedule')).getFullSchedule().filter(edition => edition.seasonNumber === season);
+    for (const edition of schedule) {
+      await expect(calendar.getByText(edition.theme, { exact: true })).toHaveCount(0);
+      await expect(calendar.getByText(edition.description, { exact: true })).toHaveCount(0);
+    }
+    expect(await calendar.locator('time').evaluateAll(nodes => nodes.every(node => parseFloat(getComputedStyle(node).fontSize) >= 30))).toBe(true);
+    expect(await calendar.evaluate(node => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+    await calendar.screenshot({ path: `/private/tmp/trivia-calendar-${test.info().project.name}-season-${season}.png` });
+  }
+  await calendar.getByRole('button', { name: /^Sezonul 1:/ }).click();
+  await expect(calendar.getByText('Marți, 27 octombrie', { exact: true })).toBeAttached();
+  await expect(calendar.getByText('Marți, 1 decembrie', { exact: true })).toBeAttached();
   await page.getByRole('dialog').getByRole('button', { name: /^(Close|Închide)$/ }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
   await page.getByRole('button', { name: 'English', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page.locator('h1')).toContainText('WEEKLY QUIZ');
+  await expect(page.getByRole('button', { name: 'English', exact: true })).toHaveCSS('background-image', /linear-gradient/);
+  await page.getByRole('button', { name: 'Calendar', exact: true }).click();
+  await expect(calendar.locator('time')).toHaveCount(15);
+  await expect(calendar.getByText('Tuesday 27 October', { exact: true })).toBeAttached();
+  expect(await calendar.evaluate(node => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+  await calendar.getByRole('button', { name: /^(Close|Închide)$/ }).click();
   await noOverflow(page);
   await page.locator('#prizes').scrollIntoViewIfNeeded();
   for (const image of await page.locator('#prizes img').all()) {
@@ -232,4 +255,114 @@ test('a failed lazy route offers a working page-reload recovery', async ({ page 
   await page.unroute('**/assets/AdminPanel-*.js');
   await page.getByRole('button', { name: 'Reîncarcă pagina', exact: true }).click();
   await expect(page.getByLabel('Parolă de Administrator', { exact: true })).toBeVisible();
+});
+
+test('leaderboard Excel preview, weekly updates, manual links, filters, ties, and bilingual tables', async ({ page }) => {
+  const { readFile } = await import('node:fs/promises');
+  const { default: ExcelJS } = await import('exceljs');
+  const makeWorkbook = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Overall Ranking');
+    sheet.addRow(['Numele echipei', 'Ediția 1', 'Ediția 2', 'Ediția 3', 'Scor Final']);
+    sheet.addRow(['Ciorbă cu Crutoane', 64.25, 1.5, null, 65.75]);
+    sheet.addRow(['5 Oameni Furioși', 63.5, 2.25, null, 65.75]);
+    sheet.addRow(['Zero participation', null, 0, null, 0]);
+    return Buffer.from(await workbook.xlsx.writeBuffer());
+  };
+  const registeredName = unique('LeaderboardLink');
+  const teamResponse = await page.request.post('/__test/team', { data: { name: registeredName } });
+  expect(teamResponse.status()).toBe(200);
+  const team = await teamResponse.json();
+  await page.goto('/admin');
+  await page.getByLabel('Parolă de Administrator', { exact: true }).fill('browser-test-admin');
+  await page.getByRole('button', { name: 'Autentifică-te', exact: true }).click();
+  await page.getByRole('button', { name: 'Clasament', exact: true }).click();
+  await page.getByLabel('Anul de început al sezonului', { exact: true }).fill('2026');
+  await page.getByLabel('Sezon', { exact: true }).selectOption('1');
+  const sample = await readFile('tests/fixtures/leaderboard-example.xlsx');
+  await page.getByLabel('Fișier Excel (.xlsx, maximum 2 MB)', { exact: true }).setInputFiles({ name: 'Grading Sheet Overall.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: sample });
+  await page.getByRole('button', { name: 'Previzualizează importul', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Previzualizare: 7 echipe · ediții 1', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Publică acest clasament', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Clasament publicat:' })).toBeVisible();
+  await page.getByLabel('Ciorbă cu Crutoane', { exact: true }).selectOption(team.id);
+  await expect(page.getByText('Asociere salvată.', { exact: true })).toBeVisible();
+  await page.getByLabel('Fișier Excel (.xlsx, maximum 2 MB)', { exact: true }).setInputFiles({ name: 'weekly-update.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: await makeWorkbook() });
+  await page.getByRole('button', { name: 'Previzualizează importul', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Previzualizare: 3 echipe · ediții 1, 2', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Publică acest clasament', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Clasament publicat:' })).toBeVisible();
+  await page.goto('/#leaderboard');
+  const leaderboard = page.locator('#leaderboard');
+  const first = leaderboard.getByRole('row').filter({ hasText: registeredName });
+  await expect(first).toContainText('65,75');
+  await expect(first).toContainText('Echipa ta');
+  await expect(page.locator('#team').getByText('65,75 Puncte', { exact: true })).toBeVisible();
+  await expect(first.getByRole('cell').first()).toHaveText('1');
+  const second = leaderboard.getByRole('row').filter({ hasText: '5 Oameni Furioși' });
+  await expect(second.getByRole('cell').first()).toHaveText('1');
+  await leaderboard.getByLabel('Sezon', { exact: true }).selectOption('2026-s1');
+  await leaderboard.getByLabel('Ediție', { exact: true }).selectOption('2');
+  await expect(first).toContainText('1,5');
+  await expect(second.getByRole('cell').first()).toHaveText('1');
+  await expect(first.getByRole('cell').first()).toHaveText('2');
+  await expect(leaderboard.getByLabel('Ediție', { exact: true }).locator('option')).toHaveCount(3);
+  await expect(leaderboard.getByRole('row').filter({ hasText: 'Zero participation' })).toContainText('0');
+  await leaderboard.screenshot({ path: `/private/tmp/leaderboard-${test.info().project.name}.png` });
+  await page.getByRole('button', { name: 'English', exact: true }).click();
+  await expect(leaderboard.getByRole('heading', { name: 'LEADERBOARD', exact: true })).toBeVisible();
+  await expect(first).toContainText('Your team');
+  await expect(first).toContainText('1.5');
+  await noOverflow(page);
+  if (test.info().project.name === 'desktop') {
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await noOverflow(page);
+  }
+});
+
+test('server clock resets completed games, changes puzzles, and clears unfinished guesses after midnight and tab resume', async ({ page }) => {
+  const { getRealCurrentWeekIndex, getPuzzleWeekId, getWeekDateRange } = await import('../../shared/puzzle-week');
+  const { getTargetPuzzle } = await import('../../shared/target-game');
+  const before = new Date('2026-10-13T20:59:55Z');
+  let serverTime = before;
+  const previousWeek = getPuzzleWeekId(getRealCurrentWeekIndex(before));
+  await page.clock.install({ time: before });
+  await page.route('**/api/puzzles/week', async route => {
+    const index = getRealCurrentWeekIndex(serverTime);
+    await route.fulfill({ json: { weekIndex: index, weekId: getPuzzleWeekId(index), serverTime: serverTime.toISOString(), nextResetAt: getWeekDateRange(index).nextResetAt.toISOString() } });
+  });
+  await page.route('**/api/games/progress/*', async route => {
+    const weekId = new URL(route.request().url()).pathname.split('/').pop();
+    await route.fulfill({ json: { weekId, games: Object.fromEntries(['WORDLE', 'TARGET', 'TIMELINE', 'CONNECTIONS', 'GLOBLE'].map(game => [game, { isSolved: weekId === previousWeek }])) } });
+  });
+  await page.addInitScript(() => localStorage.setItem('admin_preview_week', '4'));
+  const name = unique('Rollover');
+  expect((await page.request.post('/__test/team', { data: { name } })).status()).toBe(200);
+  await page.goto('/#games');
+  const games = page.locator('#games');
+  await expect(games.getByText('5 DIN 5 JOCURI COMPLETATE', { exact: true })).toBeVisible();
+  await games.getByRole('button', { name: /DESCHIDE PERGAMENTUL SECRET/ }).click();
+  await expect(page.getByRole('dialog').getByText('LACĂTUL ESTE DESCHIS', { exact: true })).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'AM REȚINUT SECRETUL', exact: true }).click();
+  await games.getByRole('tab', { name: 'Atinge Ținta', exact: true }).click();
+  const oldPuzzle = getTargetPuzzle(getRealCurrentWeekIndex(before));
+  await expect(games.getByText(String(oldPuzzle.target), { exact: true }).first()).toBeVisible();
+  serverTime = new Date('2026-10-13T21:00:01Z');
+  await page.clock.runFor(7000);
+  await expect(games.getByText('0 DIN 5 JOCURI COMPLETATE', { exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog')).toBeHidden();
+  await games.getByRole('tab', { name: 'Atinge Ținta', exact: true }).click();
+  const fresh = getTargetPuzzle(getRealCurrentWeekIndex(serverTime));
+  expect(fresh).not.toEqual(oldPuzzle);
+  await expect(games.getByText(String(fresh.target), { exact: true }).first()).toBeVisible();
+  await games.getByRole('tab', { name: 'Wordle', exact: true }).click();
+  await games.getByRole('button', { name: 'A', exact: true }).click();
+  await expect(games.getByRole('tabpanel').filter({ visible: true }).getByText('A', { exact: true })).toHaveCount(2);
+  // Simulate a sleeping tab/device waking a week later with a clock that still shows last week.
+  serverTime = new Date('2026-10-20T21:00:01Z');
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(games.getByText('0 DIN 5 JOCURI COMPLETATE', { exact: true })).toBeVisible();
+  await expect(games.getByRole('tabpanel').filter({ visible: true }).getByText('A', { exact: true })).toHaveCount(1);
+  await games.getByRole('button', { name: /VERIFICĂ STAREA LACĂTULUI/ }).click();
+  await expect(page.getByRole('dialog').getByText('LACĂTUL ESTE BLOCAT (0/5)', { exact: true })).toBeVisible();
 });

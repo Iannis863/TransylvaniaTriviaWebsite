@@ -1,7 +1,7 @@
 import { t, locale } from "@/lib/i18n";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { getCurrentOrNextEdition, getFullSchedule, type ActiveEditionState, type ScheduleEdition } from "@shared/schedule";
+import { getCurrentOrNextEdition, getFullSchedule, getEditionDateTime, type ActiveEditionState } from "@shared/schedule";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -281,41 +281,21 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
           <div className="space-y-2.5 mt-4">
             {(selectedSeasonTab === 1 ? season1Editions : season2Editions).map((ed) => {
               const isCurrent = ed.editionNumber === editionNumber && ed.seasonNumber === seasonNumber;
+              const eventDate = getEditionDateTime(ed);
+              const dateLabel = eventDate.toLocaleDateString(locale(), { timeZone: "Europe/Bucharest", weekday: "long", day: "numeric", month: "long" });
               return (
                 <div
                   key={ed.id}
-                  className={`p-3.5 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+                  aria-current={isCurrent ? "date" : undefined}
+                  className={`min-h-24 px-5 py-6 rounded-2xl border transition-colors flex items-center ${
                     isCurrent
                       ? "bg-amber-500/15 border-amber-400 shadow-[0_0_25px_rgba(246,184,40,0.25)]"
                       : "bg-purple-950/30 border-purple-800/40 hover:border-purple-600/50"
                   }`}
                 >
-                  <div className="flex items-center gap-3.5">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-heading text-lg ${
-                      isCurrent ? "bg-amber-400 text-purple-950 font-bold" : "bg-purple-900/60 text-purple-200"
-                    }`}>
-                      #{ed.editionNumber}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-white text-sm">
-                           {t("Marți,")} {ed.dayOfMonth} {t(ed.monthName)}
-                        </span>
-                        {isCurrent && (
-                          <Badge className="bg-amber-400 text-purple-950 text-[10px] font-bold">
-                             {t("EDIȚIA ACTIVĂ")} </Badge>
-                        )}
-                      </div>
-                      <div className="text-xs text-amber-300/90 mt-0.5">{t(ed.theme)}</div>
-                      <div className="text-[11px] text-purple-300/70">{t(ed.description)}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 self-end sm:self-center">
-                    <span className="text-xs text-purple-300/80 font-mono">20:00</span>
-                    <Badge variant="outline" className="border-purple-600/40 text-purple-300 text-[11px]">
-                      Max {ed.maxTeams}  {t("Echipe")} </Badge>
-                  </div>
+                  <time dateTime={eventDate.toISOString()} className={`font-heading text-3xl sm:text-4xl leading-tight tracking-wide ${isCurrent ? "text-amber-300" : "text-white"}`}>
+                    {dateLabel.charAt(0).toLocaleUpperCase(locale()) + dateLabel.slice(1)}
+                  </time>
                 </div>
               );
             })}

@@ -3,7 +3,7 @@ for (const key of ['DATABASE_URL', 'POSTGRES_URL', 'NEON_DATABASE_URL', 'POSTGRE
 process.env.NODE_ENV = 'test';
 const { default: express } = await import('express');
 const { createServer } = await import('node:http');
-const { setupSecurity, hashPassword } = await import('../server/security.ts');
+const { setupSecurity, hashPassword, establishSession } = await import('../server/security.ts');
 const { storage, MemStorage } = await import('../server/storage.ts');
 const { getCurrentOrNextEdition } = await import('../shared/schedule.ts');
 if (!(storage instanceof MemStorage)) throw new Error('Browser tests require in-memory storage');
@@ -12,11 +12,21 @@ const { registerRoutes } = await import('../server/routes.ts');
 const { serveStatic } = await import('../server/static.ts');
 const app = express();
 setupSecurity(app);
+// This loopback-only fixture server lets browser suites simulate separate clients.
+// Production proxy trust and rate limits remain governed by setupSecurity.
+app.set('trust proxy', 'loopback');
 app.use(express.json());
 const server = createServer(app);
 await registerRoutes(server, app);
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', database: 'memory' }));
 // Fixtures exist only in this test entry point, never in the production API.
+app.post('/__test/team', async (req, res) => {
+  const { randomUUID } = await import('node:crypto');
+  const user = await storage.createUser({ name: req.body.userName || 'Fixture Captain', email: `${randomUUID()}@example.test`, role: 'MEMBER' });
+  const team = req.body.withoutTeam ? null : await storage.createTeam({ name: req.body.name, leaderId: user.id, inviteCode: randomUUID().replaceAll('-', '').slice(0, 12) });
+  await establishSession(req, (await storage.getUser(user.id)));
+  res.json(team || { user });
+});
 app.post('/__test/reset-code', async (req, res) => {
   const user = await storage.getUserByEmail(req.body.email);
   if (!user) return res.sendStatus(404);

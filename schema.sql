@@ -192,3 +192,18 @@ ALTER TABLE app_email_deliveries ADD COLUMN IF NOT EXISTS user_id VARCHAR REFERE
 ALTER TABLE app_email_deliveries ADD COLUMN IF NOT EXISTS team_id VARCHAR REFERENCES app_teams(id) ON DELETE CASCADE;
 ALTER TABLE app_email_deliveries ADD COLUMN IF NOT EXISTS week_id TEXT;
 CREATE UNIQUE INDEX IF NOT EXISTS app_email_deliveries_scope_kind_email_key ON app_email_deliveries(scope_key, kind, email);
+
+-- Leaderboard history is independent of registrations and player accounts.
+CREATE TABLE IF NOT EXISTS app_leaderboard_identities (
+    id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    name_key TEXT NOT NULL UNIQUE,
+    team_id VARCHAR REFERENCES app_teams(id) ON DELETE SET NULL
+);
+CREATE TABLE IF NOT EXISTS app_leaderboard_seasons (
+    id VARCHAR PRIMARY KEY,
+    start_year INTEGER NOT NULL,
+    number INTEGER NOT NULL,
+    data JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

@@ -1,4 +1,5 @@
-import { t } from "@/lib/i18n";
+import { useLeaderboard } from "@/lib/leaderboard";
+import { t, locale } from "@/lib/i18n";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
@@ -41,6 +42,8 @@ import {
 
 export default function TeamDashboard() {
   const { user, team, teamMembers, refreshAuth } = useAuth();
+  const leaderboard = useLeaderboard(!!team);
+  const standing = leaderboard.data?.rows.find(row => row.teamId === team?.id);
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -243,8 +246,8 @@ export default function TeamDashboard() {
                 <div>
                   <div className="text-[10px] text-purple-300 uppercase tracking-wider font-bold">{t("Punctajul echipei")}</div>
                   <div className="text-base font-bold text-emerald-300 mt-0.5 font-mono">
-                    {team.score || 0}  {t("Puncte")} </div>
-                  <div className="text-xs text-purple-300 font-medium">{t("Sezonul I")}</div>
+                    {standing ? (standing.total / 100).toLocaleString(locale(), { maximumFractionDigits: 2 }) : "—"}  {t("Puncte")} </div>
+                  <a href="#leaderboard" className="text-xs text-purple-300 font-medium underline underline-offset-2">{t("General · toate sezoanele")}</a>
                 </div>
               </div>
 

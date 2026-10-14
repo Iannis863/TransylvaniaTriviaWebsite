@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import {
+  Trophy,
   Sparkles,
   Crown,
   Users,
@@ -25,6 +26,7 @@ const NAV_LINKS = [
   { id: "hero",         label: "Eveniment",       icon: Sparkles  },
   { id: "registration", label: "Înscrieri",        icon: Users     },
   { id: "games",        label: "Jocuri",           icon: Gamepad2  },
+  { id: "leaderboard",  label: "Clasament",        icon: Trophy    },
   { id: "rulebook",     label: "Regulament",       icon: BookOpen  },
   { id: "team",         label: "Echipa Mea",       icon: Crown     },
   { id: "prizes",       label: "Premii & Locație", icon: Crown     },
@@ -53,6 +55,7 @@ export default function Navbar({
 
   // ─── Refs ──────────────────────────────────────────────────────────────────
   const navRef       = useRef<HTMLElement>(null);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
   const buttonRefs   = useRef<(HTMLButtonElement | null)[]>([]);
   // Overlay span for each button — dark-colored duplicate, clipped to pill area
   const overlayRefs  = useRef<(HTMLSpanElement | null)[]>([]);
@@ -93,6 +96,24 @@ export default function Navbar({
     window.addEventListener("open-auth-modal", handleOpenAuth);
     return () => window.removeEventListener("open-auth-modal", handleOpenAuth);
   }, []);
+
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1280px)");
+    const closeOnDesktop = () => { if (desktop.matches) setMobileMenuOpen(false); };
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => desktop.removeEventListener("change", closeOnDesktop);
+  }, []);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setMobileMenuOpen(false);
+      menuToggleRef.current?.focus();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [mobileMenuOpen]);
 
   // ─── Per-character clip: update each overlay's clip-path every spring tick ─
   // For each button, the dark overlay is clipped to only the region where the
@@ -218,7 +239,7 @@ export default function Navbar({
       document.fonts.removeEventListener("loadingdone", measure);
       window.removeEventListener("resize", measure);
     };
-  }, [language, cacheButtonRects, cacheSectionTops, updatePillPosition]);
+  }, [language, user?.id, user?.name, team?.id, cacheButtonRects, cacheSectionTops, updatePillPosition]);
 
   // ─── Drive pill position from scroll ──────────────────────────────────────
   useMotionValueEvent(scrollY, "change", updatePillPosition);
@@ -239,24 +260,24 @@ export default function Navbar({
   return (
     <>
       <div className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 pointer-events-none">
-        <header className="pointer-events-auto w-fit mx-auto mt-3 sm:mt-5 rounded-full p-1.5 sm:p-2 bg-[#0c0317]/85 backdrop-blur-2xl ring-1 ring-amber-400/30 shadow-[0_15px_40px_rgba(0,0,0,0.85)] flex items-center gap-3 transition-all duration-300">
+        <header className="pointer-events-auto w-fit max-w-full mx-auto mt-3 sm:mt-5 rounded-full p-1.5 sm:p-2 bg-[#0c0317]/85 backdrop-blur-2xl ring-1 ring-amber-400/30 shadow-[0_15px_40px_rgba(0,0,0,0.85)] flex items-center gap-3">
 
           {/* Brand Mark */}
           <button
             type="button"
             onClick={() => onNavigate("hero")}
-            className="flex items-center gap-2.5 pl-2 sm:pl-3 text-left group flex-shrink-0"
+            className="flex min-w-0 max-w-[16rem] items-center gap-2.5 pl-2 sm:pl-3 text-left group"
           >
-            <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden p-0.5 ring-1 ring-amber-400/50 shadow-[0_0_15px_rgba(246,184,40,0.3)] group-hover:scale-105 transition-transform">
+            <div className="relative w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-full overflow-hidden p-0.5 ring-1 ring-amber-400/50 shadow-[0_0_15px_rgba(246,184,40,0.3)] group-hover:scale-105 transition-transform">
               <img src="/logo-main.webp" width={880} height={880} alt="Transilvania Trivia" className="w-full h-full object-cover rounded-full" />
             </div>
-            <div className="flex flex-col">
-              <span className="font-heading text-lg sm:text-xl text-gold-gradient tracking-widest leading-none drop-shadow">
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate font-heading text-lg sm:text-xl text-gold-gradient tracking-widest leading-none drop-shadow">
                 TRANSILVANIA TRIVIA
               </span>
               <span className="text-[10px] text-purple-300/80 font-medium tracking-wide flex items-center gap-1 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-ping motion-reduce:animate-none" />
-                {editionLabel}
+                <span className="w-1.5 h-1.5 shrink-0 rounded-full bg-emerald-400 inline-block animate-ping motion-reduce:animate-none" />
+                <span className="truncate">{editionLabel}</span>
               </span>
             </div>
           </button>
@@ -265,10 +286,11 @@ export default function Navbar({
           <nav
             ref={navRef}
             aria-label={t("Navigare principală")}
-            className="hidden lg:flex items-center gap-1 bg-purple-950/40 p-1 rounded-full border border-purple-800/40 relative"
+            className="hidden xl:flex shrink-0 items-center gap-1 bg-purple-950/40 p-1 rounded-full border border-purple-800/40 relative"
           >
             {/* The amber sliding background pill */}
             <motion.div
+              data-testid="navigation-highlight"
               className="absolute inset-y-1 rounded-full bg-amber-400 shadow-[0_0_15px_rgba(246,184,40,0.45)] pointer-events-none"
               aria-hidden="true"
               style={{ left: pillLeft, width: pillWidth, visibility: pillReady ? "visible" : "hidden" }}
@@ -279,10 +301,11 @@ export default function Navbar({
               return (
                 <button
                   key={link.id}
+                  data-section={link.id}
                   ref={(el) => { buttonRefs.current[i] = el; }}
                   onClick={() => onNavigate(link.id)}
                   aria-current={activeSection === link.id ? "location" : undefined}
-                  className="relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap"
+                  className="relative z-10 flex shrink-0 items-center gap-1.5 px-2 2xl:px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap"
                 >
                   {/* Base layer — always light/purple (visible in un-highlighted areas) */}
                   <Icon className="w-3.5 h-3.5 shrink-0 text-amber-400/80" />
@@ -293,7 +316,7 @@ export default function Navbar({
                   <span
                     ref={(el) => { overlayRefs.current[i] = el; }}
                     aria-hidden="true"
-                    className="absolute inset-0 flex items-center gap-1.5 px-3 text-xs font-medium text-purple-950 pointer-events-none overflow-hidden rounded-full"
+                    className="absolute inset-0 flex items-center gap-1.5 px-2 2xl:px-3 text-xs font-medium text-purple-950 pointer-events-none overflow-hidden rounded-full"
                     style={{ clipPath: "inset(0 100% 0 0)" }}
                   >
                     <Icon className="w-3.5 h-3.5 shrink-0 text-purple-950" />
@@ -305,17 +328,18 @@ export default function Navbar({
           </nav>
 
           {/* Right User / Auth Status (Desktop Only) */}
-          <div className="flex items-center gap-1 sm:gap-2 pr-1 sm:pr-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2 pr-1 sm:pr-2">
             {user ? (
-              <div className="hidden lg:flex items-center gap-1.5">
+              <div className="hidden xl:flex items-center gap-1.5">
                 {team && (
                   <button
                     onClick={copyInviteCode}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-900/50 border border-purple-600/40 hover:border-amber-400/60 text-[11px] font-mono transition-colors text-purple-200"
+                    className="flex shrink-0 items-center gap-1 px-2.5 py-1 rounded-full bg-purple-900/50 border border-purple-600/40 hover:border-amber-400/60 text-[11px] font-mono transition-colors text-purple-200"
                     title={t("Copiază codul de invitație pentru coechipieri")}
+                    aria-label={t("Copiază codul de invitație pentru coechipieri")}
                   >
-                    <span className="text-amber-400 font-bold">{t("Cod:")}</span>
-                    <span>{team.inviteCode}</span>
+                    <span className="hidden min-[1440px]:inline text-amber-400 font-bold">{t("Cod:")}</span>
+                    <span className="hidden min-[1440px]:inline">{team.inviteCode}</span>
                     {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-purple-400" />}
                   </button>
                 )}
@@ -324,11 +348,12 @@ export default function Navbar({
                   onClick={() => setLocation("/cont")}
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 cursor-pointer hover:bg-amber-500/20 transition-all"
                   title={t("Contul Meu")}
+                  aria-label={t("Contul Meu")}
                 >
                   <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-400 to-purple-600 flex items-center justify-center text-xs shadow">
                     {user.avatar || (user.role === "TEAM_LEADER" ? "👑" : "👤")}
                   </div>
-                  <span className="text-xs font-bold text-amber-300">
+                  <span className="max-w-24 truncate text-xs font-bold text-amber-300">
                     {user.name.split(" ")[0]}
                   </span>
                 </button>
@@ -344,7 +369,7 @@ export default function Navbar({
             ) : (
               <Button
                 onClick={() => setIsAuthOpen(true)}
-                className="hidden lg:flex gold-btn rounded-full text-xs font-heading tracking-wider px-4 py-1.5 h-8 items-center gap-1.5"
+                className="hidden xl:flex shrink-0 gold-btn rounded-full text-xs font-heading tracking-wider px-4 py-1.5 h-8 items-center gap-1.5"
               >
                 <LogIn className="w-3.5 h-3.5" />
                  {t("AUTENTIFICARE")} </Button>
@@ -352,11 +377,12 @@ export default function Navbar({
 
             {/* Mobile Menu Toggle (Always visible on mobile) */}
             <button
+              ref={menuToggleRef}
               onClick={() => setMobileMenuOpen((open) => !open)}
               aria-label={t(mobileMenuOpen ? "Închide meniul" : "Deschide meniul")}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-navigation"
-              className="lg:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-purple-900/60 border border-purple-700/50 text-purple-200 flex items-center justify-center shrink-0 hover:bg-purple-800/60 transition-colors"
+              className="xl:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-purple-900/60 border border-purple-700/50 text-purple-200 flex items-center justify-center shrink-0 hover:bg-purple-800/60 transition-colors"
             >
               {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
@@ -366,7 +392,7 @@ export default function Navbar({
 
         {/* Mobile Flyout Menu */}
         {mobileMenuOpen && (
-          <div id="mobile-navigation" className="lg:hidden pointer-events-auto max-w-sm mx-auto mt-2 rounded-3xl border border-purple-700/50 bg-[#0f041e]/95 backdrop-blur-2xl p-4 shadow-2xl animate-in slide-in-from-top-3 duration-200 motion-reduce:animate-none">
+          <div id="mobile-navigation" className="xl:hidden pointer-events-auto max-w-sm max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain mx-auto mt-2 rounded-3xl border border-purple-700/50 bg-[#0f041e]/95 backdrop-blur-2xl p-4 shadow-2xl animate-in slide-in-from-top-3 duration-200 motion-reduce:animate-none">
 
             {/* Mobile Auth / Profile Section */}
             {user ? (
@@ -378,13 +404,13 @@ export default function Navbar({
                       setLocation("/cont");
                       setMobileMenuOpen(false);
                     }}
-                    className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
+                    className="flex min-w-0 items-center gap-3 text-left hover:opacity-80 transition-opacity"
                   >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-purple-600 flex items-center justify-center text-lg shadow-inner ring-1 ring-amber-400/30">
+                    <div className="w-10 h-10 shrink-0 rounded-full bg-gradient-to-tr from-amber-400 to-purple-600 flex items-center justify-center text-lg shadow-inner ring-1 ring-amber-400/30">
                       {user.avatar || (user.role === "TEAM_LEADER" ? "👑" : "👤")}
                     </div>
-                    <div>
-                      <div className="text-sm font-bold text-white leading-tight">{user.name}</div>
+                    <div className="min-w-0">
+                      <div className="break-words text-sm font-bold text-white leading-tight">{user.name}</div>
                       <div className="text-[10px] text-amber-300 uppercase tracking-widest font-semibold mt-0.5">{user.role === "TEAM_LEADER" ? t("Căpitan") : t("Membru")}</div>
                     </div>
                   </button>
@@ -393,7 +419,7 @@ export default function Navbar({
                       logout();
                       setMobileMenuOpen(false);
                     }}
-                    className="p-2.5 rounded-xl text-purple-400 hover:text-red-400 bg-purple-900/40 border border-purple-700/40 transition-colors shadow-sm"
+                    className="shrink-0 p-2.5 rounded-xl text-purple-400 hover:text-red-400 bg-purple-900/40 border border-purple-700/40 transition-colors shadow-sm"
                     aria-label={t("Deconectare")}
                   >
                     <LogOut className="w-4 h-4" />
