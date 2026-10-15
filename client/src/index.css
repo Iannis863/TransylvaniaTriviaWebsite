@@ -3,14 +3,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* =========================================================
- * TRANSYLVANIA TRIVIA - MYSTICAL PURPLE & 3D GOLD LUXURY SYSTEM
- * Faithfully adapted from Logo.png (Purple Lightning Aura & 3D Gold Bevels)
- * ========================================================= */
+/* Transilvania Trivia theme; canonical artwork is in assets/source/. */
 
 :root {
   --radius: 0.5rem;
-  --spacing: 0.25rem;
 
   /* Deep Obsidian-Purple Backdrop */
   --background: 270 50% 3%;      /* #0a0412 */
@@ -28,9 +24,6 @@
   --secondary: 275 85% 62%;      /* #b04bf5 - Mystical Purple */
   --secondary-foreground: 0 0% 100%;
   
-  --gold-glow: 45 100% 70%;
-  --purple-glow: 280 90% 70%;
-
   /* UI Muted & Accents */
   --muted: 270 25% 12%;
   --muted-foreground: 270 15% 65%;
@@ -81,49 +74,6 @@
     background: linear-gradient(135deg, #fff2a3 0%, #f7c948 25%, #e0981a 50%, #fbd46d 75%, #bb740e 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-  }
-
-  /* Electric Violet Gradient Text */
-  .text-purple-gradient {
-    background: linear-gradient(135deg, #e9d5ff 0%, #c084fc 40%, #9333ea 70%, #6b21a8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  /* Intense Brand Glows */
-  .glow-gold {
-    text-shadow: 0 0 15px rgba(246, 184, 40, 0.7), 0 0 35px rgba(246, 184, 40, 0.35);
-  }
-
-  .glow-purple {
-    text-shadow: 0 0 15px rgba(168, 85, 247, 0.8), 0 0 35px rgba(147, 51, 234, 0.45);
-  }
-
-  .glow-gold-box {
-    box-shadow: 0 0 25px -5px rgba(246, 184, 40, 0.3), inset 0 0 15px rgba(246, 184, 40, 0.1);
-  }
-
-  .glow-purple-box {
-    box-shadow: 0 0 30px -5px rgba(168, 85, 247, 0.35), inset 0 0 20px rgba(147, 51, 234, 0.15);
-  }
-
-  .glass-panel {
-    background: rgba(19, 10, 33, 0.75);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(168, 85, 247, 0.2);
-  }
-
-  .gold-card {
-    background: linear-gradient(180deg, rgba(30, 16, 52, 0.8) 0%, rgba(17, 8, 30, 0.95) 100%);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(246, 184, 40, 0.25);
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7), 0 0 15px rgba(246, 184, 40, 0.08);
-  }
-
-  .gold-card:hover {
-    border-color: rgba(246, 184, 40, 0.5);
-    box-shadow: 0 12px 35px -8px rgba(0, 0, 0, 0.8), 0 0 25px rgba(246, 184, 40, 0.2);
   }
 
   .gold-btn {

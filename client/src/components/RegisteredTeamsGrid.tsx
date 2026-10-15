@@ -1,17 +1,8 @@
 import { locale } from "@/lib/i18n";
 import { t } from "@/lib/i18n";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import {
-  Users,
-  Crown,
-  Clock,
-  ShieldCheck,
-  Sparkles,
-  Flame,
-  AlertCircle
-} from "lucide-react";
+import { Users, Crown, ShieldCheck, Flame } from "lucide-react";
 
 export interface RegisteredTeamItem {
   id: string;

@@ -1,5 +1,7 @@
 # Project review and deployment notes
 
+> Historical implementation notes. Use the [current README](../README.md) for setup, configuration, component roles, and deployment behavior. In particular, later database-backed admin/session initialization supersedes the early environment-password instructions below. The [15 October cleanup audit](infrastructure-cleanup-2026-10-15.md) records current file/asset locations and verification.
+
 ## What the app does
 
 Transylvania Trivia is a Romanian trivia-event website. The React/Vite client provides the event calendar and countdown, guest registration, accounts and invite-based teams, five collaborative weekly puzzles, theme suggestions, and an administrator panel. Express exposes the API from `api/index.js`. Drizzle accesses PostgreSQL; development can use in-memory storage. `shared/schedule.ts` supplies the event schedule, and `client/src/lib/weeklyGames.ts` supplies puzzle content. Email uses Resend.

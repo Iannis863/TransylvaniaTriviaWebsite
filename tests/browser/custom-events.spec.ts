@@ -335,7 +335,7 @@ test('large logo originals are optimized automatically with transparency, center
   await dialog.getByLabel('Eveniment în colaborare', { exact: true }).check();
   await dialog.getByLabel('Nume colaborator', { exact: true }).fill('Colaborator cu siglă mare');
   const input = dialog.getByLabel('Logo colaborator (PNG)', { exact: true });
-  const largeFile = await readFile('client/public/logo-main.png');
+  const largeFile = await readFile('assets/source/logo-main.png');
   expect(largeFile.length).toBeGreaterThan(1024 * 1024);
   await input.setInputFiles({ name: 'large-original.png', mimeType: 'image/png', buffer: largeFile });
   const preview = dialog.getByTestId('custom-event-logo-preview');

@@ -15,14 +15,6 @@ export interface ScheduleEdition {
   maxTeams: number;
 }
 
-export interface SeasonInfo {
-  number: number;
-  name: string;
-  totalEditions: number;
-  months: string[];
-  editions: ScheduleEdition[];
-}
-
 // 1. Predefined Season 1 Schedule (15 Editions)
 // Oct: 6, 13, 20, 27 | Nov: 3, 10, 17, 24 | Dec: 1, 8, 15 | Jan: 5, 12, 19, 26
 export const SEASON_1_SCHEDULE: Omit<ScheduleEdition, "id">[] = [

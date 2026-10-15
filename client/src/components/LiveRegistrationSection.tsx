@@ -7,20 +7,10 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import TeamRegistrationStatus from "./TeamRegistrationStatus";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import {
-  Users,
-  Crown,
-  Sparkles,
-  CheckCircle2,
-  ShieldAlert,
-  Send,
-  Zap,
-  ArrowRight
-} from "lucide-react";
+import { Users, Crown, CheckCircle2, Zap, ArrowRight } from "lucide-react";
 
 const registrationSchema = z.object({
   teamName: z.string().trim().max(100).min(2, "Numele echipei trebuie să aibă cel puțin 2 caractere"),

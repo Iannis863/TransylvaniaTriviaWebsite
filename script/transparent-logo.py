@@ -1,5 +1,5 @@
 """Remove a black matte while retaining the supplied logo's gold/purple glow.
-Usage: python3 script/transparent-logo.py /path/to/original/Logo.png
+Usage: python3 script/transparent-logo.py assets/source/logo-original.png
 Requires Pillow. Never run on an already transparent output.
 """
 from pathlib import Path
@@ -16,6 +16,7 @@ for r, g, b in source.getdata():
     alpha = max(0.0, min(1.0, (brightness - 8) / 88))
     pixels.append((min(255, round(r / alpha)), min(255, round(g / alpha)), min(255, round(b / alpha)), round(alpha * 255)) if alpha else (0, 0, 0, 0))
 result.putdata(pixels)
-public = Path(__file__).resolve().parents[1] / "client" / "public"
-result.save(public / "logo-main.png", optimize=True)
+root = Path(__file__).resolve().parents[1]
+public = root / "client" / "public"
+result.save(root / "assets" / "source" / "logo-main.png", optimize=True)
 result.resize((368, 368), Image.Resampling.LANCZOS).save(public / "email-logo.png", optimize=True)

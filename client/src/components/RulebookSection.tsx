@@ -1,21 +1,8 @@
 import { t } from "@/lib/i18n";
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import {
-  BookOpen,
-  Sparkles,
-  Crown,
-  HelpCircle,
-  Flame,
-  Zap,
-  CheckCircle2,
-  Scale,
-  Trophy,
-  Layers,
-  ArrowRight
-} from "lucide-react";
+import { BookOpen, Zap, CheckCircle2, Trophy, Layers } from "lucide-react";
 import ThemeValidator from "./ThemeValidator";
 
 export default function RulebookSection() {

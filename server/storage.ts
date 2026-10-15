@@ -38,7 +38,6 @@ export interface IStorage {
   // User Operations
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, data: Partial<Pick<User, "name" | "email" | "phoneNumber" | "password">>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
@@ -71,11 +70,6 @@ export interface IStorage {
   deleteRegistration(id: string): Promise<boolean>;
   markReminderSent(id: string): Promise<void>;
 
-  // Legacy Team Registration methods
-  createTeamRegistration(registration: InsertRegistration): Promise<Registration>;
-  getTeamRegistrations(editionId?: string): Promise<Registration[]>;
-  deleteTeamRegistration(id: string): Promise<boolean>;
-
   // Weekly Mini-Games Progress
   getPuzzleProgress(teamId: string, editionId: string): Promise<WeeklyPuzzleProgress[]>;
   savePuzzleProgress(progress: InsertPuzzleProgress): Promise<WeeklyPuzzleProgress>;
@@ -100,7 +94,6 @@ export interface IStorage {
   resetUserPassword(email: string, code: string, passwordHash: string): Promise<boolean>;
   consumeResetCode(email: string, code: string): Promise<boolean>;
   getValidResetCode(email: string): Promise<PasswordResetCode | undefined>;
-  incrementResetCodeAttempts(id: string): Promise<void>;
   deleteResetCodes(email: string, issuedCode?: string): Promise<void>;
 }
 
@@ -307,10 +300,6 @@ export class MemStorage implements IStorage {
     );
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return this.getUserByEmail(username);
-  }
-
   async createUser(insertUser: InsertUser): Promise<User> {
     const email = insertUser.email.trim().toLowerCase();
     if (Array.from(this.users.values()).some(user => user.email.trim().toLowerCase() === email)) throw new DuplicateEmailError();
@@ -489,19 +478,6 @@ export class MemStorage implements IStorage {
     }
   }
 
-  // Legacy mappings
-  async createTeamRegistration(registration: InsertRegistration): Promise<Registration> {
-    return this.createRegistration(registration);
-  }
-
-  async getTeamRegistrations(editionId?: string): Promise<Registration[]> {
-    return this.getRegistrations(editionId);
-  }
-
-  async deleteTeamRegistration(id: string): Promise<boolean> {
-    return this.deleteRegistration(id);
-  }
-
   async getPuzzleProgress(teamId: string, editionId: string): Promise<WeeklyPuzzleProgress[]> {
     return Array.from(this.puzzleProgress.values()).filter(
       (p) => p.teamId === teamId && p.editionId === editionId
@@ -673,14 +649,6 @@ export class MemStorage implements IStorage {
     return true;
   }
 
-  async incrementResetCodeAttempts(id: string): Promise<void> {
-    this.resetCodes.forEach((entry, key) => {
-      if (entry.id === id) {
-        this.resetCodes.set(key, { ...entry, attempts: entry.attempts + 1 });
-      }
-    });
-  }
-
   async deleteResetCodes(email: string, issuedCode?: string): Promise<void> {
     const key = email.toLowerCase();
     if (!issuedCode || this.resetCodes.get(key)?.code === issuedCode) this.resetCodes.delete(key);
@@ -740,10 +708,6 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [result] = await this.database.select().from(users).where(sql`lower(trim(${users.email})) = ${email.trim().toLowerCase()}`);
     return result;
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return this.getUserByEmail(username);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -896,18 +860,6 @@ export class DatabaseStorage implements IStorage {
     await this.database.update(registrations).set({ reminderSent: true }).where(eq(registrations.id, id));
   }
 
-  async createTeamRegistration(registration: InsertRegistration): Promise<Registration> {
-    return this.createRegistration(registration);
-  }
-
-  async getTeamRegistrations(editionId?: string): Promise<Registration[]> {
-    return this.getRegistrations(editionId);
-  }
-
-  async deleteTeamRegistration(id: string): Promise<boolean> {
-    return this.deleteRegistration(id);
-  }
-
   async getPuzzleProgress(teamId: string, editionId: string): Promise<WeeklyPuzzleProgress[]> {
     return await this.database.select().from(weeklyPuzzleProgress).where(
       and(
@@ -1050,15 +1002,6 @@ export class DatabaseStorage implements IStorage {
       await tx.update(users).set({ password: passwordHash }).where(eq(users.id, user.id));
       return true;
     });
-  }
-
-  async incrementResetCodeAttempts(id: string): Promise<void> {
-    const entry = await this.database.select().from(passwordResetCodes).where(eq(passwordResetCodes.id, id));
-    if (entry.length > 0) {
-      await this.database.update(passwordResetCodes)
-        .set({ attempts: sql`${passwordResetCodes.attempts} + 1` })
-        .where(eq(passwordResetCodes.id, id));
-    }
   }
 
   async deleteResetCodes(email: string, issuedCode?: string): Promise<void> {

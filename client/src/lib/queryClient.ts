@@ -7,27 +7,6 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
-  method: string,
-  url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
-  // Ensure URL starts with a slash for Vercel routing
-  const fetchUrl = url.startsWith("/") ? url : `/${url}`;
-  
-  const res = await fetch(fetchUrl, {
-    method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    // Using "same-origin" is the high-society standard for Vercel deployments
-    // to avoid CORS "Pending" hangs.
-    credentials: "same-origin",
-  });
-
-  await throwIfResNotOk(res);
-  return res;
-}
-
 type UnauthorizedBehavior = "returnNull" | "throw";
 
 export const getQueryFn: <T>(options: {

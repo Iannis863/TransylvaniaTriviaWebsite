@@ -295,12 +295,6 @@ async function queryJService(
   theme: string
 ): Promise<TriviaSearchResult | null> {
   try {
-    const searchUrl =
-      `https://jservice.io/api/clues?` +
-      new URLSearchParams({
-        value: "200",   // common clue value
-      }).toString();
-
     // jService doesn't have a text search endpoint in its free tier,
     // so we search by category name instead
     const catSearchUrl =

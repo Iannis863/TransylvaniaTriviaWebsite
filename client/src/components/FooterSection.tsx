@@ -1,5 +1,5 @@
 import { t } from "@/lib/i18n";
-import { Sparkles, Heart, Wine, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 
 export default function FooterSection() {
   return (

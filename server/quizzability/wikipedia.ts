@@ -354,12 +354,6 @@ async function traverseCategory(
         ? directSubcategoryNames.slice(0, CATEGORY_PARAMS.maxSubcategoriesPerLevel)
         : [];
 
-      // For deeper levels, collect subcats from the members we just fetched
-      const memberSubcats: string[] = [];
-      // Re-fetch if needed — but we already counted them above
-      // We need the titles, which we collected for depth 0 in directSubcategoryNames
-      // For deeper levels, we need a different approach
-
       if (depth === 0) {
         const categoryPrefix = lang === "ro" ? "Categorie" : "Category";
         for (const name of subcatsToFollow) {

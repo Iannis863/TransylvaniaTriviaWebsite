@@ -3,23 +3,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Sparkles,
   Scroll,
-  Crown,
   ShieldCheck,
   Flame,
   Lock,
-  Unlock,
-  KeyRound,
-  AlertCircle,
-  CheckCircle2
+  Unlock
 } from "lucide-react";
 
 interface SecretClueModalProps {
   isOpen: boolean;
   onClose: () => void;
   secretClue: string;
-  theme: string;
   seasonNumber: number;
   editionNumber: number;
   solvedCount: number;
@@ -31,7 +25,6 @@ export default function SecretClueModal({
   isOpen,
   onClose,
   secretClue,
-  theme,
   seasonNumber,
   editionNumber,
   solvedCount,

@@ -3,27 +3,9 @@ import { useState, useEffect, useMemo, useRef, lazy, Suspense } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Gamepad2,
-  Sparkles,
-  Crown,
-  CheckCircle2,
-  Lock,
-  Unlock,
-  Scroll,
-  RotateCcw,
-  Calculator,
-  Compass,
-  ListOrdered,
-  Layers,
-  FileText,
-  HelpCircle,
-  AlertTriangle
-} from "lucide-react";
+import { Sparkles, Crown, CheckCircle2, Lock, Unlock, Scroll, RotateCcw, Calculator, Compass, ListOrdered, Layers, FileText, AlertTriangle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,22 +27,14 @@ import { getEditionForWeek, getPuzzleWeekId } from "@/lib/weeklyEngine";
 import { usePuzzleWeek } from "@/hooks/use-puzzle-week";
 import SecretClueModal from "./games/SecretClueModal";
 
-interface MiniGamesHubProps {
-  editionId: string;
-  seasonNumber: number;
-  editionNumber: number;
-  theme: string;
-  secretClue: string;
-}
-
-export default function MiniGamesHub(props: MiniGamesHubProps) {
+export default function MiniGamesHub() {
   const { user, team } = useAuth();
   const week = usePuzzleWeek();
   // Remount every game, its guesses, and its completion state together on a week/account change.
-  return <WeeklyGames key={`${week.weekIndex}:${week.isPreview}:${user?.id ?? "guest"}:${team?.id ?? "none"}`} {...props} {...week} />;
+  return <WeeklyGames key={`${week.weekIndex}:${week.isPreview}:${user?.id ?? "guest"}:${team?.id ?? "none"}`} {...week} />;
 }
 
-function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: number; isPreview: boolean }) {
+function WeeklyGames({ weekIndex, isPreview }: { weekIndex: number; isPreview: boolean }) {
   const { user, team } = useAuth();
   const { toast } = useToast();
   const [activeGameTab, setActiveGameTab] = useState("wordle");
@@ -498,7 +472,6 @@ function WeeklyGames({ weekIndex, isPreview }: MiniGamesHubProps & { weekIndex: 
         isOpen={isClueModalOpen}
         onClose={() => setIsClueModalOpen(false)}
         secretClue={clueQuery.data?.clue ? t(clueQuery.data.clue) : (clueQuery.isError ? t("Indiciul nu a putut fi încărcat. Reîncearcă în câteva momente.") : t("Se încarcă indiciul…"))}
-        theme="Runda 4"
         seasonNumber={edition?.seasonNumber ?? 0}
         editionNumber={edition?.editionNumber ?? 0}
         solvedCount={solvedCount}

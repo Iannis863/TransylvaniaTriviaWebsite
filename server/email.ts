@@ -90,7 +90,7 @@ function buildCustomEventEmail(kind: EmailKind, details: EventEmailDetails): Ema
   };
 }
 
-// The installed Resend SDK predates idempotency support; use the documented HTTP header.
+// Use Resend's HTTP API so each queued delivery can carry its idempotency key.
 export async function sendEmail(payload: EmailPayload, deliveryId?: string): Promise<EmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {

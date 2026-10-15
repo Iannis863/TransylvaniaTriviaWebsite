@@ -1,24 +1,10 @@
 import { t, locale } from "@/lib/i18n";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/lib/auth-context";
 import { getCurrentOrNextEdition, getFullSchedule, getEditionDateTime, type ActiveEditionState } from "@shared/schedule";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  Sparkles,
-  Users,
-  Trophy,
-  Flame,
-  ChevronRight,
-  CalendarDays,
-  CheckCircle2,
-  ArrowRight
-} from "lucide-react";
+import { Calendar, Clock, MapPin, Users, Flame, ChevronRight, CalendarDays, ArrowRight } from "lucide-react";
 
 interface HeroSectionProps {
   onRegisterClick: () => void;
@@ -27,7 +13,6 @@ interface HeroSectionProps {
 }
 
 export default function HeroSection({ onRegisterClick, registeredCount, maxTeams }: HeroSectionProps) {
-  const { user, team } = useAuth();
   const [scheduleState, setScheduleState] = useState<ActiveEditionState>(getCurrentOrNextEdition());
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedSeasonTab, setSelectedSeasonTab] = useState<1 | 2>(1);
@@ -41,10 +26,7 @@ export default function HeroSection({ onRegisterClick, registeredCount, maxTeams
   }, []);
 
   const {
-    currentEdition,
-    formattedDate,
     formattedTime,
-    seasonName,
     seasonNumber,
     editionNumber,
     theme,

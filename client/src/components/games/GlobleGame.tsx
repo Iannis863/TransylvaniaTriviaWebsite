@@ -2,7 +2,7 @@ import { countryCode } from "@/lib/country-code";
 import { t, getLanguage } from "@/lib/i18n";
 import { Component, type ReactNode, useState, useEffect, useRef, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Globe2, Compass } from "lucide-react";
+import { CheckCircle2, Globe2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -280,7 +280,7 @@ export default function GlobleGame({ weeklyData, onSolve, isAlreadySolved = fals
 
       {/* Guesses log */}
       <div className="w-full space-y-2 mb-4 max-h-48 overflow-y-auto custom-scrollbar pr-1">
-        {guesses.map((g, idx) => (
+        {guesses.map((g) => (
           <div key={g.properties.ISO_A3} className="w-full p-2.5 rounded-lg bg-purple-950/40 border border-purple-800/40 text-sm flex items-center justify-between shadow-inner">
             <span className="font-bold text-purple-200">{g.name}</span>
             <div className="flex items-center gap-3">

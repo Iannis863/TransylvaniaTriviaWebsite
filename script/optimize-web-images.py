@@ -1,18 +1,20 @@
-"""Encode the existing artwork for web delivery; keep source PNGs for email/artwork.
+"""Encode canonical PNGs from assets/source for web delivery.
 
 Requires Pillow with WebP support. Run from the repository root.
 """
 from pathlib import Path
 from PIL import Image
 
-PUBLIC = Path(__file__).resolve().parents[1] / "client" / "public"
+ROOT = Path(__file__).resolve().parents[1]
+SOURCE = ROOT / "assets" / "source"
+PUBLIC = ROOT / "client" / "public"
 for name, bounds in {
     "logo-main": (880, 880),
     "prize_beer": (480, 480),
     "prize_wine": (480, 480),
     "prize_shots": (480, 480),
 }.items():
-    source = PUBLIC / f"{name}.png"
+    source = SOURCE / f"{name}.png"
     target = PUBLIC / f"{name}.webp"
     with Image.open(source) as image:
         image.thumbnail(bounds, Image.Resampling.LANCZOS)

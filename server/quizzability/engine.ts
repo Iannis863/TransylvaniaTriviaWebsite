@@ -88,13 +88,6 @@ export async function scoreQuizzability(
     verifiability_flag: verifiabilityFlag,
   };
 
-  // ── Step 5: Weighted aggregation into a single score ──
-  const rawScore =
-    contentDepth * weights.content_depth +
-    factDensity * weights.fact_density +
-    triviaCoverage * weights.existing_trivia_coverage +
-    breadthAnalysis.score * weights.breadth_balance;
-
   // ── Step 5b: Consistency guard between signals ──
   // If content_depth or existing_trivia_coverage is high but fact_density
   // is near 0, this signals a fact-extraction scoping bug, not a genuinely

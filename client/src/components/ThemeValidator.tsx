@@ -2,22 +2,16 @@ import { t, translateFeedback } from "@/lib/i18n";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Sparkles,
-  CheckCircle2,
   AlertCircle,
-  HelpCircle,
   Send,
   Crown,
-  Flame,
-  ShieldAlert,
   SearchCheck,
-  Brain,
-  Gauge
+  Brain
 } from "lucide-react";
 
 interface ValidationResult {

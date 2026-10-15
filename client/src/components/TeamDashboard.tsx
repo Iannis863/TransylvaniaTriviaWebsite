@@ -5,22 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Users,
-  Crown,
-  Sparkles,
-  Copy,
-  Check,
-  Share2,
-  Trophy,
-  ShieldCheck,
-  Flame,
-  ArrowRight,
-  MoreHorizontal,
-  UserX,
-  ArrowUpCircle,
-  UserMinus
-} from "lucide-react";
+import { Users, Crown, Sparkles, Copy, Check, Share2, Trophy, MoreHorizontal, UserX, ArrowUpCircle } from "lucide-react";
 import AuthModal from "./AuthModal";
 import TeamRegistrationStatus from "./TeamRegistrationStatus";
 import {

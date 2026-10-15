@@ -7,7 +7,6 @@ import type { QuizzabilityWeights } from "./types.js";
 
 /**
  * Default sub-signal weights (must sum to 1.0).
- * Tuned against the calibration set — see calibration.ts.
  *
  * Rationale:
  * - content_depth (0.30): strong base signal — no content, no quiz.

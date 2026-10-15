@@ -1,19 +1,7 @@
 import { t } from "@/lib/i18n";
 import { CUSTOM_EVENT_DEFAULT_PRIZES, type CustomEventPrizes } from "@shared/custom-events";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Trophy,
-  Wine,
-  Beer,
-  GlassWater,
-  MapPin,
-  Clock,
-  Sparkles,
-  Crown,
-  Flame,
-  Award
-} from "lucide-react";
+import { Trophy, MapPin, Crown } from "lucide-react";
 
 export default function PrizesSection({ customEvent }: { customEvent?: { prizes: CustomEventPrizes } } = {}) {
   const eventPrizes = customEvent?.prizes ?? CUSTOM_EVENT_DEFAULT_PRIZES;
@@ -29,7 +17,6 @@ export default function PrizesSection({ customEvent }: { customEvent?: { prizes:
       borderColor: "ring-2 ring-amber-400/80 shadow-[0_0_35px_rgba(246,184,40,0.4)]",
       bgGradient: "from-amber-500/20 via-purple-900/20 to-[#0e041d]",
       glowClass: "drop-shadow-[0_0_10px_rgba(246,184,40,0.8)] border border-amber-300",
-      icon: Crown,
     },
     {
       place: t("LOCUL II"),
@@ -42,7 +29,6 @@ export default function PrizesSection({ customEvent }: { customEvent?: { prizes:
       borderColor: "ring-2 ring-gray-400/70 shadow-[0_0_30px_rgba(156,163,175,0.4)]",
       bgGradient: "from-gray-500/20 via-purple-900/15 to-[#0e041d]",
       glowClass: "drop-shadow-[0_0_10px_rgba(156,163,175,0.8)] border border-gray-200",
-      icon: Award,
     },
     {
       place: t("LOCUL III"),
@@ -55,7 +41,6 @@ export default function PrizesSection({ customEvent }: { customEvent?: { prizes:
       borderColor: "ring-2 ring-[#CD7F32]/70 shadow-[0_0_30px_rgba(205,127,50,0.4)]",
       bgGradient: "from-[#CD7F32]/20 via-purple-950/15 to-[#0e041d]",
       glowClass: "drop-shadow-[0_0_10px_rgba(205,127,50,0.8)] border border-[#CD7F32]",
-      icon: Trophy,
     },
   ];
 
@@ -77,7 +62,6 @@ export default function PrizesSection({ customEvent }: { customEvent?: { prizes:
         {/* Prizes Cards (Double-Bezel Architecture) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {prizes.map((p) => {
-            const Icon = p.icon;
             return (
               <div
                 key={p.place}

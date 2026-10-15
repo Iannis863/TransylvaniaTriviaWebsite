@@ -266,7 +266,7 @@ export default function AdminPanel() {
   };
 
   // ─── Registration actions ────────────────────────────────────────────────────
-  const deleteReg = async (id: string, editionId: string) => {
+  const deleteReg = async (id: string) => {
     setConfirmDialog({
       isOpen: true,
       title: t("Ștergi această înregistrare?"),
@@ -562,7 +562,7 @@ export default function AdminPanel() {
                                         <Edit2 className="w-3.5 h-3.5" />
                                       </button>
                                       <button
-                                        onClick={() => deleteReg(reg.id, ed.id)}
+                                        onClick={() => deleteReg(reg.id)}
                                         className="p-1 text-purple-400 hover:text-red-400 transition-colors"
                                         aria-label={t("Șterge")} title={t("Șterge")}
                                       >

@@ -4,7 +4,6 @@
 // ─────────────────────────────────────────────────────────────
 
 export { scoreQuizzability } from "./engine.js";
-export { runCalibration } from "./calibration.js";
 export { recognizeDomain } from "./domains.js";
 export type { DomainRecognition } from "./domains.js";
 export { DEFAULT_WEIGHTS, VERDICT_THRESHOLDS } from "./config.js";

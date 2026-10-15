@@ -6,6 +6,11 @@ vite.config.ts.*
 *.tar.gz
 .env
 .env.*
+!.env.example
 .env.local
 playwright-report
 test-results
+*.swp
+*.swo
+*.log
+*.tsbuildinfo
