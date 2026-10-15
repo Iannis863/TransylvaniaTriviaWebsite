@@ -43,7 +43,6 @@
     "react-globe.gl": "^2.38.0",
     "react-hook-form": "^7.55.0",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss-animate": "^1.0.7",
     "three": "^0.185.1",
     "wouter": "^3.3.5",
     "zod": "^3.24.2",
@@ -66,13 +65,13 @@
     "esbuild": "^0.25.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
+    "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.20.5",
     "typescript": "5.6.3",
     "vite": "^7.3.6",
     "word-list": "^4.1.0"
   },
   "allowScripts": {
-    "esbuild@0.18.20": true,
     "esbuild@0.25.12": true,
     "esbuild@0.28.2": true,
     "fsevents@2.3.3": true
@@ -81,6 +80,10 @@
     "node": ">=22.12.0"
   },
   "overrides": {
+    "@esbuild-kit/core-utils": {
+      "esbuild": "$esbuild"
+    },
+    "postcss-selector-parser": "7.1.6",
     "exceljs": {
       "uuid": "^11.1.1"
     }

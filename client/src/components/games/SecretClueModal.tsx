@@ -35,7 +35,7 @@ export default function SecretClueModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[560px] bg-[#0c0317] border-2 border-amber-400/80 text-foreground p-6 sm:p-8 rounded-[2.5rem] shadow-[0_0_80px_rgba(246,184,40,0.35)]">
+      <DialogContent className="sm:max-w-[560px] max-h-[90dvh] overflow-y-auto bg-[#0c0317] border-2 border-amber-400/80 text-foreground p-6 sm:p-8 rounded-[2.5rem] shadow-[0_0_80px_rgba(246,184,40,0.35)]">
 
         <DialogHeader className="text-center pb-2">
           <div className="flex justify-center mb-3">
@@ -77,7 +77,7 @@ export default function SecretClueModal({
               <div className="font-heading text-lg text-amber-400 flex items-center gap-2 mb-2">
                 <Scroll className="w-5 h-5 text-amber-400" />
                  {t("Indiciul Secret al Ediției:")} </div>
-              <p className="text-base text-purple-50 italic leading-relaxed font-serif font-medium">
+              <p className="[overflow-wrap:anywhere] text-base text-purple-50 italic leading-relaxed font-serif font-medium">
                 "{secretClue}"
               </p>
             </div>

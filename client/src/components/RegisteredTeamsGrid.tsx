@@ -92,15 +92,15 @@ export default function RegisteredTeamsGrid({
                 <div className="p-4 rounded-xl bg-[#110523] h-full flex flex-col justify-between">
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-[10px] font-bold text-amber-300 font-mono">
+                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                        <span className="w-6 h-6 shrink-0 rounded-full bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-[10px] font-bold text-amber-300 font-mono">
                           #{idx + 1}
                         </span>
-                        <h4 className="font-heading text-base text-white tracking-wide truncate max-w-[170px] group-hover:text-amber-300 transition-colors">
+                        <h4 className="min-w-0 font-heading text-base text-white tracking-wide truncate max-w-[170px] group-hover:text-amber-300 transition-colors">
                           {team.teamName}
                         </h4>
                       </div>
-                      <Badge className="bg-purple-900/60 border-purple-600/40 text-purple-200 text-[10px] px-2 py-0.5">
+                      <Badge className="shrink-0 bg-purple-900/60 border-purple-600/40 text-purple-200 text-[10px] px-2 py-0.5">
                         {team.memberCount} {team.memberCount === 1 ? t("membru") : t("membri")}
                       </Badge>
                     </div>

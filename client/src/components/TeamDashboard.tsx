@@ -179,7 +179,7 @@ export default function TeamDashboard() {
             {team.name.toUpperCase()}
           </h2>
           {team.tagline && (
-            <p className="text-purple-300/80 text-sm sm:text-base italic max-w-lg mx-auto mt-1 font-serif">
+            <p className="break-words text-purple-300/80 text-sm sm:text-base italic max-w-lg mx-auto mt-1 font-serif">
               "{team.tagline}"
             </p>
           )}

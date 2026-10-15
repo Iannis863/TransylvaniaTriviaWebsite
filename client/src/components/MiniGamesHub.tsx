@@ -260,8 +260,8 @@ function WeeklyGames({ weekIndex, isPreview }: { weekIndex: number; isPreview: b
 
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
 
-              <div className="flex items-center gap-4 text-left">
-                <div className={`w-16 h-16 rounded-2xl border-2 flex items-center justify-center text-2xl shadow-lg transition-all ${
+              <div className="flex w-full min-w-0 items-center gap-4 text-left md:flex-1">
+                <div className={`w-16 h-16 shrink-0 rounded-2xl border-2 flex items-center justify-center text-2xl shadow-lg transition-all ${
                   allSolved
                     ? "bg-amber-400 border-amber-200 text-purple-950 shadow-[0_0_25px_rgba(246,184,40,0.5)] animate-pulse"
                     : "bg-purple-950/90 border-purple-600/50 text-amber-300"
@@ -269,8 +269,8 @@ function WeeklyGames({ weekIndex, isPreview }: { weekIndex: number; isPreview: b
                   {allSolved ? <Crown className="w-8 h-8 text-purple-950" /> : <Scroll className="w-8 h-8 text-amber-400" />}
                 </div>
 
-                <div>
-                  <div className="text-[11px] uppercase tracking-wider font-bold text-purple-300">
+                <div className="min-w-0">
+                  <div className="break-words text-[11px] uppercase tracking-wider font-bold text-purple-300">
                      {t("Progres Comun:")} <strong className="text-amber-300">{team ? team.name : t("Echipa Ta")}</strong>
                   </div>
                   <div className="font-heading text-2xl sm:text-3xl text-white mt-0.5">

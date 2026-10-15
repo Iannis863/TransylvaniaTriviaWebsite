@@ -193,8 +193,8 @@ export default function Account() {
             <TeamRegistrationStatus />
             {team ? (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-950 rounded-lg border border-gray-800 gap-4">
-                <div>
-                  <p className="font-medium">{team.name}</p>
+                <div className="min-w-0">
+                  <p className="break-words font-medium">{team.name}</p>
                   <p className="text-sm text-gray-400">
                      {t("Rol:")} {user.role === "TEAM_LEADER" ? t("Căpitan") : t("Membru")}
                   </p>
@@ -285,8 +285,8 @@ export default function Account() {
                         </AlertDialogContent>
                       </AlertDialog>
                     )}
-                    <div className="pr-6">
-                      <p className="font-medium">{theme.themeName}</p>
+                    <div className="min-w-0 pr-6">
+                      <p className="break-words font-medium">{theme.themeName}</p>
                       <p className="text-xs text-gray-400 mt-1">
                          {t("Scor:")} <strong className="text-amber-400">{theme.popularityScore}</strong> {theme.createdAt ? `• ${new Date(theme.createdAt).toLocaleDateString(locale())}` : ""}
                       </p>

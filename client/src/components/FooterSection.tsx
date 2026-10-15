@@ -4,18 +4,18 @@ import { MapPin } from "lucide-react";
 export default function FooterSection() {
   return (
     <footer className="border-t border-purple-900/40 bg-[#06010b] text-foreground py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
+      <div className="max-w-6xl mx-auto flex flex-col xl:flex-row items-center justify-between gap-8">
 
         {/* Brand Column */}
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-full overflow-hidden p-0.5 ring-1 ring-amber-400/40 shadow">
+        <div className="flex min-w-0 max-w-full items-center gap-3.5">
+          <div className="w-12 h-12 shrink-0 rounded-full overflow-hidden p-0.5 ring-1 ring-amber-400/40 shadow">
             <img src="/logo-main.webp" width={880} height={880} loading="lazy" decoding="async" alt="Transilvania Trivia" className="w-full h-full object-cover" />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="font-heading text-2xl text-gold-gradient tracking-widest leading-none">
               TRANSILVANIA TRIVIA
             </div>
-            <div className="text-[10px] sm:text-xs text-purple-300/70 mt-1 flex items-center gap-1.5 whitespace-nowrap">
+            <div className="text-[10px] sm:text-xs text-purple-300/70 mt-1 flex items-start gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
               <span>{t("Insomnia Cafe & Bistro • Str. Universității nr. 2, Cluj-Napoca")}</span>
             </div>
@@ -32,9 +32,9 @@ export default function FooterSection() {
         </div>
 
         {/* Copyright */}
-        <div className="text-xs text-purple-400/60 text-center md:text-right flex flex-col items-center md:items-end">
-          <div className="whitespace-nowrap">© {new Date().getFullYear()}  {t("Transilvania Trivia. Toate drepturile rezervate.")}</div>
-          <div className="text-[11px] text-purple-400/40 mt-1 whitespace-nowrap">
+        <div className="max-w-full text-xs text-purple-400/60 text-center xl:text-right flex flex-col items-center xl:items-end">
+          <div>© {new Date().getFullYear()}  {t("Transilvania Trivia. Toate drepturile rezervate.")}</div>
+          <div className="text-[11px] text-purple-400/40 mt-1">
              {t("Creat cu pasiune pentru cultură și distracție.")} </div>
         </div>
 

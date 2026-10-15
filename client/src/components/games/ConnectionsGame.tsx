@@ -118,7 +118,7 @@ export default function ConnectionsGame({ weeklyData, onSolve, isAlreadySolved =
   return (
     <div className="flex flex-col items-center max-w-md mx-auto">
       <div className="text-center mb-4">
-        <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/40 text-xs mb-1">
+        <Badge className="max-w-full whitespace-normal bg-amber-500/20 text-amber-300 border-amber-400/40 text-xs mb-1">
            {t("Conexiuni Trivia (4 Categorii x 4 Cuvinte)")} </Badge>
         <p className="text-xs text-purple-300/80">{t("Selectează 4 cuvinte care aparțin aceleiași categorii. (Încercări nelimitate)")}</p>
       </div>
@@ -153,7 +153,7 @@ export default function ConnectionsGame({ weeklyData, onSolve, isAlreadySolved =
                     : "bg-purple-950/60 border-purple-700/50 text-purple-200 hover:bg-purple-900/40 hover:border-amber-400/50"
                 }`}
               >
-                {word}
+                <span className="min-w-0 [overflow-wrap:anywhere]">{word}</span>
               </button>
             );
           })}

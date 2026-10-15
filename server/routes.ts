@@ -183,17 +183,22 @@ export async function registerRoutes(
       const eventDate = getEditionDateTime(edition);
       if (eventDate <= new Date()) return res.status(400).json({ message: "Înscrierile pentru această ediție s-au închis" });
       data.eventDate = eventDate;
+      const capacity = await storage.getEditionCapacityOverride(data.editionId) ?? edition.maxTeams;
+      let registration;
       if (data.teamId) {
         await requireUser(req, res, (error?: unknown) => { if (error) throw error; });
         if (res.headersSent) return;
-        const team = await storage.getTeam(data.teamId);
-        if (!team || team.leaderId !== req.session.userId) return res.status(403).json({ message: "Doar căpitanul poate înscrie echipa" });
-        data.teamName = team.name;
-        data.captainName = res.locals.user.name;
-        data.email = res.locals.user.email;
+        // Keep ownership validation and booking under the same lock used by
+        // leadership transfers and account/team deletion.
+        registration = await storage.withTeamMutation(async source => {
+          const team = await source.getTeam(data.teamId!);
+          const captain = req.session.userId ? await source.getUser(req.session.userId) : undefined;
+          if (!team || !captain || team.leaderId !== captain.id) throw new TeamError(403, "Doar căpitanul poate înscrie echipa");
+          return source.createRegistrationWithinCapacity({ ...data, teamName: team.name, captainName: captain.name, email: captain.email }, capacity);
+        });
+      } else {
+        registration = await storage.createRegistrationWithinCapacity(data, capacity);
       }
-      const capacity = await storage.getEditionCapacityOverride(data.editionId) ?? edition.maxTeams;
-      const registration = await storage.createRegistrationWithinCapacity(data, capacity);
       
       let emailStatus = "pending";
       try {
@@ -212,6 +217,7 @@ export async function registerRoutes(
       res.status(201).json({ ...registration, emailStatus });
     } catch (error) {
       if (error instanceof ZodError) return res.status(400).json({ message: fromZodError(error).message });
+      if (error instanceof TeamError) return res.status(error.status).json({ message: error.message });
       if (error instanceof Error && (error.message === "EDITION_FULL" || error.message === "DUPLICATE_REGISTRATION")) return res.status(409).json({ message: error.message === "EDITION_FULL" ? "Toate locurile sunt ocupate" : "Echipa este deja înscrisă" });
       console.error("Registration error:", error);
       res.status(500).json({ message: "Eroare la înregistrarea echipei" });

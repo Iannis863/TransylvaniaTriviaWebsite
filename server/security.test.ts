@@ -114,3 +114,49 @@ test("a legacy password upgrade cannot overwrite a simultaneous password reset",
   assert.equal(await source.upgradeLegacyPassword(user.id, "old-password", await hashPassword("old-password")), undefined);
   assert.equal((await source.getUser(user.id))?.password, resetHash);
 });
+
+test("regular registrations recheck captain ownership after a concurrent leadership transfer", async t => {
+  assert.equal(process.env.DATABASE_URL, undefined);
+  const app = express();
+  setupSecurity(app);
+  app.use(express.json());
+  const server = createServer(app);
+  await registerRoutes(server, app);
+  await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => { server.closeAllConnections(); server.close(); });
+  const base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+  const request = async (path: string, body: unknown, cookie?: string) => {
+    const response = await fetch(base + path, {
+      method: "POST", headers: { "Content-Type": "application/json", ...(cookie ? { cookie } : {}) },
+      body: JSON.stringify(body),
+    });
+    return { status: response.status, body: await response.json(), cookie: response.headers.get("set-cookie")?.split(";")[0] };
+  };
+  const captain = await request("/api/auth/register", { name: "Original Captain", email: "original-captain@race.example", password: "secret123" });
+  const successor = await request("/api/auth/register", { name: "New Captain", email: "new-captain@race.example", password: "secret123" });
+  const team = await request("/api/teams", { name: "Captain Race Team" }, captain.cookie);
+  assert.equal((await request("/api/teams/join", { inviteCode: team.body.inviteCode }, successor.cookie)).status, 200);
+  const data = { editionId: getCurrentOrNextEdition().currentEdition.id, teamId: team.body.id, teamName: team.body.name, captainName: "Forged Captain", email: "forged@race.example", memberCount: 2 };
+
+  const originalMutation = storage.withTeamMutation.bind(storage);
+  let entered!: () => void;
+  const queued = new Promise<void>(resolve => { entered = resolve; });
+  const waitingMutation = t.mock.method(storage, "withTeamMutation", async operation => { entered(); return originalMutation(operation); });
+  let formerCaptainAttempt!: ReturnType<typeof request>;
+  await originalMutation(async source => {
+    formerCaptainAttempt = request("/api/registrations", data, captain.cookie);
+    // An unprotected route completes while the transfer is still in progress;
+    // a protected route queues behind it and sees the new captain afterward.
+    await Promise.race([queued, formerCaptainAttempt]);
+    await source.updateUserTeam(captain.body.id, team.body.id, "MEMBER");
+    await source.updateUserTeam(successor.body.id, team.body.id, "TEAM_LEADER");
+    await source.updateTeam(team.body.id, { leaderId: successor.body.id });
+  });
+  waitingMutation.mock.restore();
+  assert.equal((await formerCaptainAttempt).status, 403);
+  assert.equal((await storage.getRegistrations(data.editionId)).some(item => item.teamId === team.body.id), false);
+  const approved = await request("/api/registrations", data, successor.cookie);
+  assert.equal(approved.status, 201);
+  assert.equal(approved.body.captainName, "New Captain");
+  assert.equal(approved.body.email, "new-captain@race.example");
+});
