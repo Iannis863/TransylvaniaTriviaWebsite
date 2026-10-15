@@ -1,9 +1,10 @@
 import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
 import type { CustomEventInput } from '../../shared/custom-events';
-import { deflateSync } from 'node:zlib';
+import { createDeflate, deflateSync } from 'node:zlib';
+import { Readable } from 'node:stream';
 import { pngCrc32 } from '../../server/custom-event-logo';
 
-function pngFromRows(width: number, height: number, rows: Buffer) {
+function pngFromCompressedRows(width: number, height: number, compressed: Buffer) {
   const chunk = (type: string, bytes: Buffer) => {
     const result = Buffer.alloc(bytes.length + 12);
     result.writeUInt32BE(bytes.length); result.write(type, 4); bytes.copy(result, 8);
@@ -12,7 +13,25 @@ function pngFromRows(width: number, height: number, rows: Buffer) {
   };
   const header = Buffer.alloc(13);
   header.writeUInt32BE(width); header.writeUInt32BE(height, 4); header[8] = 8; header[9] = 6;
-  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', header), chunk('IDAT', deflateSync(rows)), chunk('IEND', Buffer.alloc(0))]);
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', header), chunk('IDAT', compressed), chunk('IEND', Buffer.alloc(0))]);
+}
+function pngFromRows(width: number, height: number, rows: Buffer) {
+  return pngFromCompressedRows(width, height, deflateSync(rows));
+}
+let hugeLogoFixture: Promise<Buffer> | undefined;
+function hugeLogoPng() {
+  return hugeLogoFixture ??= (async () => {
+    const size = 10660, inset = 1800;
+    const emptyRow = Buffer.alloc(size * 4 + 1), artworkRow = Buffer.alloc(size * 4 + 1);
+    for (let x = inset; x < size - inset; x++) artworkRow.writeUInt32BE(0x22aa77ff, 1 + x * 4);
+    // Reuse two immutable rows and stream zlib input rather than allocate a 454 MB raster.
+    const rows = Readable.from((function* () {
+      for (let y = 0; y < size; y++) yield y < inset || y >= size - inset ? emptyRow : artworkRow;
+    })());
+    const chunks: Buffer[] = [];
+    for await (const chunk of rows.pipe(createDeflate())) chunks.push(chunk as Buffer);
+    return pngFromCompressedRows(size, size, Buffer.concat(chunks));
+  })();
 }
 function paddedWordmarkPng() {
   const width = 5000, height = 2000;
@@ -411,4 +430,102 @@ test('detailed images fit automatically, invalid artwork stays unsaved, and canc
   expect(small.readUInt32BE(16)).toBeLessThanOrEqual(64);
   expect(small.readUInt32BE(16)).toBe(small.readUInt32BE(20));
   await expect(dialog.getByRole('alert')).toHaveCount(0);
+});
+
+async function openLogoEditor(page: Page, address: string) {
+  await page.route('**/api/**', route => route.continue({ headers: { ...route.request().headers(), 'x-forwarded-for': address } }));
+  await page.goto('/admin');
+  await page.getByLabel('Parolă de Administrator', { exact: true }).fill('browser-test-admin');
+  await page.getByRole('button', { name: 'Autentifică-te', exact: true }).click();
+  await page.getByRole('button', { name: 'Evenimente speciale', exact: true }).click();
+  await page.getByRole('button', { name: 'Creează eveniment', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Eveniment în colaborare', { exact: true }).check();
+  return dialog;
+}
+
+test('10660 pixel originals use a bounded working bitmap and preserve transparent artwork', async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = window.createImageBitmap.bind(window);
+    const requests: { sourceWidth: number; sourceHeight: number; resizeWidth?: number; resizeHeight?: number; resizeQuality?: string; outputWidth: number; outputHeight: number }[] = [];
+    (window as unknown as Record<string, unknown>).__logoRequests = requests;
+    window.createImageBitmap = (async (...args: unknown[]) => {
+      const bitmap = await Reflect.apply(original, window, args) as ImageBitmap;
+      if (args[0] instanceof Blob) {
+        const header = new DataView(await args[0].slice(0, 24).arrayBuffer());
+        const options = args[1] as ImageBitmapOptions | undefined;
+        requests.push({ sourceWidth: header.getUint32(16), sourceHeight: header.getUint32(20),
+          resizeWidth: options?.resizeWidth, resizeHeight: options?.resizeHeight, resizeQuality: options?.resizeQuality,
+          outputWidth: bitmap.width, outputHeight: bitmap.height });
+      }
+      return bitmap;
+    }) as typeof window.createImageBitmap;
+  });
+  const dialog = await openLogoEditor(page, '192.0.2.46');
+  const source = await hugeLogoPng();
+  expect(source.readUInt32BE(16)).toBe(10660);
+  expect(source.readUInt32BE(20)).toBe(10660);
+  await dialog.getByLabel('Logo colaborator (PNG)', { exact: true }).setInputFiles({ name: 'collaborator-10660.png', mimeType: 'image/png', buffer: source });
+  const preview = dialog.getByTestId('custom-event-logo-preview');
+  await expect(preview).toHaveAttribute('src', /^data:image\/png;base64,/, { timeout: 20000 });
+  await expect(dialog.getByRole('button', { name: 'Salvează evenimentul', exact: true })).toBeEnabled();
+  await expect(dialog.getByRole('alert')).toHaveCount(0);
+  const requests = await page.evaluate(() => (window as unknown as Record<string, unknown>).__logoRequests);
+  expect(requests).toEqual([{ sourceWidth: 10660, sourceHeight: 10660, resizeWidth: 2048, resizeHeight: 2048, resizeQuality: 'high', outputWidth: 2048, outputHeight: 2048 }]);
+  const prepared = Buffer.from((await preview.getAttribute('src'))!.split(',')[1], 'base64');
+  expect(prepared.length).toBeLessThanOrEqual(1024 * 1024);
+  expect(prepared.readUInt32BE(16)).toBe(prepared.readUInt32BE(20));
+  expect(prepared.readUInt32BE(16)).toBeLessThanOrEqual(1024);
+  const pixels = await preview.evaluate(async (image: HTMLImageElement) => {
+    await image.decode();
+    const canvas = document.createElement('canvas'); canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+    const context = canvas.getContext('2d')!; context.drawImage(image, 0, 0);
+    return { corner: context.getImageData(0, 0, 1, 1).data[3], center: Array.from(context.getImageData(Math.floor(canvas.width / 2), Math.floor(canvas.height / 2), 1, 1).data) };
+  });
+  expect(pixels).toEqual({ corner: 0, center: [34, 170, 119, 255] });
+});
+
+test('large originals refuse a decoder that ignores resize instead of falling back to an unbounded image', async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = window.createImageBitmap.bind(window), originalURL = URL.createObjectURL.bind(URL);
+    const state = { decoderCalls: 0, closed: 0, objectURLs: 0 };
+    (window as unknown as Record<string, unknown>).__logoDecodeState = state;
+    window.createImageBitmap = (async (...args: unknown[]) => {
+      if (!(args[0] instanceof Blob)) return Reflect.apply(original, window, args);
+      state.decoderCalls++;
+      const canvas = document.createElement('canvas'); canvas.width = 2; canvas.height = 2;
+      const bitmap = await original(canvas), close = bitmap.close.bind(bitmap);
+      bitmap.close = () => { state.closed++; close(); };
+      return bitmap;
+    }) as typeof window.createImageBitmap;
+    URL.createObjectURL = blob => { state.objectURLs++; return originalURL(blob); };
+  });
+  const dialog = await openLogoEditor(page, '192.0.2.47');
+  await dialog.getByLabel('Logo colaborator (PNG)', { exact: true }).setInputFiles({ name: 'unsupported-10660.png', mimeType: 'image/png', buffer: await hugeLogoPng() });
+  await expect(dialog.getByRole('alert')).toHaveText('Browserul nu a putut pregăti acest PNG mare. Încearcă un browser actualizat sau un PNG mai mic.');
+  await expect(dialog.getByTestId('custom-event-logo-preview')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as unknown as Record<string, unknown>).__logoDecodeState)).toEqual({ decoderCalls: 1, closed: 1, objectURLs: 0 });
+});
+
+test('ordinary logos retain the image fallback when ImageBitmap is unavailable and release their object URL', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'createImageBitmap', { configurable: true, value: undefined });
+    const create = URL.createObjectURL.bind(URL), revoke = URL.revokeObjectURL.bind(URL);
+    const state = { created: 0, revoked: 0 };
+    (window as unknown as Record<string, unknown>).__logoFallback = state;
+    URL.createObjectURL = blob => { state.created++; return create(blob); };
+    URL.revokeObjectURL = url => { state.revoked++; revoke(url); };
+  });
+  const dialog = await openLogoEditor(page, '192.0.2.48');
+  const rows = Buffer.alloc((64 * 4 + 1) * 32);
+  for (let y = 8; y < 24; y++) for (let x = 8; x < 56; x++) rows.writeUInt32BE(0x22aa77ff, y * (64 * 4 + 1) + 1 + x * 4);
+  await dialog.getByLabel('Logo colaborator (PNG)', { exact: true }).setInputFiles({ name: 'ordinary.png', mimeType: 'image/png', buffer: pngFromRows(64, 32, rows) });
+  const preview = dialog.getByTestId('custom-event-logo-preview');
+  await expect(preview).toHaveAttribute('src', /^data:image\/png;base64,/);
+  await expect(dialog.getByRole('button', { name: 'Salvează evenimentul', exact: true })).toBeEnabled();
+  await expect(dialog.getByRole('alert')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as unknown as Record<string, unknown>).__logoFallback)).toEqual({ created: 1, revoked: 1 });
+  const prepared = Buffer.from((await preview.getAttribute('src'))!.split(',')[1], 'base64');
+  expect(prepared.readUInt32BE(16)).toBe(prepared.readUInt32BE(20));
+  expect(prepared.readUInt32BE(16)).toBeLessThanOrEqual(64);
 });

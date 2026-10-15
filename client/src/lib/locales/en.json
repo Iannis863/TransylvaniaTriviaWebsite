@@ -1078,5 +1078,6 @@
   "Alege o imagine PNG validă.": "Choose a valid PNG image.",
   "Imaginea este prea mare pentru a fi pregătită. Alege un PNG mai mic.": "This image is too large to prepare. Choose a smaller PNG.",
   "Logoul nu a putut fi pregătit. Încearcă un alt PNG.": "The logo could not be prepared. Try another PNG.",
+  "Browserul nu a putut pregăti acest PNG mare. Încearcă un browser actualizat sau un PNG mai mic.": "Your browser could not prepare this large PNG. Try an updated browser or a smaller PNG.",
   "Logoul nu conține elemente vizibile.": "The logo has no visible artwork."
 }

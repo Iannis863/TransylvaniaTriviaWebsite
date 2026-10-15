@@ -15,7 +15,7 @@ export const CUSTOM_EVENT_DEFAULT_PRIZES = {
 export const CUSTOM_EVENT_LOGO_MAX_BYTES = 1024 * 1024;
 // Originals are processed in the admin browser; only the optimized PNG is saved.
 export const CUSTOM_EVENT_LOGO_SOURCE_MAX_BYTES = 20 * 1024 * 1024;
-export const CUSTOM_EVENT_LOGO_SOURCE_MAX_PIXELS = 40 * 1024 * 1024;
+export const CUSTOM_EVENT_LOGO_SOURCE_MAX_PIXELS = 128 * 1024 * 1024;
 export const CUSTOM_EVENT_LOGO_SOURCE_MAX_DIMENSION = 16384;
 export const CUSTOM_EVENT_LOGO_TARGET_SIZE = 1024;
 const customEventPrizeSchema = z.object({ title: z.string().trim().min(1).max(120), description: z.string().trim().max(600) });

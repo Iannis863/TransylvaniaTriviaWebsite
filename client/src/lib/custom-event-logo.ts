@@ -18,14 +18,18 @@ interface ImageSource {
   release: () => void;
 }
 interface Bounds { x: number; y: number; width: number; height: number }
+interface SourceDimensions { width: number; height: number }
 
 const PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
 const ART_FRACTION = 0.88;
 const STRIP_HEIGHT = 128;
+const WORKING_MAX_DIMENSION = 2048;
+const FALLBACK_MAX_PIXELS = 40 * 1024 * 1024;
 const INVALID_PNG = "Alege o imagine PNG validă.";
 const TOO_LARGE = "Imaginea este prea mare pentru a fi pregătită. Alege un PNG mai mic.";
 const PROCESSING_FAILED = "Logoul nu a putut fi pregătit. Încearcă un alt PNG.";
 const EMPTY_LOGO = "Logoul nu conține elemente vizibile.";
+const LARGE_PNG_UNSUPPORTED = "Browserul nu a putut pregăti acest PNG mare. Încearcă un browser actualizat sau un PNG mai mic.";
 
 function checkAbort(signal?: AbortSignal) {
   if (signal?.aborted) throw new DOMException("Logo processing cancelled", "AbortError");
@@ -41,7 +45,7 @@ function context(canvas: HTMLCanvasElement, readFrequently = false): CanvasRende
   return result;
 }
 
-async function preflight(file: File, signal?: AbortSignal) {
+async function preflight(file: File, signal?: AbortSignal): Promise<SourceDimensions> {
   checkAbort(signal);
   if (file.size > CUSTOM_EVENT_LOGO_SOURCE_MAX_BYTES) throw new Error(TOO_LARGE);
   const bytes = new Uint8Array(await file.slice(0, 33).arrayBuffer());
@@ -52,22 +56,35 @@ async function preflight(file: File, signal?: AbortSignal) {
   const width = header.getUint32(16), height = header.getUint32(20);
   if (!width || !height) throw new Error(INVALID_PNG);
   if (width > CUSTOM_EVENT_LOGO_SOURCE_MAX_DIMENSION || height > CUSTOM_EVENT_LOGO_SOURCE_MAX_DIMENSION || width * height > CUSTOM_EVENT_LOGO_SOURCE_MAX_PIXELS) throw new Error(TOO_LARGE);
+  return { width, height };
 }
 
-async function decodeSource(file: File, signal?: AbortSignal): Promise<ImageSource> {
+async function decodeSource(file: File, dimensions: SourceDimensions, signal?: AbortSignal): Promise<ImageSource> {
   const png = new Blob([file], { type: "image/png" });
+  // Ordinary images retain native detail until transparent margins are trimmed.
+  const scale = dimensions.width * dimensions.height > FALLBACK_MAX_PIXELS
+    ? Math.min(1, WORKING_MAX_DIMENSION / Math.max(dimensions.width, dimensions.height)) : 1;
+  const width = Math.max(1, Math.round(dimensions.width * scale));
+  const height = Math.max(1, Math.round(dimensions.height * scale));
   if (typeof createImageBitmap === "function") {
     let bitmap: ImageBitmap | undefined;
     try {
-      bitmap = await createImageBitmap(png);
+      // Request the working size during decoding; a huge native bitmap must never
+      // reach the alpha scan. Decoder implementations may still use transient memory.
+      bitmap = scale < 1 ? await createImageBitmap(png, {
+        resizeWidth: width, resizeHeight: height, resizeQuality: "high",
+      }) : await createImageBitmap(png);
       checkAbort(signal);
+      if (bitmap.width !== width || bitmap.height !== height) throw new Error(PROCESSING_FAILED);
       return { image: bitmap, width: bitmap.width, height: bitmap.height, release: () => bitmap!.close() };
     } catch {
       bitmap?.close(); checkAbort(signal);
-      // Some browsers cannot decode a PNG variant through ImageBitmap but support it in <img>.
     }
   }
   checkAbort(signal);
+  // Preserve the existing fallback for ordinary inputs. Large originals require a
+  // decoder that honors resize options instead of retaining a full-size <img>.
+  if (dimensions.width * dimensions.height > FALLBACK_MAX_PIXELS) throw new Error(LARGE_PNG_UNSUPPORTED);
   const url = URL.createObjectURL(png);
   const image = new Image();
   image.decoding = "async";
@@ -81,6 +98,7 @@ async function decodeSource(file: File, signal?: AbortSignal): Promise<ImageSour
       image.src = url;
     });
     checkAbort(signal);
+    if (!image.naturalWidth || !image.naturalHeight || image.naturalWidth * image.naturalHeight > FALLBACK_MAX_PIXELS) throw new Error(PROCESSING_FAILED);
     return { image, width: image.naturalWidth, height: image.naturalHeight, release: () => { image.src = ""; URL.revokeObjectURL(url); } };
   } catch (error) { image.src = ""; URL.revokeObjectURL(url); throw error; }
 }
@@ -180,12 +198,13 @@ export async function prepareCustomEventLogo(file: File, options: { signal?: Abo
   let originalCanvas: HTMLCanvasElement | undefined;
   let resizedCanvas: HTMLCanvasElement | undefined;
   try {
-    await preflight(file, signal);
-    source = await decodeSource(file, signal);
+    const original = await preflight(file, signal);
+    source = await decodeSource(file, original, signal);
     checkAbort(signal);
     if (!source.width || !source.height || source.width > CUSTOM_EVENT_LOGO_SOURCE_MAX_DIMENSION || source.height > CUSTOM_EVENT_LOGO_SOURCE_MAX_DIMENSION || source.width * source.height > CUSTOM_EVENT_LOGO_SOURCE_MAX_PIXELS) throw new Error(TOO_LARGE);
-    const sourceWidth = source.width, sourceHeight = source.height;
+    const sourceWidth = original.width, sourceHeight = original.height;
     const bounds = await visibleBounds(source, signal);
+    const trimmed = bounds.x !== 0 || bounds.y !== 0 || bounds.width !== source.width || bounds.height !== source.height;
     let size = Math.min(CUSTOM_EVENT_LOGO_TARGET_SIZE, Math.ceil(Math.max(bounds.width, bounds.height) / ART_FRACTION));
     originalCanvas = document.createElement("canvas"); originalCanvas.width = size; originalCanvas.height = size;
     await drawLogo(source, bounds, originalCanvas, signal);
@@ -204,11 +223,10 @@ export async function prepareCustomEventLogo(file: File, options: { signal?: Abo
     if (encoded.size > CUSTOM_EVENT_LOGO_MAX_BYTES) throw new Error(PROCESSING_FAILED);
     const result = await dataURL(encoded, signal);
     checkAbort(signal);
-    return { dataUrl: result, sourceWidth, sourceHeight, size,
-      trimmed: bounds.x !== 0 || bounds.y !== 0 || bounds.width !== sourceWidth || bounds.height !== sourceHeight };
+    return { dataUrl: result, sourceWidth, sourceHeight, size, trimmed };
   } catch (error) {
     checkAbort(signal);
-    if (error instanceof Error && [INVALID_PNG, TOO_LARGE, PROCESSING_FAILED, EMPTY_LOGO].includes(error.message)) throw error;
+    if (error instanceof Error && [INVALID_PNG, TOO_LARGE, PROCESSING_FAILED, EMPTY_LOGO, LARGE_PNG_UNSUPPORTED].includes(error.message)) throw error;
     throw new Error(PROCESSING_FAILED);
   } finally {
     source?.release();
